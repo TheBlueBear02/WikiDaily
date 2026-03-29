@@ -23,6 +23,7 @@ Stores each user's reading stats. One row per user, created automatically when t
 | Column           | Type    | Nullable | Default | Description |
 |------------------|---------|----------|---------|-------------|
 | `user_id`        | uuid    | NO       | —       | Primary key. References `auth.users(id)`. Deleted automatically if the user account is deleted (`ON DELETE CASCADE`). |
+| `username`       | text    | YES      | null    | Public display name (collected at signup). Should be unique (recommended via a unique index). |
 | `current_streak` | integer | NO       | 0       | Number of consecutive days the user has read an article. Resets to 1 if they miss a day. |
 | `max_streak`     | integer | NO       | 0       | The highest `current_streak` the user has ever reached. Never decreases. |
 | `last_read`      | date    | YES      | null    | The date of the user's most recent read. Used to calculate whether the streak should increment, reset, or stay the same. Null for brand new users. |
@@ -35,6 +36,10 @@ Stores each user's reading stats. One row per user, created automatically when t
 
 **Trigger: `handle_new_user`**
 Runs automatically after a new row is inserted into `auth.users` (i.e. every new signup). Creates a blank `profiles` row for that user so the app never has to handle a "profile not found" case.
+
+If you collect `username` on signup, the recommended flow is:
+- Frontend calls `supabase.auth.signUp(..., options: { data: { username } })` so `username` is stored in `auth.users.raw_user_meta_data`.
+- The `handle_new_user` trigger copies that value into `profiles.username` at insert time.
 
 ---
 

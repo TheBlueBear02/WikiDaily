@@ -1,12 +1,23 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
 
 import StreakBadge from './StreakBadge'
+import { useUserProgress } from '../hooks/useUserProgress'
+import { getSupabase } from '../lib/supabaseClient'
+import { buildAuthUrl } from '../lib/returnTo'
 
 const linkBase =
   'rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900'
 const linkActive = 'bg-slate-100 text-slate-900'
 
 export default function Navbar() {
+  const location = useLocation()
+  const { userId, profile } = useUserProgress()
+
+  async function onSignOut() {
+    const supabase = getSupabase()
+    await supabase.auth.signOut()
+  }
+
   return (
     <header className="border-b border-slate-200">
       <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-4">
@@ -21,7 +32,30 @@ export default function Navbar() {
         </div>
 
         <div className="flex items-center gap-3">
+          {userId && profile?.username ? (
+            <div className="hidden text-sm text-slate-600 sm:block">
+              Hi, <span className="font-medium text-slate-900">{profile.username}</span>
+            </div>
+          ) : null}
           <StreakBadge />
+          {userId ? (
+            <button
+              type="button"
+              onClick={onSignOut}
+              className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Sign out
+            </button>
+          ) : (
+            <NavLink
+              to={buildAuthUrl({
+                returnTo: `${location.pathname}${location.search ?? ''}${location.hash ?? ''}`,
+              })}
+              className="rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800"
+            >
+              Sign in
+            </NavLink>
+          )}
           <nav className="flex items-center gap-2">
             <NavLink
               to="/"

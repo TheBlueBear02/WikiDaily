@@ -78,9 +78,11 @@ Tweet script + GitHub Action
 - **Already read today** is detected via the `reading_log` unique constraint and shown as a non-error UI state.
 
 ## Phase 6 — Auth Flow
-- [ ] Add a Login/Signup page (or modal) using Supabase Auth UI or a custom form
-- [ ] Protect `/history` and the Mark as Read button — redirect to login if not authenticated
-- [ ] Ensure the user has a `profiles` row on first login (trigger recommended per `agents/WikiDaily_Database.md`)
+- [X] Add a Login/Signup page using a custom email/password form (`/auth`)
+- [X] Keep `/history` public, but show “collected” markers on cards when signed in (reads `reading_log`)
+- [X] Redirect “Mark as read” to `/auth?returnTo=...` when unauthenticated
+- [X] Add auth state syncing so sign-in/out instantly updates cached user state (no refresh)
+- [X] Ensure the user has a `profiles` row on signup (trigger per `agents/WikiDaily_Database.md`; UI includes a short retry for timing edge cases)
 
 ## Phase 7 — X (Twitter) Automation *(Not for the MVP)*
 - [ ] Create a developer account on X and get API keys

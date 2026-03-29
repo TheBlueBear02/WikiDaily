@@ -31,16 +31,26 @@ export function useUserProgress() {
   const profileQuery = useQuery({
     queryKey: ['profile', userId],
     enabled: Boolean(userId),
+    retry: (failureCount, err) => {
+      const code = err?.code ?? err?.cause?.code
+      if (code === 'PGRST116') return failureCount < 3
+      return failureCount < 2
+    },
+    retryDelay: (attemptIndex) => Math.min(1500 * (attemptIndex + 1), 4000),
     queryFn: async () => {
       const supabase = getSupabase()
       const { data, error } = await supabase
         .from('profiles')
-        .select('user_id,current_streak,max_streak,last_read,total_read')
+        .select('user_id,username,current_streak,max_streak,last_read,total_read')
         .eq('user_id', userId)
-        .maybeSingle()
+        .single()
 
-      if (error) throw error
-      return data ?? null
+      if (error) {
+        // No rows yet (signup trigger timing) — retry briefly.
+        if (error.code === 'PGRST116') throw error
+        throw error
+      }
+      return data
     },
   })
 

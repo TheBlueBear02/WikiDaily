@@ -1,6 +1,11 @@
 import { useUserProgress } from '../hooks/useUserProgress'
+import { useLocation, useNavigate } from 'react-router-dom'
+
+import { buildAuthUrl } from '../lib/returnTo'
 
 export default function MarkAsReadButton({ wikiSlug, readDateYmd }) {
+  const location = useLocation()
+  const navigate = useNavigate()
   const { userId, profile, markAsReadMutation, markAsRead } = useUserProgress()
 
   const isReadToday = Boolean(profile?.last_read && profile.last_read === readDateYmd)
@@ -24,6 +29,8 @@ export default function MarkAsReadButton({ wikiSlug, readDateYmd }) {
   async function onClick() {
     if (!userId) {
       markAsReadMutation.reset()
+      const returnTo = `${location.pathname}${location.search ?? ''}${location.hash ?? ''}`
+      navigate(buildAuthUrl({ returnTo }))
       return
     }
     await markAsRead({ wikiSlug, readDateYmd })

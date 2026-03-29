@@ -1,9 +1,13 @@
 import ArticleCard from '../components/ArticleCard'
 import { useDailyArchive } from '../hooks/useDailyArchive'
+import { useUserProgress } from '../hooks/useUserProgress'
+import { useReadingLog } from '../hooks/useReadingLog'
 
 export default function History() {
   const limit = 60
   const { data, isLoading, isError, error, refetch } = useDailyArchive({ limit })
+  const { userId } = useUserProgress()
+  const readingLogQuery = useReadingLog({ userId })
 
   if (isLoading) {
     return (
@@ -47,12 +51,16 @@ export default function History() {
   }
 
   const rows = data ?? []
+  const collectedDates = new Set(
+    (readingLogQuery.data ?? []).map((r) => r.read_date).filter(Boolean),
+  )
 
   return (
     <section className="space-y-4">
       <h1 className="text-2xl font-semibold tracking-tight">History</h1>
       <p className="text-sm text-slate-600">
-        Past featured articles (latest first). If this grows large, we’ll paginate it.
+        A collection wall of past featured articles (latest first). Sign in to see which
+        ones you’ve collected.
       </p>
 
       {rows.length === 0 ? (
@@ -63,9 +71,10 @@ export default function History() {
           </div>
         </div>
       ) : (
-        <div className="grid gap-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {rows.map((row) => {
             const wikiUrl = `https://en.wikipedia.org/wiki/${encodeURIComponent(row.wiki_slug)}`
+            const isCollected = Boolean(userId) && collectedDates.has(row.date)
             return (
               <ArticleCard
                 key={row.date}
@@ -74,6 +83,7 @@ export default function History() {
                 description={row.description}
                 imageUrl={row.image_url}
                 wikiUrl={wikiUrl}
+                isCollected={isCollected}
               />
             )
           })}

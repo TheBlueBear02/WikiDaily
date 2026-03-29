@@ -6,13 +6,25 @@ export default function ArticleCard({
   wikiUrl,
   isFallback = false,
   actions = null,
+  isCollected = false,
 }) {
   return (
-    <article className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+    <article
+      className={[
+        'relative overflow-hidden rounded-xl border bg-white',
+        isCollected ? 'border-emerald-300 ring-1 ring-emerald-200' : 'border-slate-200',
+      ].join(' ')}
+    >
       {isFallback ? (
         <div className="border-b border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           Today’s article isn’t available yet. Showing the most recent article in the
           database.
+        </div>
+      ) : null}
+
+      {isCollected ? (
+        <div className="absolute right-3 top-3 z-10 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-900">
+          Collected
         </div>
       ) : null}
 
