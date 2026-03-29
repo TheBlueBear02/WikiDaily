@@ -28,10 +28,11 @@ Tweet script + GitHub Action
 
 ## Phase 1 — Supabase Setup
 - [X] Create a new Supabase project
-- [X] Create the `daily_articles` table (date PK, wiki_title text)
-- [X] Create the `user_progress` table (user_id, streak, last_read, history jsonb)
-- [X] Enable Row Level Security on `user_progress`
-- [X] Write RLS policy: users can SELECT/UPDATE only where `user_id = auth.uid()`
+- [X] Create the `daily_articles` table (date PK, `wiki_slug`, cached article fields)
+- [X] Create the `profiles` table (user_id PK, streak fields, last_read, total_read)
+- [X] Create the `reading_log` table (one row per user per day)
+- [X] Enable Row Level Security on user-specific tables
+- [X] Write RLS policies so users can only read/write their own rows
 - [ ] Enable Supabase Auth (Email/Password is enough for MVP)
 - [X] Copy `SUPABASE_URL` and `SUPABASE_ANON_KEY` to `.env.local`
 
@@ -46,40 +47,45 @@ Tweet script + GitHub Action
 - [X] Add `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` as GitHub Actions secrets *(Settings → Secrets and variables → Actions; required before the scheduled job can write to Supabase)*
 
 ## Phase 3 — Vite + React Project Init
-- [ ] `npm create vite@latest wikidaily -- --template react`
-- [ ] Install dependencies:
+- [X] `npm create vite@latest frontend -- --template react`
+- [X] Install dependencies (run inside `frontend/`):
   ```
+  npm install
   npm install @supabase/supabase-js @tanstack/react-query react-router-dom
-  npm install -D tailwindcss postcss autoprefixer
+  npm install -D tailwindcss@3 postcss autoprefixer
   npx tailwindcss init -p
   ```
-- [ ] Configure Tailwind (`tailwind.config.js` + add directives to `index.css`)
-- [ ] Create `src/lib/supabaseClient.js` with `createClient()`
-- [ ] Create `src/lib/wikipedia.js` with the summary fetch helper
+- [X] Configure Tailwind (`tailwind.config.js` + add directives to `src/index.css`)
+- [X] Create `src/lib/supabaseClient.js` (getter using `createClient()`)
+- [X] Create `src/lib/wikipedia.js` with the summary fetch helper
 
 ## Phase 4 — React Query Hooks
-- [ ] `useDailyArticle.js` — queries `daily_articles` for today's date → returns `wiki_title`
-- [ ] `useWikiSummary.js` — takes a `wiki_title`, calls the WP REST API → returns article data
-- [ ] `useUserProgress.js` — fetches `user_progress` for the logged-in user; exposes `markAsRead()` mutation
+- [X] `useDailyArticle.js` — queries `daily_articles` for today’s UTC date → returns the full cached row (incl. `wiki_slug`, `display_title`, `image_url`, `description`)
+- [ ] *(Deferred)* `useWikiSummary.js` — optional later if you need richer data than the cached columns
+- [X] `useUserProgress.js` — aligned to `profiles` + `reading_log`; supports mark-as-read for already-authenticated users (Phase 6 adds Auth UI)
 
 ## Phase 5 — Components & Pages
-- [ ] `Navbar.jsx` — links to `/` and `/history`, shows streak badge
-- [ ] `StreakBadge.jsx` — reads streak from `useUserProgress`
-- [ ] `ArticleCard.jsx` — renders thumbnail, title, extract, "Read Full Article" link
-- [ ] `MarkAsReadButton.jsx` — runs the streak logic on click, calls Supabase update
-- [ ] `Home.jsx` — composes `ArticleCard` + `MarkAsReadButton` using the two hooks
-- [ ] `History.jsx` — maps over `history[]` array, fetches WP titles, lists past articles
-- [ ] `App.jsx` — sets up `<BrowserRouter>` with routes for `/` and `/history`
+- [X] `Navbar.jsx` — links to `/` and `/history`, shows streak badge
+- [X] `StreakBadge.jsx` — reads streak from `useUserProgress` (has a loading state to avoid auth “flash”)
+- [X] `ArticleCard.jsx` — presentational card (thumbnail, title, extract, "Read Full Article" link)
+- [X] `MarkAsReadButton.jsx` — inserts into `reading_log` and updates `profiles` streak fields (works if user is already signed in)
+- [X] `Home.jsx` — composes `ArticleCard` + `MarkAsReadButton` using cached `daily_articles` fields; Wikipedia URL is `https://en.wikipedia.org/wiki/{wiki_slug}`
+- [X] `History.jsx` — public archive of past `daily_articles` (latest first; paginate later)
+- [X] `App.jsx` — routes for `/` and `/history` (router is in `src/main.jsx`)
+
+**Notes (Phase 5)**:
+- **Mark as read requires an authenticated user**. Phase 6 adds the login/signup UI and can enforce route protection.
+- **Already read today** is detected via the `reading_log` unique constraint and shown as a non-error UI state.
 
 ## Phase 6 — Auth Flow
 - [ ] Add a Login/Signup page (or modal) using Supabase Auth UI or a custom form
 - [ ] Protect `/history` and the Mark as Read button — redirect to login if not authenticated
-- [ ] Create a `user_progress` row on first login (use a Supabase Edge Function or handle in the hook)
+- [ ] Ensure the user has a `profiles` row on first login (trigger recommended per `agents/WikiDaily_Database.md`)
 
-## Phase 7 — X (Twitter) Automation *(optional for MVP)*
+## Phase 7 — X (Twitter) Automation *(Not for the MVP)*
 - [ ] Create a developer account on X and get API keys
 - [ ] Write `scripts/tweet-today.js`:
-  - Reads today's `wiki_title` from Supabase
+  - Reads today's `wiki_slug` from Supabase
   - Fetches the WP summary
   - Posts tweet with title + first sentence + site URL
 - [ ] Add to the GitHub Action workflow (runs after `daily-picker.js`)
@@ -94,6 +100,6 @@ Tweet script + GitHub Action
 ## Phase 9 — Polish *(post-MVP)*
 - [ ] Loading skeleton while article fetches
 - [ ] Error state if Wikipedia API is down
-- [ ] Handle the edge case where no article exists yet for today (show a fallback)
+- [X] Handle the edge case where no article exists yet for today (show the latest available article as a fallback)
 - [ ] Mobile-responsive layout pass
 - [ ] Add Hebrew (`he.wikipedia.org`) language toggle

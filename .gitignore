@@ -3,3 +3,7 @@ node_modules/
 .env
 *.log
 .DS_Store
+
+# Frontend (Vite) env files (kept in frontend/.gitignore too, but ignore explicitly)
+frontend/.env.local
+frontend/.env.*.local
