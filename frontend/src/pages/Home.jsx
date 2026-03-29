@@ -1,6 +1,7 @@
 import { useDailyArticle } from '../hooks/useDailyArticle'
 import { todayUtcYmd } from '../lib/date'
 import ArticleCard from '../components/ArticleCard'
+import HeroAside from '../components/HeroAside'
 import MarkAsReadButton from '../components/MarkAsReadButton'
 
 export default function Home() {
@@ -68,21 +69,43 @@ export default function Home() {
 
   return (
     <section className="space-y-4">
-      <ArticleCard
-        date={dailyArticle.date}
-        displayTitle={dailyArticle.display_title}
-        description={dailyArticle.description}
-        imageUrl={dailyArticle.image_url}
-        wikiUrl={wikiUrl}
-        cardHref={wikiUrl}
-        isFallback={isFallback}
-        actions={
-          <MarkAsReadButton
-            wikiSlug={dailyArticle.wiki_slug}
-            readDateYmd={readDateYmd}
+      <div className="flex flex-col gap-4 md:flex-row md:items-stretch md:gap-6">
+        <HeroAside>
+          <div className="flex h-full flex-col justify-between gap-6">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                WikiDaily
+              </p>
+              <h1 className="mt-2 text-xl font-semibold leading-snug text-slate-900">
+                Your daily Wikipedia pick
+              </h1>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                Same article for everyone today—read, learn, and keep your streak.
+              </p>
+            </div>
+            {dailyArticle.date ? (
+              <div className="text-xs text-slate-500">Featured date · {dailyArticle.date}</div>
+            ) : null}
+          </div>
+        </HeroAside>
+        <div className="w-full shrink-0 md:w-[70%]">
+          <ArticleCard
+            date={dailyArticle.date}
+            displayTitle={dailyArticle.display_title}
+            description={dailyArticle.description}
+            imageUrl={dailyArticle.image_url}
+            wikiUrl={wikiUrl}
+            cardHref={wikiUrl}
+            isFallback={isFallback}
+            actions={
+              <MarkAsReadButton
+                wikiSlug={dailyArticle.wiki_slug}
+                readDateYmd={readDateYmd}
+              />
+            }
           />
-        }
-      />
+        </div>
+      </div>
     </section>
   )
 }

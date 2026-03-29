@@ -23,7 +23,8 @@ WikiDaily/
 │       ├── main.jsx                   # Vite entry + React Query provider + auth sync
 │       ├── App.jsx                    # Routes: /, /history, /auth
 │       ├── components/
-│       │   ├── ArticleCard.jsx        # Presentational article card (reused by Home/History; supports full-card link via cardHref; image uses contain (no crop))
+│       │   ├── ArticleCard.jsx        # Presentational article card (`h-full w-full` in hero; optional `className`); Home places it in a ~70% column beside `HeroAside` with gap. Full-card opens `cardHref` in a new tab except clicks on nested `a`/buttons; image uses contain (no crop) with a bottom-end “Today’s article” badge in primary slate-900; title prominent; date under title; description shows first two sentences with “...” when truncated
+│       │   ├── HeroAside.jsx          # Left column of the Home hero row: flex-1, bordered panel; `gap-4` / `md:gap-6` between aside and article column; stretches to match article height (`md:items-stretch`)
 │       │   ├── MarkAsReadButton.jsx   # Inserts reading_log + updates profile streaks (auth required)
 │       │   ├── AuthSync.jsx           # onAuthStateChange → invalidates user-scoped React Query caches (mounted in main.jsx)
 │       │   ├── Navbar.jsx             # App header; logo/title links to / (no focus ring); History link; user menu (display name → Sign out)
@@ -39,7 +40,7 @@ WikiDaily/
 │       │   └── useUserProgress.js     # React Query: auth user + profiles + mark-as-read mutation
 │       └── pages/
 │           ├── Auth.jsx
-│           ├── Home.jsx                # Shows the daily article card (card is fully clickable and opens Wikipedia in the same tab)
+│           ├── Home.jsx                # Hero row: `HeroAside` (remaining width) + article column (~70%) with `ArticleCard`; gap between columns; both equal height on `md+`
 │           └── History.jsx
 │
 ├── scripts/
