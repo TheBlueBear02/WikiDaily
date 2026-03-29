@@ -7,8 +7,8 @@ import { getSupabase } from '../lib/supabaseClient'
 import { buildAuthUrl } from '../lib/returnTo'
 
 const linkBase =
-  'rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-const linkActive = 'bg-slate-100 text-slate-900'
+  'rounded-none px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-primary'
+const linkActive = 'bg-slate-100 text-primary'
 
 export default function Navbar() {
   const location = useLocation()
@@ -73,7 +73,7 @@ export default function Navbar() {
           aria-label="Go to home"
           className="flex items-center gap-3 rounded-md focus:outline-none"
         >
-          <div className="grid h-9 w-9 place-items-center rounded-lg bg-slate-900 text-sm font-semibold text-white">
+          <div className="grid h-9 w-9 place-items-center rounded-lg bg-primary text-sm font-semibold text-white">
             WD
           </div>
           <div className="leading-tight">
@@ -103,7 +103,7 @@ export default function Navbar() {
                 onClick={() => setIsUserMenuOpen((v) => !v)}
                 aria-haspopup="menu"
                 aria-expanded={isUserMenuOpen}
-                className="flex items-center gap-2 rounded-full border border-slate-200 bg-white py-1 pl-1 pr-3 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-300"
+                className="flex items-center gap-2 bg-white py-1 pl-1 pr-3 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-300"
               >
                 <span className="grid h-8 w-8 place-items-center rounded-full bg-slate-100 text-slate-500">
                   <svg
@@ -127,14 +127,14 @@ export default function Navbar() {
                 <div
                   role="menu"
                   aria-label="User menu"
-                  className="absolute right-0 top-full z-50 mt-2 w-44 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg"
+                  className="absolute right-0 top-full z-50 mt-2 w-max overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg"
                 >
                   <button
                     type="button"
                     role="menuitem"
                     onClick={onSignOut}
                     disabled={isSigningOut}
-                    className="w-full px-3 py-2 text-left text-sm font-medium text-red-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="whitespace-nowrap px-3 py-2 text-left text-sm font-medium text-red-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {isSigningOut ? 'Signing out…' : 'Sign out'}
                   </button>
@@ -146,7 +146,7 @@ export default function Navbar() {
               to={buildAuthUrl({
                 returnTo: `${location.pathname}${location.search ?? ''}${location.hash ?? ''}`,
               })}
-              className="rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800"
+              className="rounded-none bg-primary px-3 py-2 text-sm font-medium text-white hover:bg-primary-hover"
             >
               Sign in
             </NavLink>

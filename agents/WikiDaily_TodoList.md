@@ -67,7 +67,7 @@ Tweet script + GitHub Action
 ## Phase 5 — Components & Pages
 - [X] `Navbar.jsx` — logo/title links to `/`; nav link to `/history`; user menu (name+avatar) with dropdown “Sign out”
 - [X] `StreakBadge.jsx` — reads streak from `useUserProgress` (has a loading state to avoid auth “flash”)
-- [X] `ArticleCard.jsx` — presentational card (thumbnail, title, extract, "Read Full Article" link)
+- [X] `ArticleCard.jsx` — presentational card (thumbnail, title, extract, "Read now" link)
 - [X] `MarkAsReadButton.jsx` — inserts into `reading_log` and updates `profiles` streak fields (works if user is already signed in)
 - [X] `Home.jsx` — composes `ArticleCard` + `MarkAsReadButton` using cached `daily_articles` fields; Wikipedia URL is `https://en.wikipedia.org/wiki/{wiki_slug}`
 - [X] `History.jsx` — public archive of past `daily_articles` (latest first; paginate later)

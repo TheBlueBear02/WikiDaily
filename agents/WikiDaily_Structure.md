@@ -17,30 +17,32 @@ WikiDaily/
 │   ├── index.html
 │   ├── package.json
 │   ├── postcss.config.js
-│   ├── tailwind.config.js
+│   ├── tailwind.config.js             # `theme.extend.colors.primary`: DEFAULT `#1E2952`, `hover` `#151d3c` (CTAs)
 │   ├── .env.example                   # Copy to .env.local (not committed)
 │   └── src/
 │       ├── main.jsx                   # Vite entry + React Query provider + auth sync
 │       ├── App.jsx                    # Routes: /, /history, /auth
 │       ├── components/
-│       │   ├── ArticleCard.jsx        # Presentational article card (`h-full w-full` in hero; optional `className`); Home places it in a ~70% column beside `HeroAside` with gap. Full-card opens `cardHref` in a new tab except clicks on nested `a`/buttons; image uses contain (no crop) with a bottom-end “Today’s article” badge in primary slate-900; title prominent; date under title; description shows first two sentences with “...” when truncated
-│       │   ├── HeroAside.jsx          # Left column of the Home hero row: flex-1, bordered panel; `gap-4` / `md:gap-6` between aside and article column; stretches to match article height (`md:items-stretch`)
+│       │   ├── ArticleCard.jsx        # Presentational article card (`h-full w-full` in hero; optional `className`); Home places it in a ~70% column beside `HeroAside` with gap. Full-card opens `cardHref` in a new tab except clicks on nested `a`/buttons; image uses contain (no crop) with a bottom-start “Today’s article” badge in `bg-primary` (#1E2952); title prominent; date under title; description shows first two sentences with “...” when truncated
+│       │   ├── HeroAside.jsx          # Left column of the Home hero row: flex-1, bordered panel, `overflow-hidden`, no outer padding (content manages its own); stretches to match article height (`md:items-stretch`)
+│       │   ├── WeeklyLeaderboard.jsx  # Hero aside: `bg-primary` bar with uppercase “LEADERBOARD” (`text-xl` / `md:text-2xl`); countdown below on `bg-slate-50` (UTC Sunday 23:59:59 reset); body lists ranks or empty state
 │       │   ├── MarkAsReadButton.jsx   # Inserts reading_log + updates profile streaks (auth required)
 │       │   ├── AuthSync.jsx           # onAuthStateChange → invalidates user-scoped React Query caches (mounted in main.jsx)
-│       │   ├── Navbar.jsx             # App header; logo/title links to / (no focus ring); History link; user menu (display name → Sign out)
+│       │   ├── Navbar.jsx             # App header; logo/title links to / (no focus ring); History link; user menu (display name → Sign out, menu panel and control are content-width)
 │       │   └── StreakBadge.jsx        # Shows streak; avoids auth “flash” with loading state
 │       ├── lib/
 │       │   ├── supabaseClient.js      # Supabase client getter (reads VITE_* env)
 │       │   ├── wikipedia.js           # fetch wrapper for WP REST API (optional; may be deferred)
-│       │   └── date.js                # UTC date helpers (YYYY-MM-DD)
+│       │   └── date.js                # UTC date helpers (YYYY-MM-DD); `getNextLeaderboardResetDate` / `getLeaderboardCountdownParts` for weekly reset (UTC Sunday 23:59:59.999)
 │       ├── hooks/
 │       │   ├── useDailyArticle.js     # React Query: read today's daily_articles row
 │       │   ├── useDailyArchive.js     # React Query: read public daily_articles archive (History page)
 │       │   ├── useReadingLog.js       # React Query: user reading_log (read_date only) for “collected” markers
+│       │   ├── useLeaderboardCountdown.js # 1s interval: remaining days/hours/minutes until leaderboard reset
 │       │   └── useUserProgress.js     # React Query: auth user + profiles + mark-as-read mutation
 │       └── pages/
 │           ├── Auth.jsx
-│           ├── Home.jsx                # Hero row: `HeroAside` (remaining width) + article column (~70%) with `ArticleCard`; gap between columns; both equal height on `md+`
+│           ├── Home.jsx                # Hero row (`HomeHeroRow`): `HeroAside` + `WeeklyLeaderboard` always shown on the left for loading, error, empty, and success; right column (~70%) is skeleton, message, or `ArticleCard`
 │           └── History.jsx
 │
 ├── scripts/
@@ -112,6 +114,10 @@ history   = [...history, wiki_title]
 - The navbar display name prefers `profiles.username`.
 - If that hasn’t loaded yet, it falls back to `authUser.user_metadata.username`.
 - If neither is present, it falls back to the email local-part (before `@`), then `Account`.
+
+### Buttons (square corners)
+- Native `<button>` elements use square corners: `frontend/src/index.css` sets `border-radius: 0 !important` on `button` so Tailwind `rounded-*` utilities cannot round them.
+- Link-styled controls that read as buttons (e.g. ArticleCard “Read now”, navbar History / Sign in) use `rounded-none` in their Tailwind classes.
 
 ---
 

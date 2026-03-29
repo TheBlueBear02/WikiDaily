@@ -103,7 +103,7 @@ export default function ArticleCard({
             referrerPolicy="no-referrer"
           />
           <div
-            className="pointer-events-none absolute bottom-4 end-0 bg-slate-900 px-4 py-2.5 text-sm font-bold text-white"
+            className="pointer-events-none absolute bottom-4 start-0 bg-primary px-4 py-2.5 text-sm font-bold text-white"
             aria-hidden
           >
             {"Today's article"}
@@ -113,7 +113,7 @@ export default function ArticleCard({
 
       <div className="space-y-3 p-5">
         <div className="space-y-2">
-          <h2 className="text-2xl font-semibold leading-tight tracking-tight text-slate-900">
+          <h2 className="text-2xl font-semibold leading-tight tracking-tight text-primary">
             {displayTitle}
           </h2>
           {date ? <div className="text-xs text-slate-500">{date}</div> : null}
@@ -131,9 +131,9 @@ export default function ArticleCard({
             href={wikiUrl}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center justify-center rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800"
+            className="inline-flex items-center justify-center rounded-none bg-primary px-3 py-2 text-sm font-medium text-white hover:bg-primary-hover"
           >
-            Read full article
+            Read now
           </a>
           {actions}
         </div>

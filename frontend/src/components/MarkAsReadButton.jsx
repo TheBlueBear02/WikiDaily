@@ -74,7 +74,7 @@ export default function MarkAsReadButton({ wikiSlug, readDateYmd }) {
         type="button"
         onClick={onClick}
         disabled={disabled || !userId || showAlreadyRead}
-        className="inline-flex items-center justify-center rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex items-center justify-center border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
         title={title}
       >
         {label}

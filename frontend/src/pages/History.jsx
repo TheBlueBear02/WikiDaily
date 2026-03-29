@@ -58,7 +58,7 @@ function DayCard({ dayNumber, row, wikiUrl, isCollected, isToday }) {
       ].join(' ')}
     >
       <div className="flex items-start justify-between gap-2 p-3">
-        <div className="text-sm font-semibold tabular-nums text-slate-900">{dayNumber}</div>
+        <div className="text-sm font-semibold tabular-nums text-primary">{dayNumber}</div>
         {isCollected ? (
           <div className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-900">
             Read
@@ -97,7 +97,7 @@ function DayCard({ dayNumber, row, wikiUrl, isCollected, isToday }) {
           )}
 
           <div className="p-3 pt-3">
-            <div className="line-clamp-2 text-sm font-semibold leading-snug text-slate-900">
+            <div className="line-clamp-2 text-sm font-semibold leading-snug text-primary">
               {row.display_title}
             </div>
             <div className="mt-1 text-xs text-slate-500">{row.date}</div>
@@ -174,7 +174,7 @@ export default function History() {
             <button
               type="button"
               onClick={() => refetch()}
-              className="rounded-md bg-rose-600 px-3 py-2 text-sm font-medium text-white hover:bg-rose-700"
+              className="bg-rose-600 px-3 py-2 text-sm font-medium text-white hover:bg-rose-700"
             >
               Retry
             </button>
@@ -198,7 +198,7 @@ export default function History() {
     <section className="space-y-4">
       {rows.length === 0 ? (
         <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
-          <div className="text-sm font-medium text-slate-900">No articles for this month yet</div>
+          <div className="text-sm font-medium text-primary">No articles for this month yet</div>
           <div className="mt-1 text-sm text-slate-600">
             You’ll still see the full calendar—days will fill in as the daily picker writes
             rows to Supabase.
@@ -226,7 +226,7 @@ export default function History() {
                   return next
                 })
               }}
-              className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
             >
               Prev
             </button>
@@ -241,7 +241,7 @@ export default function History() {
                   return next
                 })
               }}
-              className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
             >
               Next
             </button>

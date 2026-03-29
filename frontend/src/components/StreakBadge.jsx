@@ -22,7 +22,7 @@ export default function StreakBadge() {
   const streak = profile?.current_streak ?? 0
   return (
     <div className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-700">
-      Streak: <span className="font-semibold text-slate-900">{streak}</span>
+      Streak: <span className="font-semibold text-primary">{streak}</span>
     </div>
   )
 }

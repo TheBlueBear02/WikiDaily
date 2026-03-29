@@ -11,3 +11,8 @@ body,
 body {
   margin: 0;
 }
+
+/* Square corners on all native buttons (Tailwind utilities would otherwise win in cascade). */
+button {
+  border-radius: 0 !important;
+}

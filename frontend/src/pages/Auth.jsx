@@ -105,13 +105,13 @@ export default function Auth() {
         <form className="space-y-4" onSubmit={onSubmit}>
           {mode === 'signup' ? (
             <label className="block space-y-1">
-              <div className="text-sm font-medium text-slate-900">Username</div>
+              <div className="text-sm font-medium text-primary">Username</div>
               <input
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 autoComplete="username"
-                className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none focus:border-slate-400"
+                className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-primary shadow-sm outline-none focus:border-slate-400"
                 placeholder="wiki_reader"
                 minLength={3}
                 maxLength={20}
@@ -124,26 +124,26 @@ export default function Auth() {
           ) : null}
 
           <label className="block space-y-1">
-            <div className="text-sm font-medium text-slate-900">Email</div>
+            <div className="text-sm font-medium text-primary">Email</div>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="email"
-              className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none focus:border-slate-400"
+              className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-primary shadow-sm outline-none focus:border-slate-400"
               placeholder="you@example.com"
               required
             />
           </label>
 
           <label className="block space-y-1">
-            <div className="text-sm font-medium text-slate-900">Password</div>
+            <div className="text-sm font-medium text-primary">Password</div>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
-              className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none focus:border-slate-400"
+              className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-primary shadow-sm outline-none focus:border-slate-400"
               placeholder="••••••••"
               minLength={6}
               required
@@ -159,7 +159,7 @@ export default function Auth() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="inline-flex w-full items-center justify-center rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
+            className="inline-flex w-full items-center justify-center bg-primary px-3 py-2 text-sm font-medium text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-70"
           >
             {isSubmitting
               ? mode === 'signup'
@@ -176,7 +176,7 @@ export default function Auth() {
                 Already have an account?{' '}
                 <button
                   type="button"
-                  className="font-medium text-slate-900 hover:underline"
+                  className="font-medium text-primary hover:underline"
                   onClick={() => setMode('signin')}
                 >
                   Sign in
@@ -187,7 +187,7 @@ export default function Auth() {
                 New here?{' '}
                 <button
                   type="button"
-                  className="font-medium text-slate-900 hover:underline"
+                  className="font-medium text-primary hover:underline"
                   onClick={() => setMode('signup')}
                 >
                   Create an account
