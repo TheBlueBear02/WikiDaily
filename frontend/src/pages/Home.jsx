@@ -10,7 +10,6 @@ export default function Home() {
   if (isLoading) {
     return (
       <section className="space-y-4">
-        <h1 className="text-2xl font-semibold tracking-tight">Today’s article</h1>
         <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
           <div className="h-4 w-48 animate-pulse rounded bg-slate-200" />
           <div className="mt-3 space-y-2">
@@ -26,7 +25,6 @@ export default function Home() {
   if (isError) {
     return (
       <section className="space-y-4">
-        <h1 className="text-2xl font-semibold tracking-tight">Today’s article</h1>
         <div className="rounded-xl border border-rose-200 bg-rose-50 p-5">
           <div className="text-sm font-medium text-rose-900">
             Couldn’t load today’s article
@@ -51,7 +49,6 @@ export default function Home() {
   if (!dailyArticle) {
     return (
       <section className="space-y-4">
-        <h1 className="text-2xl font-semibold tracking-tight">Today’s article</h1>
         <p className="text-sm text-slate-600">
           No articles are available yet — check back soon.
         </p>
@@ -71,13 +68,13 @@ export default function Home() {
 
   return (
     <section className="space-y-4">
-      <h1 className="text-2xl font-semibold tracking-tight">Today’s article</h1>
       <ArticleCard
         date={dailyArticle.date}
         displayTitle={dailyArticle.display_title}
         description={dailyArticle.description}
         imageUrl={dailyArticle.image_url}
         wikiUrl={wikiUrl}
+        cardHref={wikiUrl}
         isFallback={isFallback}
         actions={
           <MarkAsReadButton

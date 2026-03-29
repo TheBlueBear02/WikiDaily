@@ -20,10 +20,12 @@ export default function Navbar() {
   const displayName = useMemo(() => {
     const username = profile?.username?.trim()
     if (username) return username
+    const metadataUsername = user?.user_metadata?.username?.trim()
+    if (metadataUsername) return metadataUsername
     const email = user?.email?.trim()
-    if (email) return email
+    if (email) return email.split('@')[0] || email
     return 'Account'
-  }, [profile?.username, user?.email])
+  }, [profile?.username, user?.user_metadata?.username, user?.email])
 
   async function onSignOut() {
     try {

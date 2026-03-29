@@ -23,10 +23,10 @@ WikiDaily/
 │       ├── main.jsx                   # Vite entry + React Query provider + auth sync
 │       ├── App.jsx                    # Routes: /, /history, /auth
 │       ├── components/
-│       │   ├── ArticleCard.jsx        # Presentational article card (reused by Home/History; square corners)
+│       │   ├── ArticleCard.jsx        # Presentational article card (reused by Home/History; supports full-card link via cardHref; image uses contain (no crop))
 │       │   ├── MarkAsReadButton.jsx   # Inserts reading_log + updates profile streaks (auth required)
 │       │   ├── AuthSync.jsx           # onAuthStateChange → invalidates user-scoped React Query caches (mounted in main.jsx)
-│       │   ├── Navbar.jsx             # App header; logo/title links to / (no focus ring); History link; user menu (name+avatar → Sign out)
+│       │   ├── Navbar.jsx             # App header; logo/title links to / (no focus ring); History link; user menu (display name → Sign out)
 │       │   └── StreakBadge.jsx        # Shows streak; avoids auth “flash” with loading state
 │       ├── lib/
 │       │   ├── supabaseClient.js      # Supabase client getter (reads VITE_* env)
@@ -39,7 +39,7 @@ WikiDaily/
 │       │   └── useUserProgress.js     # React Query: auth user + profiles + mark-as-read mutation
 │       └── pages/
 │           ├── Auth.jsx
-│           ├── Home.jsx
+│           ├── Home.jsx                # Shows the daily article card (card is fully clickable and opens Wikipedia in the same tab)
 │           └── History.jsx
 │
 ├── scripts/
@@ -95,10 +95,22 @@ history   = [...history, wiki_title]
 **Implementation note (MVP)**: the app inserts into `reading_log` first. If the insert fails due to the unique constraint (`UNIQUE (user_id, read_date)`), it treats the action as “already read today” (no streak changes). Profile streak math is currently computed client-side (acceptable for MVP; could be made atomic later via a Postgres function/RPC).
 
 ### Auth UX (Phase 6)
-- `/history` is public; if signed in, the UI marks cards as **Collected** by looking up the user’s `reading_log.read_date` in a `Set` for \(O(1)\) per-card lookup.
+- `/history` is public and rendered as a **calendar month grid**.
+- The History page supports **month navigation** via the URL query param `?month=YYYY-MM` (defaults to the current UTC month). Navigating to months with no rows still renders the full calendar, showing “No article yet” for each day.
+- The History page includes **Prev / Next** month controls (and Refresh), but no dedicated “Today” button; the default month remains the current UTC month.
+- For the selected month, it fetches `daily_articles` scoped to that month (`date >= firstOfMonth` and `date <= lastOfMonth`) and renders a small **day card** for each calendar day.
+- Days that have a `daily_articles` row show the article **image + title** and link to the Wikipedia page; missing days render a default “empty day” card.
+- The calendar visually **highlights the current UTC day** *when viewing the current UTC month* (a subtle indigo ring + dot), so users can quickly orient themselves in the grid.
+- If signed in, the UI marks days as **Read** by looking up the user’s `reading_log.read_date` in a `Set` for \(O(1)\) per-day lookup.
 - If a signed-out user clicks “Mark as read”, the app redirects them to `/auth?returnTo=...` and navigates back after login.
+- On **sign up**, the app **auto-signs the user in** before redirecting back to `returnTo`. Implementation detail: after `supabase.auth.signUp(...)`, if no session is returned (e.g. email confirmation is required), the UI does **not** redirect and instead shows a “check your email to confirm” message; otherwise it proceeds (or falls back to `signInWithPassword`) so the user lands on Home already authenticated.
 - Auth state changes are handled via `AuthSync.jsx` (which subscribes to `supabase.auth.onAuthStateChange`) so the UI updates instantly after sign-in/out (no refresh). `AuthSync` is mounted once in `main.jsx`.
 - `AuthSync.jsx` also updates the React Query cache for `authUser` on `SIGNED_IN` / `SIGNED_OUT` so components like `Navbar` reflect auth changes immediately without waiting for a refetch.
+
+### Header display name
+- The navbar display name prefers `profiles.username`.
+- If that hasn’t loaded yet, it falls back to `authUser.user_metadata.username`.
+- If neither is present, it falls back to the email local-part (before `@`), then `Account`.
 
 ---
 

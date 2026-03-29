@@ -46,7 +46,7 @@ export default function Auth() {
             'Username must be 3–20 characters and only use letters, numbers, or underscores.',
           )
         }
-        const { error: signUpErr } = await supabase.auth.signUp({
+        const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
           email: trimmedEmail,
           password,
           options: {
@@ -56,6 +56,22 @@ export default function Auth() {
           },
         })
         if (signUpErr) throw signUpErr
+
+        // Supabase can be configured to require email confirmation. In that case `signUp`
+        // succeeds but returns no active session, so we won’t be signed in on redirect.
+        // Best-effort: immediately sign in after successful signup so the user lands on
+        // Home already authenticated when confirmation is disabled.
+        if (!signUpData?.session) {
+          const { error: signInAfterSignUpErr } = await supabase.auth.signInWithPassword({
+            email: trimmedEmail,
+            password,
+          })
+          if (signInAfterSignUpErr) {
+            throw new Error(
+              'Account created. Please check your email to confirm your account, then sign in.',
+            )
+          }
+        }
       } else {
         const { error: signInErr } = await supabase.auth.signInWithPassword({
           email: trimmedEmail,
