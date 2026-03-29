@@ -24,6 +24,19 @@ const WP_SUMMARY = (slug) =>
 
 const UA = 'WikiDailyBot/1.0 (daily picker; open-source)';
 
+/** Decode `role` from a Supabase JWT without verifying the signature (debug / guardrail only). */
+function jwtRole(key) {
+  if (!key || typeof key !== 'string') return null;
+  const parts = key.split('.');
+  if (parts.length < 2) return null;
+  try {
+    const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
+    return payload.role ?? null;
+  } catch {
+    return null;
+  }
+}
+
 function todayUtcYmd() {
   const d = new Date();
   const y = d.getUTCFullYear();
@@ -97,7 +110,20 @@ async function main() {
     console.error(
       'daily-picker: set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (e.g. in .env.local)',
     );
-    process.exit(1);
+    process.exitCode = 1;
+    return;
+  }
+
+  const keyRole = jwtRole(SUPABASE_SERVICE_ROLE_KEY);
+  if (keyRole && keyRole !== 'service_role') {
+    console.error(
+      'daily-picker: SUPABASE_SERVICE_ROLE_KEY must be the service_role key (Dashboard → Project Settings → API → service_role secret).',
+    );
+    console.error(
+      `daily-picker: This JWT has role "${keyRole}" — inserts will hit RLS if you pasted the anon key by mistake.`,
+    );
+    process.exitCode = 1;
+    return;
   }
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -114,11 +140,12 @@ async function main() {
 
   if (existErr) {
     console.error('daily-picker: Supabase read failed:', existErr.message);
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
   if (existing) {
     console.log(`daily-picker: row already exists for ${todayStr}, skipping`);
-    process.exit(0);
+    return;
   }
 
   const { data: usedRows, error: usedErr } = await supabase
@@ -127,7 +154,8 @@ async function main() {
 
   if (usedErr) {
     console.error('daily-picker: Supabase list wiki_slug failed:', usedErr.message);
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
 
   const used = new Set((usedRows ?? []).map((r) => r.wiki_slug));
@@ -138,7 +166,8 @@ async function main() {
     console.error(
       'daily-picker: every slug in vital-articles.csv is already in daily_articles; add more rows to the CSV',
     );
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
 
   let lastError;
@@ -159,13 +188,13 @@ async function main() {
       if (insErr) {
         if (insErr.code === '23505') {
           console.log(`daily-picker: row for ${todayStr} was inserted concurrently, ok`);
-          process.exit(0);
+          return;
         }
         throw insErr;
       }
 
       console.log(`daily-picker: inserted ${todayStr} → ${row.wiki_slug}`);
-      process.exit(0);
+      return;
     } catch (e) {
       lastError = e;
       console.warn(`daily-picker: candidate "${slug}" failed:`, e.message ?? e);
@@ -176,7 +205,8 @@ async function main() {
     'daily-picker: could not insert after trying all unused slugs:',
     lastError?.message ?? lastError,
   );
-  process.exit(1);
+  process.exitCode = 1;
+  return;
 }
 
 main();

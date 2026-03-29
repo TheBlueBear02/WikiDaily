@@ -87,6 +87,8 @@ The Node script `scripts/daily-picker.js` runs locally or via GitHub Actions (se
 
 The React app can read cached fields from Supabase and does **not** need to call Wikipedia on initial page load for the featured article.
 
+**Troubleshooting — `new row violates row-level security policy for table "daily_articles"` on insert:** the script must use the **service_role** API key (Dashboard → Project Settings → **API** → `service_role` *secret*). If `SUPABASE_SERVICE_ROLE_KEY` is accidentally set to the **anon** `public` key, `SELECT` can still work (public read policy) while `INSERT` is blocked by RLS. The picker decodes the JWT `role` claim and exits early if it is not `service_role`.
+
 ---
 
 ## Relationships

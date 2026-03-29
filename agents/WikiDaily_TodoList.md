@@ -43,7 +43,7 @@ Tweet script + GitHub Action
   - Inserts `{ date, wiki_slug, display_title, image_url, description }` (UTC `date`, idempotent if today exists)
 - [X] Test the script locally: `npm run daily-picker` or `node scripts/daily-picker.js` (requires `SUPABASE_SERVICE_ROLE_KEY` in `.env.local`)
 - [X] Create `.github/workflows/daily-picker.yml` — scheduled cron at 00:00 UTC + `workflow_dispatch`
-- [ ] Add `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` as GitHub Actions secrets *(Settings → Secrets and variables → Actions; required before the scheduled job can write to Supabase)*
+- [X] Add `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` as GitHub Actions secrets *(Settings → Secrets and variables → Actions; required before the scheduled job can write to Supabase)*
 
 ## Phase 3 — Vite + React Project Init
 - [ ] `npm create vite@latest wikidaily -- --template react`
