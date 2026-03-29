@@ -11,6 +11,11 @@ function isUniqueUserDateViolation(err) {
   return code === '23505' || msg.toLowerCase().includes('duplicate key value')
 }
 
+function isNoRowsFound(err) {
+  const code = err?.code ?? err?.cause?.code
+  return code === 'PGRST116'
+}
+
 export function useUserProgress() {
   const queryClient = useQueryClient()
 
@@ -27,6 +32,21 @@ export function useUserProgress() {
 
   const user = authUserQuery.data ?? null
   const userId = user?.id ?? null
+
+  async function ensureProfileExists({ supabase, userId: ensuredUserId, user } = {}) {
+    if (!supabase) throw new Error('Missing supabase client.')
+    if (!ensuredUserId) throw new Error('Missing userId.')
+
+    const { error } = await supabase.from('profiles').upsert(
+      {
+        user_id: ensuredUserId,
+        username: user?.user_metadata?.username ?? null,
+      },
+      { onConflict: 'user_id' },
+    )
+
+    if (error) throw error
+  }
 
   const profileQuery = useQuery({
     queryKey: ['profile', userId],
@@ -46,8 +66,17 @@ export function useUserProgress() {
         .single()
 
       if (error) {
-        // No rows yet (signup trigger timing) — retry briefly.
-        if (error.code === 'PGRST116') throw error
+        // Self-heal: if user deleted their `profiles` row, recreate it so the app can function.
+        if (isNoRowsFound(error)) {
+          await ensureProfileExists({ supabase, userId, user })
+          const { data: data2, error: error2 } = await supabase
+            .from('profiles')
+            .select('user_id,username,current_streak,max_streak,last_read,total_read')
+            .eq('user_id', userId)
+            .single()
+          if (error2) throw error2
+          return data2
+        }
         throw error
       }
       return data
@@ -64,6 +93,9 @@ export function useUserProgress() {
       }
 
       const supabase = getSupabase()
+
+      // Ensure the profile exists before we write user-specific data.
+      await ensureProfileExists({ supabase, userId, user })
 
       const { error: insertErr } = await supabase.from('reading_log').insert({
         user_id: userId,

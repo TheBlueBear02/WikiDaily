@@ -65,7 +65,7 @@ Tweet script + GitHub Action
 - [X] `useUserProgress.js` — aligned to `profiles` + `reading_log`; supports mark-as-read for already-authenticated users (Phase 6 adds Auth UI)
 
 ## Phase 5 — Components & Pages
-- [X] `Navbar.jsx` — links to `/` and `/history`, shows streak badge
+- [X] `Navbar.jsx` — logo/title links to `/`; nav link to `/history`; user menu (name+avatar) with dropdown “Sign out”
 - [X] `StreakBadge.jsx` — reads streak from `useUserProgress` (has a loading state to avoid auth “flash”)
 - [X] `ArticleCard.jsx` — presentational card (thumbnail, title, extract, "Read Full Article" link)
 - [X] `MarkAsReadButton.jsx` — inserts into `reading_log` and updates `profiles` streak fields (works if user is already signed in)

@@ -23,10 +23,10 @@ WikiDaily/
 │       ├── main.jsx                   # Vite entry + React Query provider + auth sync
 │       ├── App.jsx                    # Routes: /, /history, /auth
 │       ├── components/
-│       │   ├── ArticleCard.jsx        # Presentational article card (reused by Home/History)
+│       │   ├── ArticleCard.jsx        # Presentational article card (reused by Home/History; square corners)
 │       │   ├── MarkAsReadButton.jsx   # Inserts reading_log + updates profile streaks (auth required)
-│       │   ├── AuthSync.jsx           # onAuthStateChange → invalidates user-scoped React Query caches
-│       │   ├── Navbar.jsx             # App header + nav links + streak badge
+│       │   ├── AuthSync.jsx           # onAuthStateChange → invalidates user-scoped React Query caches (mounted in main.jsx)
+│       │   ├── Navbar.jsx             # App header; logo/title links to / (no focus ring); History link; user menu (name+avatar → Sign out)
 │       │   └── StreakBadge.jsx        # Shows streak; avoids auth “flash” with loading state
 │       ├── lib/
 │       │   ├── supabaseClient.js      # Supabase client getter (reads VITE_* env)
@@ -95,7 +95,10 @@ history   = [...history, wiki_title]
 **Implementation note (MVP)**: the app inserts into `reading_log` first. If the insert fails due to the unique constraint (`UNIQUE (user_id, read_date)`), it treats the action as “already read today” (no streak changes). Profile streak math is currently computed client-side (acceptable for MVP; could be made atomic later via a Postgres function/RPC).
 
 ### Auth UX (Phase 6)
-- `/history` is public; if signed in, the UI marks cards as **Collected** by looking up the user’s `reading_log.read_date` in a `Set` for \(O(1)\) per-card lookup.\n+- If a signed-out user clicks “Mark as read”, the app redirects them to `/auth?returnTo=...` and navigates back after login.\n+- Auth state changes are handled via `supabase.auth.onAuthStateChange` so the UI updates instantly after sign-in/out (no refresh).
+- `/history` is public; if signed in, the UI marks cards as **Collected** by looking up the user’s `reading_log.read_date` in a `Set` for \(O(1)\) per-card lookup.
+- If a signed-out user clicks “Mark as read”, the app redirects them to `/auth?returnTo=...` and navigates back after login.
+- Auth state changes are handled via `AuthSync.jsx` (which subscribes to `supabase.auth.onAuthStateChange`) so the UI updates instantly after sign-in/out (no refresh). `AuthSync` is mounted once in `main.jsx`.
+- `AuthSync.jsx` also updates the React Query cache for `authUser` on `SIGNED_IN` / `SIGNED_OUT` so components like `Navbar` reflect auth changes immediately without waiting for a refetch.
 
 ---
 

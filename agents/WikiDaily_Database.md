@@ -32,7 +32,24 @@ Stores each user's reading stats. One row per user, created automatically when t
 **RLS Policies:**
 - `SELECT` — user can only read their own row
 - `UPDATE` — user can only update their own row
-- No `INSERT` policy needed — the `handle_new_user` trigger handles creation using the service role
+- **Recommended**: allow `INSERT` for the authenticated user’s own `user_id` so the app can self-heal if a `profiles` row is manually deleted (useful in development). The `handle_new_user` trigger still creates the row on signup, but this policy enables safe recreation.
++
++**SQL (run in Supabase SQL editor):**
++
++```sql
++-- PROFILES: allow a signed-in user to insert their own row
++create policy "profiles_insert_own"
++on public.profiles
++for insert
++to authenticated
++with check (auth.uid() = user_id);
++```
++
++If you already have an `INSERT` policy and want to replace it, drop it first:
++
++```sql
++drop policy if exists "profiles_insert_own" on public.profiles;
++```
 
 **Trigger: `handle_new_user`**
 Runs automatically after a new row is inserted into `auth.users` (i.e. every new signup). Creates a blank `profiles` row for that user so the app never has to handle a "profile not found" case.

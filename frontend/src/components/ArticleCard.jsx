@@ -11,7 +11,7 @@ export default function ArticleCard({
   return (
     <article
       className={[
-        'relative overflow-hidden rounded-xl border bg-white',
+        'relative overflow-hidden rounded-none border bg-white',
         isCollected ? 'border-emerald-300 ring-1 ring-emerald-200' : 'border-slate-200',
       ].join(' ')}
     >
