@@ -16,6 +16,19 @@ function isNoRowsFound(err) {
   return code === 'PGRST116'
 }
 
+function normalizeReadingSource(source) {
+  return source === 'random' ? 'random' : 'daily'
+}
+
+function isForeignKeyViolation(err) {
+  const code = err?.code ?? err?.cause?.code
+  return code === '23503'
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
 export function useUserProgress() {
   const queryClient = useQueryClient()
 
@@ -79,12 +92,30 @@ export function useUserProgress() {
         }
         throw error
       }
+
+      // Self-heal: ensure `profiles.total_read` reflects ALL reads (daily + random)
+      // from the source of truth (`reading_log`). This prevents drift if a prior
+      // client-side profile update failed but the log insert succeeded.
+      const currentTotalRead = data?.total_read ?? 0
+      const { count, error: countErr } = await supabase
+        .from('reading_log')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId)
+
+      if (!countErr && typeof count === 'number' && count !== currentTotalRead) {
+        const { error: fixErr } = await supabase
+          .from('profiles')
+          .update({ total_read: count })
+          .eq('user_id', userId)
+        if (!fixErr) return { ...data, total_read: count }
+      }
+
       return data
     },
   })
 
   const markAsReadMutation = useMutation({
-    mutationFn: async ({ wikiSlug, readDateYmd }) => {
+    mutationFn: async ({ wikiSlug, readDateYmd, source } = {}) => {
       if (!userId) {
         throw new Error('You must be signed in to mark an article as read.')
       }
@@ -92,16 +123,48 @@ export function useUserProgress() {
         throw new Error('Missing required fields to mark as read.')
       }
 
+      const normalizedSource = normalizeReadingSource(source)
       const supabase = getSupabase()
 
       // Ensure the profile exists before we write user-specific data.
       await ensureProfileExists({ supabase, userId, user })
 
-      const { error: insertErr } = await supabase.from('reading_log').insert({
-        user_id: userId,
-        wiki_slug: wikiSlug,
-        read_date: readDateYmd,
-      })
+      async function fetchCurrentProfile() {
+        return await supabase
+          .from('profiles')
+          .select('user_id,username,current_streak,max_streak,last_read,total_read')
+          .eq('user_id', userId)
+          .single()
+      }
+
+      async function insertReadingLogOnce() {
+        return await supabase.from('reading_log').insert({
+          user_id: userId,
+          wiki_slug: wikiSlug,
+          read_date: readDateYmd,
+          source: normalizedSource,
+        })
+      }
+
+      let insertErr = null
+      {
+        const res = await insertReadingLogOnce()
+        insertErr = res.error ?? null
+      }
+
+      // Random reads may navigate before the article row is cached/upserted.
+      // If the `reading_log.wiki_slug -> articles.wiki_slug` FK rejects the insert,
+      // wait briefly and retry a couple times.
+      if (insertErr && normalizedSource === 'random' && isForeignKeyViolation(insertErr)) {
+        const delaysMs = [250, 750, 1500]
+        for (const delayMs of delaysMs) {
+          await sleep(delayMs)
+          const retryRes = await insertReadingLogOnce()
+          insertErr = retryRes.error ?? null
+          if (!insertErr) break
+          if (!isForeignKeyViolation(insertErr)) break
+        }
+      }
 
       if (insertErr) {
         if (isUniqueUserDateViolation(insertErr)) {
@@ -110,13 +173,38 @@ export function useUserProgress() {
         throw insertErr
       }
 
-      const currentProfile = profileQuery.data ?? null
+      // IMPORTANT: fetch a fresh profile snapshot here.
+      // Relying on `profileQuery.data` can lose increments if multiple reads happen
+      // before React Query refreshes the cached profile.
+      let currentProfile = null
+      {
+        const { data, error } = await fetchCurrentProfile()
+        if (error) {
+          // Rare timing edge case: profile row may have just been created and not
+          // immediately visible through PostgREST. Self-heal + retry briefly.
+          if (isNoRowsFound(error)) {
+            await ensureProfileExists({ supabase, userId, user })
+            await sleep(200)
+            const { data: data2, error: error2 } = await fetchCurrentProfile()
+            if (error2) throw error2
+            currentProfile = data2 ?? null
+          } else {
+            throw error
+          }
+        } else {
+          currentProfile = data ?? null
+        }
+      }
+
       const lastRead = currentProfile?.last_read ?? null
       const yesterday = yesterdayUtcYmd()
 
+      // Streak is per-day, but `total_read` is per successful log insert.
+      // If the user already read something today, we should not change streak,
+      // but we should still increment `total_read` for additional articles.
       let nextCurrentStreak = 1
       if (lastRead === readDateYmd) {
-        return { status: 'already_read' }
+        nextCurrentStreak = currentProfile?.current_streak ?? 0
       } else if (lastRead === yesterday) {
         nextCurrentStreak = (currentProfile?.current_streak ?? 0) + 1
       }
@@ -142,6 +230,7 @@ export function useUserProgress() {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['profile', userId] })
+      await queryClient.invalidateQueries({ queryKey: ['readingHistory', userId] })
     },
   })
 

@@ -15,6 +15,7 @@ WikiDaily/
 │
 ├── frontend/                          # Vite + React app (deploy this folder)
 │   ├── index.html
+│   ├── favicon uses `public/images/streak-icon.png` (streak branding)
 │   ├── package.json
 │   ├── postcss.config.js
 │   ├── tailwind.config.js             # `theme.extend.colors.primary`: DEFAULT `#1E2952`, `hover` `#151d3c` (CTAs)
@@ -27,17 +28,19 @@ WikiDaily/
 │       │   ├── HeroAside.jsx          # Left column of the Home hero row: flex-1, bordered panel, `overflow-hidden`, no outer padding (content manages its own); stretches to match article height (`md:items-stretch`)
 │       │   ├── WeeklyLeaderboard.jsx  # Hero aside: `bg-primary` bar with uppercase “LEADERBOARD” (`text-xl` / `md:text-2xl`); countdown below on `bg-slate-50` (UTC Sunday 23:59:59 reset); body lists ranks or empty state
 │       │   ├── MarkAsReadButton.jsx   # Inserts reading_log + updates profile streaks (auth required)
-│       │   ├── RandomWikiSection.jsx   # Home panel: picks a random page and navigates to `/wiki/:wikiSlug` (passes `location.state.displayTitle`)
-│       │   ├── AuthSync.jsx           # onAuthStateChange → invalidates user-scoped React Query caches (mounted in main.jsx)
+│       │   ├── RandomWikiSection.jsx     # Home panel: composes `WizardImageCard.jsx` (70% quote + wizard art) + `RandomWikiPickerCard.jsx` (30% clickable picker)
+│       │   │   ├── WizardImageCard.jsx  # Presentation card with a left-aligned inspirational quote (“knowledge is power... keep reading” – David Bailey) and a right-aligned wizard helper image
+│       │   │   └── RandomWikiPickerCard.jsx  # 30% clickable picker card (random page fetch + Wikipedia summary fetch + `articles` upsert as random + navigate to `/wiki/:wikiSlug`)
+│       │   ├── AuthSync.jsx             # onAuthStateChange → invalidates user-scoped React Query caches (mounted in main.jsx)
 │       │   ├── Navbar.jsx             # App header; logo/title links to / (no focus ring); History link; user menu (display name → Sign out, menu panel and control are content-width)
-│       │   └── StreakBadge.jsx        # Shows streak; avoids auth “flash” with loading state
+│       │   └── StreakBadge.jsx        # Nav streak icon (`streak-icon.png`) + centered white number overlay (no “Streak:” label); borderless, zoom/cropped image (slightly shifted up with `-translate-y-1`) to reduce PNG white bg; native tooltip (`title="Streak days"`); avoids auth “flash” with loading state
 │       ├── lib/
 │       │   ├── supabaseClient.js      # Supabase client getter (reads VITE_* env)
 │       │   ├── wikipedia.js           # fetch wrapper for WP summary + MediaWiki random page
 │       │   └── date.js                # UTC date helpers (YYYY-MM-DD); `getNextLeaderboardResetDate` / `getLeaderboardCountdownParts` for weekly reset (UTC Sunday 23:59:59.999)
 │       ├── hooks/
-│       │   ├── useDailyArticle.js     # React Query: read today's daily_articles row
-│       │   ├── useDailyArchive.js     # React Query: read public daily_articles archive (History page)
+│       │   ├── useDailyArticle.js     # React Query: read today's featured daily `articles` row
+│       │   ├── useDailyArchive.js     # React Query: read public daily `articles` archive (History page)
 │       │   ├── useReadingLog.js       # React Query: user reading_log (read_date only) for “collected” markers
 │       │   ├── useLeaderboardCountdown.js # 1s interval: remaining days/hours/minutes until leaderboard reset
 │       │   └── useUserProgress.js     # React Query: auth user + profiles + mark-as-read mutation
@@ -48,7 +51,7 @@ WikiDaily/
 │           └── WikiIframe.jsx         # In-app Wikipedia viewer (`/wiki/:wikiSlug`) using an iframe + timed fallback link if embedding is blocked (uses `location.state?.displayTitle` for the iframe title)
 │
 ├── scripts/
-│   ├── daily-picker.js               # Node: random unused slug → WP summary → full daily_articles row
+│   ├── daily-picker.js               # Node: random unused slug → WP summary → upsert daily row into `articles`
 │   ├── tweet-today.js                # Node.js: posts today's article to X/Twitter
 │   └── vital-articles.csv            # Seed slugs (header: wiki_slug) for the daily picker
 │
@@ -62,14 +65,15 @@ WikiDaily/
 
 Canonical column details and RLS: see [WikiDaily_Database.md](./WikiDaily_Database.md).
 
-### Table: `daily_articles`
+### Table: `articles`
 | Column          | Type | Notes |
 |-----------------|------|--------|
-| `date`          | date | **Primary Key** (UTC calendar day) |
-| `wiki_slug`     | text | Wikipedia page key, e.g. `Game_theory` |
-| `display_title` | text | Human-readable title (cached from Wikipedia) |
-| `image_url`     | text | Nullable; thumbnail from Wikipedia API |
-| `description`   | text | Nullable; extract from Wikipedia API |
+| `wiki_slug`     | text | **Primary Key** (Wikipedia page key, e.g. `Game_theory`) |
+| `is_daily`      | bool | `true` for featured daily articles; `false` for random-read articles |
+| `featured_date` | date | Nullable; `is_daily=true` rows use `featured_date` (unique per day) |
+| `display_title` | text | Cached from Wikipedia |
+| `image_url`     | text | Nullable; cached thumbnail |
+| `description`   | text | Nullable; cached extract |
 
 ### Table: `user_progress` *(or `profiles` / `reading_log` — see WikiDaily_Database.md)*
 
@@ -103,14 +107,18 @@ last_read = today
 history   = [...history, wiki_title]
 ```
 
-**Implementation note (MVP)**: the app inserts into `reading_log` first. If the insert fails due to the unique constraint (`UNIQUE (user_id, read_date)`), it treats the action as “already read today” (no streak changes). Profile streak math is currently computed client-side (acceptable for MVP; could be made atomic later via a Postgres function/RPC).
+Notes:
+- `current_streak` is **per-day** (only changes once per UTC day).
+- `total_read` is **per successful `reading_log` insert**, so it can increment multiple times in the same day if the user reads multiple different articles.
+
+**Implementation note (MVP)**: the app inserts into `reading_log` first. If the insert fails due to the unique constraint (`UNIQUE (user_id, wiki_slug, read_date)`), it treats the action as “already logged this article today” (no streak changes). Profile streak math is currently computed client-side (acceptable for MVP; could be made atomic later via a Postgres function/RPC).
 
 ### Auth UX (Phase 6)
 - `/history` is public and rendered as a **calendar month grid**.
 - The History page supports **month navigation** via the URL query param `?month=YYYY-MM` (defaults to the current UTC month). Navigating to months with no rows still renders the full calendar, showing “No article yet” for each day.
 - The History page includes **Prev / Next** month controls (and Refresh), but no dedicated “Today” button; the default month remains the current UTC month.
-- For the selected month, it fetches `daily_articles` scoped to that month (`date >= firstOfMonth` and `date <= lastOfMonth`) and renders a small **day card** for each calendar day.
-- Days that have a `daily_articles` row show the article **image + title** and link to the in-app iframe viewer (`/wiki/:wikiSlug`); missing days render a default “empty day” card.
+- For the selected month, it fetches daily featured `articles` scoped to that month (`featured_date >= firstOfMonth` and `featured_date <= lastOfMonth`, with `is_daily=true`) and renders a small **day card** for each calendar day.
+- Days that have an `articles` row show the article **image + title** and link to the in-app iframe viewer (`/wiki/:wikiSlug`); missing days render a default “empty day” card.
 - The calendar visually **highlights the current UTC day** *when viewing the current UTC month* (a subtle indigo ring + dot), so users can quickly orient themselves in the grid.
 - If signed in, the UI marks days as **Read** by looking up the user’s `reading_log.read_date` in a `Set` for \(O(1)\) per-day lookup.
 - If a signed-out user clicks “Mark as read”, the app redirects them to `/auth?returnTo=...` and navigates back after login.
@@ -131,7 +139,7 @@ history   = [...history, wiki_title]
 
 ## Frontend Fallback Behavior
 
-If there is no `daily_articles` row for the current UTC date (e.g. the picker hasn’t run yet), the frontend falls back to showing the **most recent** row in `daily_articles` by `date DESC` so the Home page never appears empty once data exists.
+If there is no daily featured `articles` row for the current UTC date (e.g. the picker hasn’t run yet), the frontend falls back to showing the **most recent** daily featured row by `featured_date DESC` so the Home page never appears empty once data exists.
 
 ## Environment Variables Reference
 

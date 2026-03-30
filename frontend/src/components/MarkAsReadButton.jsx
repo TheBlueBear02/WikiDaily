@@ -32,12 +32,14 @@ function formatMutationError(err) {
   return String(err)
 }
 
-export default function MarkAsReadButton({ wikiSlug, readDateYmd }) {
+export default function MarkAsReadButton({ wikiSlug, readDateYmd, source = 'daily' }) {
   const location = useLocation()
   const navigate = useNavigate()
   const { userId, profile, markAsReadMutation, markAsRead } = useUserProgress()
 
-  const isReadToday = Boolean(profile?.last_read && profile.last_read === readDateYmd)
+  const isReadToday = Boolean(
+    source === 'daily' && profile?.last_read && profile.last_read === readDateYmd,
+  )
   const alreadyReadFromMutation = markAsReadMutation.data?.status === 'already_read'
   const showAlreadyRead = isReadToday || alreadyReadFromMutation
   const errorMessage = formatMutationError(markAsReadMutation.error)
@@ -53,7 +55,11 @@ export default function MarkAsReadButton({ wikiSlug, readDateYmd }) {
 
   const title = (() => {
     if (!userId) return 'Sign in to mark an article as read (Phase 6 adds the UI).'
-    if (showAlreadyRead) return 'You already marked today as read.'
+    if (showAlreadyRead) {
+      return source === 'daily'
+        ? 'You already marked today as read.'
+        : 'You already logged this article today.'
+    }
     if (errorMessage) return errorMessage
     return undefined
   })()
@@ -65,7 +71,7 @@ export default function MarkAsReadButton({ wikiSlug, readDateYmd }) {
       navigate(buildAuthUrl({ returnTo }))
       return
     }
-    await markAsRead({ wikiSlug, readDateYmd })
+    await markAsRead({ wikiSlug, readDateYmd, source })
   }
 
   return (

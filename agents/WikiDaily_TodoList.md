@@ -28,7 +28,7 @@ Tweet script + GitHub Action
 
 ## Phase 1 — Supabase Setup
 - [X] Create a new Supabase project
-- [X] Create the `daily_articles` table (date PK, `wiki_slug`, cached article fields)
+- [X] Create the unified `articles` table (wiki_slug PK; daily rows use `is_daily=true` + `featured_date`; random rows use `is_daily=false` + `featured_date=NULL`)
 - [X] Create the `profiles` table (user_id PK, streak fields, last_read, total_read)
 - [X] Create the `reading_log` table (one row per user per day)
 - [X] Enable Row Level Security on user-specific tables
@@ -39,9 +39,9 @@ Tweet script + GitHub Action
 ## Phase 2 — Daily Picker Script
 - [X] Curate or download the Wikipedia Vital Articles CSV → save as `scripts/vital-articles.csv` (header `wiki_slug`)
 - [X] Write `scripts/daily-picker.js`:
-  - Reads the CSV; builds unused pool vs existing `daily_articles.wiki_slug`
-  - Picks a random unused slug; **GET** English Wikipedia REST summary; inserts full row
-  - Inserts `{ date, wiki_slug, display_title, image_url, description }` (UTC `date`, idempotent if today exists)
+  - Reads the CSV; builds unused pool vs existing daily `articles` slugs (`is_daily=true`)
+  - Picks a random unused slug; **GET** English Wikipedia REST summary; upserts full row
+  - Upserts daily values into `articles` with `is_daily=true` and `featured_date=<today UTC>` (idempotent via `wiki_slug` upsert)
 - [X] Test the script locally: `npm run daily-picker` or `node scripts/daily-picker.js` (requires `SUPABASE_SERVICE_ROLE_KEY` in `.env.local`)
 - [X] Create `.github/workflows/daily-picker.yml` — scheduled cron at 00:00 UTC + `workflow_dispatch`
 - [X] Add `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` as GitHub Actions secrets *(Settings → Secrets and variables → Actions; required before the scheduled job can write to Supabase)*
@@ -60,24 +60,24 @@ Tweet script + GitHub Action
 - [X] Create `src/lib/wikipedia.js` with the summary fetch helper
 
 ## Phase 4 — React Query Hooks
-- [X] `useDailyArticle.js` — queries `daily_articles` for today’s UTC date → returns the full cached row (incl. `wiki_slug`, `display_title`, `image_url`, `description`)
+- [X] `useDailyArticle.js` — queries daily featured `articles` where `featured_date`=today UTC → returns the full cached row (incl. `wiki_slug`, `display_title`, `image_url`, `description`)
 - [ ] *(Deferred)* `useWikiSummary.js` — optional later if you need richer data than the cached columns
 - [X] `useUserProgress.js` — aligned to `profiles` + `reading_log`; supports mark-as-read for already-authenticated users (Phase 6 adds Auth UI)
 
 ## Phase 5 — Components & Pages
 - [X] `Navbar.jsx` — logo/title links to `/`; nav link to `/history`; user menu (name+avatar) with dropdown “Sign out”
-- [X] `StreakBadge.jsx` — reads streak from `useUserProgress` (has a loading state to avoid auth “flash”)
+- [X] `StreakBadge.jsx` — reads streak from `useUserProgress` and displays it as a centered number overlay on `streak-icon.png` (no “Streak:” label; borderless, zoom/cropped image slightly shifted up with `-translate-y-1`; native tooltip `title="Streak days"`; has a loading state to avoid auth “flash”)
 - [X] `ArticleCard.jsx` — presentational card (thumbnail, title, extract, "Read now" link; internal `/wiki/:wikiSlug` navigation)
 - [X] `MarkAsReadButton.jsx` — inserts into `reading_log` and updates `profiles` streak fields (works if user is already signed in)
-- [X] `RandomWikiSection.jsx` — Home panel that picks a random page and navigates to `/wiki/:wikiSlug` (passes `displayTitle` for the iframe title)
-- [X] `Home.jsx` — composes `ArticleCard` + `MarkAsReadButton` using cached `daily_articles` fields; also renders `RandomWikiSection` below the hero
-- [X] `History.jsx` — public archive of past `daily_articles` (latest first; paginate later); day cards navigate to `/wiki/:wikiSlug`
+- [X] `RandomWikiSection.jsx` — Home panel that composes `WizardImageCard.jsx` (70% wizard image) + `RandomWikiPickerCard.jsx` (30% clickable picker) that fetches random + summary, upserts random metadata into `articles` (`is_daily=false`), and navigates to `/wiki/:wikiSlug` (passes `displayTitle` for the iframe title)
+- [X] `Home.jsx` — composes `ArticleCard` + `MarkAsReadButton` using cached daily featured `articles` fields; also renders `RandomWikiSection` below the hero
+- [X] `History.jsx` — public archive of past daily featured `articles` (latest first; paginate later); day cards navigate to `/wiki/:wikiSlug`
 - [X] `WikiIframe.jsx` — in-app Wikipedia viewer at `/wiki/:wikiSlug` using an iframe with a timed fallback to “Open in Wikipedia” if embedding is blocked
 - [X] `App.jsx` — routes for `/`, `/history`, `/auth`, and `/wiki/:wikiSlug` (router is in `src/main.jsx`)
 
 **Notes (Phase 5)**:
 - **Mark as read requires an authenticated user**. Phase 6 adds the login/signup UI and can enforce route protection.
-- **Already read today** is detected via the `reading_log` unique constraint and shown as a non-error UI state.
+- **Already logged this article today** is detected via the `reading_log` unique constraint (`UNIQUE (user_id, wiki_slug, read_date)`) and shown as a non-error UI state.
 
 ## Phase 6 — Auth Flow
 - [X] Add a Login/Signup page using a custom email/password form (`/auth`)

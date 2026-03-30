@@ -11,26 +11,31 @@ export function useDailyArticle() {
     queryFn: async () => {
       const supabase = getSupabase()
       const { data, error } = await supabase
-        .from('daily_articles')
-        .select('date,wiki_slug,display_title,image_url,description')
-        .eq('date', todayStr)
+        .from('articles')
+        .select('featured_date,wiki_slug,display_title,image_url,description')
+        .eq('featured_date', todayStr)
+        .eq('is_daily', true)
         .maybeSingle()
 
       if (error) throw error
       if (data) {
-        return { row: data, isFallback: false }
+        return {
+          row: { ...data, date: data.featured_date },
+          isFallback: false,
+        }
       }
 
       const { data: latest, error: latestErr } = await supabase
-        .from('daily_articles')
-        .select('date,wiki_slug,display_title,image_url,description')
-        .order('date', { ascending: false })
+        .from('articles')
+        .select('featured_date,wiki_slug,display_title,image_url,description')
+        .eq('is_daily', true)
+        .order('featured_date', { ascending: false })
         .limit(1)
         .maybeSingle()
 
       if (latestErr) throw latestErr
       if (!latest) return { row: null, isFallback: false }
-      return { row: latest, isFallback: true }
+      return { row: { ...latest, date: latest.featured_date }, isFallback: true }
     },
   })
 

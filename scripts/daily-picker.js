@@ -1,6 +1,6 @@
 /**
  * Daily picker: picks an unused wiki_slug from vital-articles.csv, fetches the
- * English Wikipedia REST summary, inserts a full daily_articles row.
+ * English Wikipedia REST summary, upserts a full daily row into `articles`.
  * CSV format: first row is header `wiki_slug`; each following row is one slug (underscores).
  */
 import { readFileSync } from 'fs';
@@ -133,9 +133,10 @@ async function main() {
   const todayStr = todayUtcYmd();
 
   const { data: existing, error: existErr } = await supabase
-    .from('daily_articles')
-    .select('date')
-    .eq('date', todayStr)
+    .from('articles')
+    .select('wiki_slug')
+    .eq('featured_date', todayStr)
+    .eq('is_daily', true)
     .maybeSingle();
 
   if (existErr) {
@@ -144,13 +145,14 @@ async function main() {
     return;
   }
   if (existing) {
-    console.log(`daily-picker: row already exists for ${todayStr}, skipping`);
+    console.log(`daily-picker: daily article already exists for ${todayStr}, skipping`);
     return;
   }
 
   const { data: usedRows, error: usedErr } = await supabase
-    .from('daily_articles')
-    .select('wiki_slug');
+    .from('articles')
+    .select('wiki_slug')
+    .eq('is_daily', true);
 
   if (usedErr) {
     console.error('daily-picker: Supabase list wiki_slug failed:', usedErr.message);
@@ -164,7 +166,7 @@ async function main() {
 
   if (unused.length === 0) {
     console.error(
-      'daily-picker: every slug in vital-articles.csv is already in daily_articles; add more rows to the CSV',
+      'daily-picker: every slug in vital-articles.csv is already used as a daily article; add more rows to the CSV',
     );
     process.exitCode = 1;
     return;
@@ -176,24 +178,37 @@ async function main() {
       const json = await fetchWikipediaSummary(slug);
       const partial = rowFromSummary(json, slug);
       const row = {
-        date: todayStr,
         wiki_slug: partial.wiki_slug,
         display_title: partial.display_title,
         image_url: partial.image_url,
         description: partial.description,
+        // Promote to the featured daily article for today.
+        is_daily: true,
+        featured_date: todayStr,
       };
 
-      const { error: insErr } = await supabase.from('daily_articles').insert(row);
+      const { error: insErr } = await supabase
+        .from('articles')
+        .upsert(
+          row,
+          {
+            // `wiki_slug` is the PK, but we still set it as onConflict for clarity.
+            onConflict: 'wiki_slug',
+            ignoreDuplicates: false,
+          },
+        );
 
       if (insErr) {
         if (insErr.code === '23505') {
-          console.log(`daily-picker: row for ${todayStr} was inserted concurrently, ok`);
+          console.log(
+            `daily-picker: daily featured_date conflict for ${todayStr} (concurrent run), ok`,
+          );
           return;
         }
         throw insErr;
       }
 
-      console.log(`daily-picker: inserted ${todayStr} → ${row.wiki_slug}`);
+      console.log(`daily-picker: upserted daily ${todayStr} → ${row.wiki_slug}`);
       return;
     } catch (e) {
       lastError = e;

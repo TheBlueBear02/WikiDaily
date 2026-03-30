@@ -92,6 +92,16 @@ export default function Navbar() {
             >
               History
             </NavLink>
+            {userId ? (
+              <NavLink
+                to="/profile"
+                className={({ isActive }) =>
+                  `${linkBase} ${isActive ? linkActive : ''}`
+                }
+              >
+                Profile
+              </NavLink>
+            ) : null}
           </nav>
 
           <StreakBadge />
