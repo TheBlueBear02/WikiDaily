@@ -1,14 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useLocation, useParams } from 'react-router-dom'
 
 export default function WikiIframe() {
   const { wikiSlug } = useParams()
+  const location = useLocation()
 
   const wikiUrl = useMemo(() => {
     const slug = typeof wikiSlug === 'string' ? wikiSlug.trim() : ''
     if (!slug) return null
     return `https://en.wikipedia.org/wiki/${encodeURIComponent(slug)}`
   }, [wikiSlug])
+
+  const displayTitle =
+    location.state && typeof location.state.displayTitle === 'string'
+      ? location.state.displayTitle
+      : null
 
   const [showFallback, setShowFallback] = useState(false)
   const timeoutRef = useRef(null)
@@ -80,7 +86,7 @@ export default function WikiIframe() {
 
         <iframe
           key={wikiUrl}
-          title="Wikipedia article"
+          title={displayTitle ?? 'Wikipedia article'}
           src={wikiUrl}
           onLoad={handleIframeLoad}
           className="h-[85vh] w-full border-0 bg-white"

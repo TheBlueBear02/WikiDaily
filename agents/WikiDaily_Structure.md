@@ -27,12 +27,13 @@ WikiDaily/
 │       │   ├── HeroAside.jsx          # Left column of the Home hero row: flex-1, bordered panel, `overflow-hidden`, no outer padding (content manages its own); stretches to match article height (`md:items-stretch`)
 │       │   ├── WeeklyLeaderboard.jsx  # Hero aside: `bg-primary` bar with uppercase “LEADERBOARD” (`text-xl` / `md:text-2xl`); countdown below on `bg-slate-50` (UTC Sunday 23:59:59 reset); body lists ranks or empty state
 │       │   ├── MarkAsReadButton.jsx   # Inserts reading_log + updates profile streaks (auth required)
+│       │   ├── RandomWikiSection.jsx   # Home panel: picks a random page and navigates to `/wiki/:wikiSlug` (passes `location.state.displayTitle`)
 │       │   ├── AuthSync.jsx           # onAuthStateChange → invalidates user-scoped React Query caches (mounted in main.jsx)
 │       │   ├── Navbar.jsx             # App header; logo/title links to / (no focus ring); History link; user menu (display name → Sign out, menu panel and control are content-width)
 │       │   └── StreakBadge.jsx        # Shows streak; avoids auth “flash” with loading state
 │       ├── lib/
 │       │   ├── supabaseClient.js      # Supabase client getter (reads VITE_* env)
-│       │   ├── wikipedia.js           # fetch wrapper for WP REST API (optional; may be deferred)
+│       │   ├── wikipedia.js           # fetch wrapper for WP summary + MediaWiki random page
 │       │   └── date.js                # UTC date helpers (YYYY-MM-DD); `getNextLeaderboardResetDate` / `getLeaderboardCountdownParts` for weekly reset (UTC Sunday 23:59:59.999)
 │       ├── hooks/
 │       │   ├── useDailyArticle.js     # React Query: read today's daily_articles row
@@ -44,7 +45,7 @@ WikiDaily/
 │           ├── Auth.jsx
 │           ├── Home.jsx                # Hero row (`HomeHeroRow`): `HeroAside` + `WeeklyLeaderboard` always shown on the left for loading, error, empty, and success; right column (~70%) is skeleton, message, or `ArticleCard`
 │           ├── History.jsx
-│           └── WikiIframe.jsx         # In-app Wikipedia viewer (`/wiki/:wikiSlug`) using an iframe + timed fallback link if embedding is blocked
+│           └── WikiIframe.jsx         # In-app Wikipedia viewer (`/wiki/:wikiSlug`) using an iframe + timed fallback link if embedding is blocked (uses `location.state?.displayTitle` for the iframe title)
 │
 ├── scripts/
 │   ├── daily-picker.js               # Node: random unused slug → WP summary → full daily_articles row
@@ -83,6 +84,12 @@ Canonical column details and RLS: see [WikiDaily_Database.md](./WikiDaily_Databa
 GET https://en.wikipedia.org/api/rest_v1/page/summary/{wiki_slug}
 ```
 Returns: `displaytitle`, `extract`, `originalimage.source`, `content_urls.desktop.page`
+
+### Wikipedia Random Page
+```
+GET https://en.wikipedia.org/w/api.php?action=query&list=random&rnnamespace=0&rnlimit=1&format=json&origin=*
+```
+Returns: `query.random[0].title` (converted to `wikiSlug` by replacing spaces with underscores).
 
 ### Mark as Read (streak logic)
 ```

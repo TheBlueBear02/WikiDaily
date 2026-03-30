@@ -69,7 +69,8 @@ Tweet script + GitHub Action
 - [X] `StreakBadge.jsx` — reads streak from `useUserProgress` (has a loading state to avoid auth “flash”)
 - [X] `ArticleCard.jsx` — presentational card (thumbnail, title, extract, "Read now" link; internal `/wiki/:wikiSlug` navigation)
 - [X] `MarkAsReadButton.jsx` — inserts into `reading_log` and updates `profiles` streak fields (works if user is already signed in)
-- [X] `Home.jsx` — composes `ArticleCard` + `MarkAsReadButton` using cached `daily_articles` fields; internal viewer route is `/wiki/:wikiSlug`
+- [X] `RandomWikiSection.jsx` — Home panel that picks a random page and navigates to `/wiki/:wikiSlug` (passes `displayTitle` for the iframe title)
+- [X] `Home.jsx` — composes `ArticleCard` + `MarkAsReadButton` using cached `daily_articles` fields; also renders `RandomWikiSection` below the hero
 - [X] `History.jsx` — public archive of past `daily_articles` (latest first; paginate later); day cards navigate to `/wiki/:wikiSlug`
 - [X] `WikiIframe.jsx` — in-app Wikipedia viewer at `/wiki/:wikiSlug` using an iframe with a timed fallback to “Open in Wikipedia” if embedding is blocked
 - [X] `App.jsx` — routes for `/`, `/history`, `/auth`, and `/wiki/:wikiSlug` (router is in `src/main.jsx`)
