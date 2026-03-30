@@ -2,7 +2,7 @@ import { useDailyArchive } from '../hooks/useDailyArchive'
 import { useUserProgress } from '../hooks/useUserProgress'
 import { useReadingLog } from '../hooks/useReadingLog'
 import { useEffect, useMemo } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 
 function ymdUtcFromParts(year, monthIndex0, day) {
   const m = String(monthIndex0 + 1).padStart(2, '0')
@@ -71,10 +71,8 @@ function DayCard({ dayNumber, row, wikiUrl, isCollected, isToday }) {
       ) : null}
 
       {row ? (
-        <a
-          href={wikiUrl}
-          target="_blank"
-          rel="noreferrer"
+        <Link
+          to={wikiUrl}
           className="block focus:outline-none"
           aria-label={`Open article: ${row.display_title}`}
         >
@@ -102,7 +100,7 @@ function DayCard({ dayNumber, row, wikiUrl, isCollected, isToday }) {
             </div>
             <div className="mt-1 text-xs text-slate-500">{row.date}</div>
           </div>
-        </a>
+        </Link>
       ) : (
         <div className="px-3 pb-4">
           <div className="rounded-lg border border-dashed border-slate-200 bg-white p-3">
@@ -268,7 +266,7 @@ export default function History() {
             const dayNumber = idx + 1
             const row = rowsByDay.get(dayNumber) ?? null
             const wikiUrl = row
-              ? `https://en.wikipedia.org/wiki/${encodeURIComponent(row.wiki_slug)}`
+              ? `/wiki/${encodeURIComponent(row.wiki_slug)}`
               : null
             const isCollected = Boolean(userId) && Boolean(row) && collectedDates.has(row.date)
             const isToday =

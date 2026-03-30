@@ -80,7 +80,9 @@ export default function Home() {
     )
   }
 
-  const wikiUrl = `https://en.wikipedia.org/wiki/${encodeURIComponent(dailyArticle.wiki_slug)}`
+  const wikiSlug = dailyArticle.wiki_slug
+  const wikiUrl = `https://en.wikipedia.org/wiki/${encodeURIComponent(wikiSlug)}`
+  const cardHref = `/wiki/${encodeURIComponent(wikiSlug)}`
   const readDateYmd = todayUtcYmd()
 
   return (
@@ -91,11 +93,11 @@ export default function Home() {
         description={dailyArticle.description}
         imageUrl={dailyArticle.image_url}
         wikiUrl={wikiUrl}
-        cardHref={wikiUrl}
+        cardHref={cardHref}
         isFallback={isFallback}
         actions={
           <MarkAsReadButton
-            wikiSlug={dailyArticle.wiki_slug}
+            wikiSlug={wikiSlug}
             readDateYmd={readDateYmd}
           />
         }

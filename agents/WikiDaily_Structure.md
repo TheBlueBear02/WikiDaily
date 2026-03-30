@@ -21,9 +21,9 @@ WikiDaily/
 │   ├── .env.example                   # Copy to .env.local (not committed)
 │   └── src/
 │       ├── main.jsx                   # Vite entry + React Query provider + auth sync
-│       ├── App.jsx                    # Routes: /, /history, /auth
+│       ├── App.jsx                    # Routes: /, /history, /auth, /wiki/:wikiSlug
 │       ├── components/
-│       │   ├── ArticleCard.jsx        # Presentational article card (`h-full w-full` in hero; optional `className`); Home places it in a ~70% column beside `HeroAside` with gap. Full-card opens `cardHref` in a new tab except clicks on nested `a`/buttons; image uses contain (no crop) with a bottom-start “Today’s article” badge in `bg-primary` (#1E2952); title prominent; date under title; description shows first two sentences with “...” when truncated
+│       │   ├── ArticleCard.jsx        # Presentational article card (`h-full w-full` in hero; optional `className`); Home places it in a ~70% column beside `HeroAside` with gap. Full-card navigates to `cardHref`; for internal `/wiki/...` routes it stays in-app, and for external Wikipedia URLs it opens in a new tab; "Read now" uses the same target; image uses contain (no crop) with a bottom-start “Today’s article” badge in `bg-primary` (#1E2952); title prominent; date under title; description shows first two sentences with “...” when truncated
 │       │   ├── HeroAside.jsx          # Left column of the Home hero row: flex-1, bordered panel, `overflow-hidden`, no outer padding (content manages its own); stretches to match article height (`md:items-stretch`)
 │       │   ├── WeeklyLeaderboard.jsx  # Hero aside: `bg-primary` bar with uppercase “LEADERBOARD” (`text-xl` / `md:text-2xl`); countdown below on `bg-slate-50` (UTC Sunday 23:59:59 reset); body lists ranks or empty state
 │       │   ├── MarkAsReadButton.jsx   # Inserts reading_log + updates profile streaks (auth required)
@@ -43,7 +43,8 @@ WikiDaily/
 │       └── pages/
 │           ├── Auth.jsx
 │           ├── Home.jsx                # Hero row (`HomeHeroRow`): `HeroAside` + `WeeklyLeaderboard` always shown on the left for loading, error, empty, and success; right column (~70%) is skeleton, message, or `ArticleCard`
-│           └── History.jsx
+│           ├── History.jsx
+│           └── WikiIframe.jsx         # In-app Wikipedia viewer (`/wiki/:wikiSlug`) using an iframe + timed fallback link if embedding is blocked
 │
 ├── scripts/
 │   ├── daily-picker.js               # Node: random unused slug → WP summary → full daily_articles row
@@ -102,7 +103,7 @@ history   = [...history, wiki_title]
 - The History page supports **month navigation** via the URL query param `?month=YYYY-MM` (defaults to the current UTC month). Navigating to months with no rows still renders the full calendar, showing “No article yet” for each day.
 - The History page includes **Prev / Next** month controls (and Refresh), but no dedicated “Today” button; the default month remains the current UTC month.
 - For the selected month, it fetches `daily_articles` scoped to that month (`date >= firstOfMonth` and `date <= lastOfMonth`) and renders a small **day card** for each calendar day.
-- Days that have a `daily_articles` row show the article **image + title** and link to the Wikipedia page; missing days render a default “empty day” card.
+- Days that have a `daily_articles` row show the article **image + title** and link to the in-app iframe viewer (`/wiki/:wikiSlug`); missing days render a default “empty day” card.
 - The calendar visually **highlights the current UTC day** *when viewing the current UTC month* (a subtle indigo ring + dot), so users can quickly orient themselves in the grid.
 - If signed in, the UI marks days as **Read** by looking up the user’s `reading_log.read_date` in a `Set` for \(O(1)\) per-day lookup.
 - If a signed-out user clicks “Mark as read”, the app redirects them to `/auth?returnTo=...` and navigates back after login.

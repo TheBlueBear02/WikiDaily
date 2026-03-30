@@ -67,11 +67,12 @@ Tweet script + GitHub Action
 ## Phase 5 — Components & Pages
 - [X] `Navbar.jsx` — logo/title links to `/`; nav link to `/history`; user menu (name+avatar) with dropdown “Sign out”
 - [X] `StreakBadge.jsx` — reads streak from `useUserProgress` (has a loading state to avoid auth “flash”)
-- [X] `ArticleCard.jsx` — presentational card (thumbnail, title, extract, "Read now" link)
+- [X] `ArticleCard.jsx` — presentational card (thumbnail, title, extract, "Read now" link; internal `/wiki/:wikiSlug` navigation)
 - [X] `MarkAsReadButton.jsx` — inserts into `reading_log` and updates `profiles` streak fields (works if user is already signed in)
-- [X] `Home.jsx` — composes `ArticleCard` + `MarkAsReadButton` using cached `daily_articles` fields; Wikipedia URL is `https://en.wikipedia.org/wiki/{wiki_slug}`
-- [X] `History.jsx` — public archive of past `daily_articles` (latest first; paginate later)
-- [X] `App.jsx` — routes for `/` and `/history` (router is in `src/main.jsx`)
+- [X] `Home.jsx` — composes `ArticleCard` + `MarkAsReadButton` using cached `daily_articles` fields; internal viewer route is `/wiki/:wikiSlug`
+- [X] `History.jsx` — public archive of past `daily_articles` (latest first; paginate later); day cards navigate to `/wiki/:wikiSlug`
+- [X] `WikiIframe.jsx` — in-app Wikipedia viewer at `/wiki/:wikiSlug` using an iframe with a timed fallback to “Open in Wikipedia” if embedding is blocked
+- [X] `App.jsx` — routes for `/`, `/history`, `/auth`, and `/wiki/:wikiSlug` (router is in `src/main.jsx`)
 
 **Notes (Phase 5)**:
 - **Mark as read requires an authenticated user**. Phase 6 adds the login/signup UI and can enforce route protection.

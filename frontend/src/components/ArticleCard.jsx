@@ -1,3 +1,5 @@
+import { Link, useNavigate } from 'react-router-dom'
+
 /** First two sentences; appends "..." when the text was truncated. */
 function descriptionPreview(text) {
   if (!text?.trim()) return ''
@@ -20,9 +22,21 @@ export default function ArticleCard({
   className = '',
 }) {
   const isCardClickable = Boolean(cardHref)
+  const navigate = useNavigate()
+
+  const isInternalHref =
+    typeof cardHref === 'string' && cardHref.length > 0 && cardHref.startsWith('/')
+  const readNowHref = cardHref ?? wikiUrl
+  const isReadNowInternal =
+    typeof readNowHref === 'string' && readNowHref.length > 0 && readNowHref.startsWith('/')
 
   const openCard = () => {
     if (!cardHref) return
+    if (isInternalHref) {
+      navigate(cardHref)
+      return
+    }
+
     const a = document.createElement('a')
     a.href = cardHref
     a.target = '_blank'
@@ -76,7 +90,9 @@ export default function ArticleCard({
       tabIndex={isCardClickable ? 0 : undefined}
       aria-label={
         isCardClickable
-          ? `Open ${displayTitle} on Wikipedia in a new tab`
+          ? isInternalHref
+            ? `Open ${displayTitle} in the in-app viewer`
+            : `Open ${displayTitle} on Wikipedia in a new tab`
           : undefined
       }
     >
@@ -127,14 +143,23 @@ export default function ArticleCard({
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <a
-            href={wikiUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center justify-center rounded-none bg-primary px-3 py-2 text-sm font-medium text-white hover:bg-primary-hover"
-          >
-            Read now
-          </a>
+          {isReadNowInternal ? (
+            <Link
+              to={readNowHref}
+              className="inline-flex items-center justify-center rounded-none bg-primary px-3 py-2 text-sm font-medium text-white hover:bg-primary-hover"
+            >
+              Read now
+            </Link>
+          ) : (
+            <a
+              href={readNowHref}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center justify-center rounded-none bg-primary px-3 py-2 text-sm font-medium text-white hover:bg-primary-hover"
+            >
+              Read now
+            </a>
+          )}
           {actions}
         </div>
       </div>
