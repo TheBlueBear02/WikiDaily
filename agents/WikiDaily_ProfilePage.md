@@ -57,9 +57,10 @@ Returns: array of reading log entries with nested article metadata.
 
 **Contents:**
 - Avatar circle — 64px diameter, filled with a muted warm tone, displays the first two initials of `username` in uppercase. No photo upload for MVP.
-- Username — displayed as `@username` in serif font, large (24px), dark ink color.
+- Username — displayed as plain `username` (no leading `@`) in serif font, large (24px), dark ink color.
 - Member since — `"Member since [Month Year]"` formatted from `auth.users.created_at`. Small muted sans-serif text (13px).
-- Tagline — static text: `"Knowledge is Power"` in small italic serif, faint color.
+- Tagline — static text: `"Knowledge is Power"` in small italic serif, faint color, displayed to the immediate left of the wizard illustration on the right side of the header.
+- Wizard illustration — static image rendered on the right side of the profile header row, using the asset at `/images/wizard 1.jpg` (served as `/images/wizard%201.jpg`), sized roughly 96×96px with a subtle rounded rectangle mask and soft shadow.
 
 ---
 
@@ -124,7 +125,7 @@ Each card:
 
 **Layout:** CSS grid, 3 columns on desktop, 2 on tablet, 1 on mobile. Gap 12px. Full width.
 
-**Section label above:** `"Articles read"` with a count in muted text: `"42 articles"`.
+**Section label above:** `"Reading history"` with a count in muted text: `"42 articles"`.
 
 **Each card contains:**
 - Thumbnail image — full width of card, fixed height 100px, `object-fit: cover`. If `image_url` is null, show a warm parchment placeholder with the first letter of the title centered.
@@ -196,6 +197,7 @@ Profile.jsx  (page)
 When signed in, the Navbar should show a profile entry point. Two options:
 - A small avatar circle (same initials style as the header) that links to `/profile`
 - Or a plain `"Profile"` text link next to `"History"`
+Additionally, the signed-in user menu (opened from the avatar button) should include a `"Profile"` menu item above `"Sign out"` that also navigates to `/profile`.
 
 Clicking either navigates to `/profile`.
 

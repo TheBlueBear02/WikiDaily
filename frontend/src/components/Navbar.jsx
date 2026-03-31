@@ -137,8 +137,16 @@ export default function Navbar() {
                 <div
                   role="menu"
                   aria-label="User menu"
-                  className="absolute right-0 top-full z-50 mt-2 w-max overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg"
+                  className="absolute right-0 top-full z-50 mt-2 min-w-full overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg"
                 >
+                  <NavLink
+                    to="/profile"
+                    role="menuitem"
+                    className="block whitespace-nowrap px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+                    onClick={() => setIsUserMenuOpen(false)}
+                  >
+                    Profile
+                  </NavLink>
                   <button
                     type="button"
                     role="menuitem"

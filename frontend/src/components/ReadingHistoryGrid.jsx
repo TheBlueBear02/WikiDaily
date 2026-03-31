@@ -26,7 +26,7 @@ export default function ReadingHistoryGrid({
   return (
     <section className="space-y-3">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <div className="text-lg font-semibold tracking-tight text-primary">Articles read</div>
+        <div className="text-lg font-semibold tracking-tight text-primary">Reading history</div>
         <div className="text-sm text-slate-500">{count} articles</div>
       </div>
 

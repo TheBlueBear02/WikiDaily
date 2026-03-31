@@ -28,7 +28,7 @@ WikiDaily/
 │       │   ├── HeroAside.jsx          # Left column of the Home hero row: flex-1, bordered panel, `overflow-hidden`, no outer padding (content manages its own); stretches to match article height (`md:items-stretch`)
 │       │   ├── WeeklyLeaderboard.jsx  # Hero aside: `bg-primary` bar with uppercase “LEADERBOARD” (`text-xl` / `md:text-2xl`); countdown below on `bg-slate-50` (UTC Sunday 23:59:59 reset); body lists ranks or empty state
 │       │   ├── MarkAsReadButton.jsx   # Inserts reading_log + updates profile streaks (auth required)
-│       │   ├── RandomWikiSection.jsx     # Home panel: composes `WizardImageCard.jsx` (70% quote + wizard art) + `RandomWikiPickerCard.jsx` (30% clickable picker)
+│       │   ├── RandomWikiSection.jsx     # Home panel: composes `WizardImageCard.jsx` (70% quote + wizard art) + `RandomWikiPickerCard.jsx` (30% clickable picker with dice image)
 │       │   │   ├── WizardImageCard.jsx  # Presentation card with a left-aligned inspirational quote (“knowledge is power... keep reading” – David Bailey) and a right-aligned wizard helper image
 │       │   │   └── RandomWikiPickerCard.jsx  # 30% clickable picker card (random page fetch + Wikipedia summary fetch + `articles` upsert as random + navigate to `/wiki/:wikiSlug`)
 │       │   ├── AuthSync.jsx             # onAuthStateChange → invalidates user-scoped React Query caches (mounted in main.jsx)
@@ -48,7 +48,7 @@ WikiDaily/
 │           ├── Auth.jsx
 │           ├── Home.jsx                # Hero row (`HomeHeroRow`): `HeroAside` + `WeeklyLeaderboard` always shown on the left for loading, error, empty, and success; right column (~70%) is skeleton, message, or `ArticleCard`
 │           ├── History.jsx
-│           └── WikiIframe.jsx         # In-app Wikipedia viewer (`/wiki/:wikiSlug`) using an iframe + timed fallback link if embedding is blocked (uses `location.state?.displayTitle` for the iframe title)
+│           └── WikiIframe.jsx         # In-app Wikipedia viewer (`/wiki/:wikiSlug`) using an iframe + timed fallback link if embedding is blocked (uses `location.state?.displayTitle` for the iframe title). This page does NOT render a “Mark as read” control.
 │
 ├── scripts/
 │   ├── daily-picker.js               # Node: random unused slug → WP summary → upsert daily row into `articles`

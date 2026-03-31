@@ -83,17 +83,22 @@ export default function RandomWikiPickerCard() {
       onClick={handleClick}
       disabled={isLoading}
       className={[
-        'flex w-full flex-col items-center justify-center rounded-none border border-slate-200 bg-white px-6 py-0 text-center sm:w-[30%]',
+        'flex w-full flex-col items-center justify-center rounded-none border border-slate-200 bg-white px-6 py-4 text-center sm:w-[30%]',
         'cursor-pointer hover:bg-slate-50',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2',
         'disabled:cursor-not-allowed disabled:opacity-70',
       ].join(' ')}
     >
-      <div className="text-base font-semibold text-primary">Random Wikipedia</div>
+      <img
+        src="/images/random-cube.png"
+        alt="Random article dice"
+          className="mb-3 h-20 w-20 flex-shrink-0"
+      />
+      <div className="text-base font-semibold text-primary">Random Article</div>
       <div className="mt-2 text-sm text-slate-600">
         {isLoading ? 'Picking a random article...' : null}
         {!isLoading && !errorMessage
-          ? 'Click to open in the in-app viewer.'
+          ? 'Read a random wikipedia article'
           : null}
         {errorMessage ? <span className="text-rose-700">Error: {errorMessage}</span> : null}
       </div>

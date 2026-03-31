@@ -161,10 +161,6 @@ export default function ActivityHeatmap({ entries }) {
         </div>
       </div>
 
-      <div className="text-xs text-slate-500">
-        Tip: the activity tooltip uses the browser’s native hover behavior (it may not appear on
-        touch devices).
-      </div>
     </div>
   )
 }

@@ -1,14 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useParams } from 'react-router-dom'
 
-import MarkAsReadButton from '../components/MarkAsReadButton'
-import { todayUtcYmd } from '../lib/date'
-import { useUserProgress } from '../hooks/useUserProgress'
-
 export default function WikiIframe() {
   const { wikiSlug } = useParams()
   const location = useLocation()
-  const { userId, markAsRead } = useUserProgress()
 
   const wikiUrl = useMemo(() => {
     const slug = typeof wikiSlug === 'string' ? wikiSlug.trim() : ''
@@ -20,29 +15,6 @@ export default function WikiIframe() {
     location.state && typeof location.state.displayTitle === 'string'
       ? location.state.displayTitle
       : null
-
-  const source =
-    location.state && typeof location.state.source === 'string'
-      ? location.state.source
-      : null
-
-  const readDateYmd = useMemo(() => todayUtcYmd(), [])
-  const autoLogRef = useRef({ key: null })
-
-  useEffect(() => {
-    if (source !== 'random') return
-    if (!userId) return
-    if (!wikiSlug) return
-
-    const key = `${userId}:${wikiSlug}:${readDateYmd}:random`
-    if (autoLogRef.current.key === key) return
-    autoLogRef.current.key = key
-
-    void markAsRead({ wikiSlug, readDateYmd, source: 'random' }).catch((err) => {
-      // Non-blocking. If it fails, user can retry manually using the button.
-      console.warn('Auto-log random read failed:', err)
-    })
-  }, [markAsRead, readDateYmd, source, userId, wikiSlug])
 
   const [showFallback, setShowFallback] = useState(false)
   const timeoutRef = useRef(null)
@@ -98,16 +70,6 @@ export default function WikiIframe() {
 
   return (
     <section className="space-y-4">
-      {source === 'random' ? (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-none border border-slate-200 bg-slate-50 px-4 py-3">
-          <div className="text-sm font-medium text-slate-700">Random article</div>
-          <MarkAsReadButton
-            wikiSlug={wikiSlug}
-            readDateYmd={readDateYmd}
-            source="random"
-          />
-        </div>
-      ) : null}
       <div className="relative overflow-hidden rounded-none border border-slate-200 bg-white">
         {showFallback ? (
           <div className="absolute inset-0 flex items-center justify-center bg-white/90 p-6">
