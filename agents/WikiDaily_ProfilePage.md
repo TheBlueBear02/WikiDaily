@@ -28,6 +28,7 @@ supabase
   .from('reading_log')
   .select(`
     wiki_slug,
+    read_at,
     read_date,
     source,
     articles (
@@ -39,10 +40,33 @@ supabase
     )
   `)
   .eq('user_id', userId)
-  .order('read_date', { ascending: false })
+  .order('read_at', { ascending: false })
 ```
 
 Returns: array of reading log entries with nested article metadata.
+
+### Hook: `useFavorites`
+Fetches the user's favorites (separate from reading history) with article metadata in a single joined query.
+
+```js
+supabase
+  .from('favorites')
+  .select(`
+    wiki_slug,
+    created_at,
+    articles (
+      display_title,
+      image_url,
+      description,
+      is_daily,
+      featured_date
+    )
+  `)
+  .eq('user_id', userId)
+  .order('created_at', { ascending: false })
+```
+
+Returns: array of favorite entries with nested article metadata.
 
 ### Auth data
 - `useUserProgress().user` (from `supabase.auth.getUser()`) — for `created_at` (member since date) and `email`
@@ -92,7 +116,7 @@ Each card:
 
 ### 3. Activity Heatmap
 
-**Layout:** full-width section with a section label above it: `"Reading activity — past 12 months"` in small uppercase muted sans-serif.
+**Layout:** full-width section with a section label above it: `"Reading activity"` in small uppercase muted sans-serif.
 
 **What it is:** a GitHub-style calendar grid. 52 columns (weeks) × 7 rows (days Mon–Sun). Each cell is a small square (12px × 12px) with 3px gap.
 
@@ -121,7 +145,29 @@ Each card:
 
 ---
 
-### 4. Reading History Grid
+### 4. Favorites Grid
+
+**Layout:** CSS grid, 3 columns on desktop, 2 on tablet, 1 on mobile. Gap 12px. Full width.
+
+**Section label above:** `"Favorites"` with a count in muted text: `"12 saved"`.
+
+**Each card contains:**
+- Thumbnail image — full width of card, fixed height 100px, `object-fit: cover`. If `image_url` is null, show a warm parchment placeholder with the first letter of the title centered.
+- Article title — `display_title` from articles join. Serif font, 14px, font-weight 500, 2-line clamp with ellipsis overflow.
+- Saved date — `created_at` formatted as `"Saved Mar 29, 2026"`. Sans-serif, 11px, muted color.
+- Clicking any card navigates to `/wiki/${wiki_slug}` — opens the article in the in-app iframe viewer.
+
+**Empty state:**
+If `favorites` is empty, show a centered message:
+```
+"No favorites yet."
+"Open an article and tap “Add to favorites” to save it here."
+```
+With a button linking to `/`.
+
+---
+
+### 5. Reading History Grid
 
 **Layout:** CSS grid, 3 columns on desktop, 2 on tablet, 1 on mobile. Gap 12px. Full width.
 
@@ -165,6 +211,12 @@ Profile.jsx  (page)
 │     ├── Day grid (52 × 7 cells)
 │     └── Cell hover tooltip
 │
+├── FavoritesGrid.jsx
+│     └── FavoriteArticleCard.jsx × N
+│           ├── Thumbnail (or placeholder)
+│           ├── Title (2-line clamp)
+│           └── Saved date
+│
 └── ReadingHistoryGrid.jsx
       └── ArticleHistoryCard.jsx × N
             ├── Thumbnail (or placeholder)
@@ -184,9 +236,12 @@ Profile.jsx  (page)
 | Add | `frontend/src/components/StatsRow.jsx` |
 | Add | `frontend/src/components/StatCard.jsx` |
 | Add | `frontend/src/components/ActivityHeatmap.jsx` |
+| Add | `frontend/src/components/FavoritesGrid.jsx` |
+| Add | `frontend/src/components/FavoriteArticleCard.jsx` |
 | Add | `frontend/src/components/ReadingHistoryGrid.jsx` |
 | Add | `frontend/src/components/ArticleHistoryCard.jsx` |
 | Add | `frontend/src/hooks/useReadingHistory.js` |
+| Add | `frontend/src/hooks/useFavorites.js` |
 | Update | `frontend/src/App.jsx` — add `/profile` route |
 | Update | `frontend/src/components/Navbar.jsx` — add profile link/avatar |
 
@@ -210,10 +265,12 @@ Ensure the Profile NavLink uses the same active styling logic as the History Nav
 **Loading:**
 - Stats row: show 3 skeleton placeholder cards (pulsing gray rectangles)
 - Heatmap: show a gray placeholder rectangle same dimensions as the heatmap
+- Favorites grid: show 6 skeleton cards in the grid
 - History grid: show 6 skeleton cards in the grid
 
 **Error:**
 - If the `profiles` query in `useUserProgress` fails: show `"Could not load profile. Please try again."` with a retry button
+- If `useFavorites` fails: show the favorites section error card with retry
 - If `useReadingHistory` fails: show the profile header and stats (if loaded) and an error message only in the history section
 
 **No data (new user):**

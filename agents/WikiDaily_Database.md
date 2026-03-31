@@ -2,9 +2,9 @@
 
 ## Overview
 
-The database has 3 tables:
+The database has 4 tables:
 
-- `profiles` and `reading_log` are user-specific and protected by Row Level Security (RLS).
+- `profiles`, `reading_log`, and `favorites` are user-specific and protected by Row Level Security (RLS).
 - `articles` is public read-only and stores cached article metadata for BOTH daily and random articles.
 
 ```
@@ -12,9 +12,11 @@ auth.users (Supabase built-in)
     │
     └── profiles (one row per user)
             │
-            └── reading_log (one row per article read)
+            ├── reading_log (one row per article read)
+            │
+            └── favorites (one row per favorited article)
 
-articles (one row per unique wiki page; daily rows are flagged)
+articles (one row per unique wiki page; daily rows are flagged; treated as append-only)
 ```
 
 ---
@@ -66,6 +68,62 @@ If you collect `username` on signup, the recommended flow is:
 
 ---
 
+## Public streak leaderboard (Home page)
+
+Because `profiles` is RLS-protected (users can only `SELECT` their own row), the Home page leaderboard must read from a **public** view/RPC that safely exposes only non-sensitive fields.
+
+Recommended approach: a **Security Definer RPC** that returns the top users by `current_streak`.
+
+### RPC: `public.public_streak_leaderboard(limit_count int)`
+
+**What it returns (public):**
+
+- `user_id` (uuid)
+- `username` (text, coerced to `'Anonymous'` when null/blank)
+- `current_streak` (int)
+
+**Ordering:**
+
+1. `current_streak DESC`
+2. `max_streak DESC` (tie-breaker)
+3. `username ASC`
+4. `user_id ASC`
+
+**SQL (run in Supabase SQL editor):**
+
+```sql
+create or replace function public.public_streak_leaderboard(limit_count int default 10)
+returns table (
+  user_id uuid,
+  username text,
+  current_streak int
+)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select
+    p.user_id,
+    coalesce(nullif(btrim(p.username), ''), 'Anonymous') as username,
+    p.current_streak
+  from public.profiles p
+  order by
+    p.current_streak desc,
+    p.max_streak desc,
+    username asc,
+    p.user_id asc
+  limit greatest(1, least(coalesce(limit_count, 10), 50));
+$$;
+
+revoke all on function public.public_streak_leaderboard(int) from public;
+grant execute on function public.public_streak_leaderboard(int) to anon, authenticated;
+```
+
+> Notes:
+> - This is intentionally **read-only** and returns only leaderboard-safe fields.
+> - If you later want “weekly leaderboard” logic, add a second RPC based on `reading_log` aggregates; do not overload this one.
+
 ## Table: `reading_log`
 
 Records every article a user has read. One row per user per day (enforced by the unique constraint). This is the source of truth for the History page.
@@ -87,6 +145,35 @@ Records every article a user has read. One row per user per day (enforced by the
 
 - `SELECT` — user can only read their own log entries
 - `INSERT` — user can only insert rows where `user_id` matches their own auth ID
+
+---
+
+## Table: `favorites`
+
+Stores a user's favorited articles (separate from `reading_log`). One row per user per article.
+
+| Column       | Type        | Nullable | Default | Description |
+|--------------|-------------|----------|---------|-------------|
+| `id`         | bigserial   | NO       | auto-increment | Primary key. Auto-incrementing integer. |
+| `user_id`    | uuid        | NO       | —       | References `profiles(user_id)`. Deleted automatically if the profile is deleted (`ON DELETE CASCADE`). |
+| `wiki_slug`  | text        | NO       | —       | References `articles(wiki_slug)` with `ON DELETE RESTRICT` to enforce `articles` as append-only. |
+| `created_at` | timestamptz | NO       | `NOW()` | When the user favorited the article. |
+
+**Unique Constraint: one favorite per user+article**
+
+`UNIQUE (user_id, wiki_slug)`
+
+**Index (fast list):**
+
+Recommended for Profile favorites list:
+
+`INDEX (user_id, created_at DESC)`
+
+**RLS Policies:**
+
+- `SELECT` — user can only read their own favorites
+- `INSERT` — user can only insert favorites for themselves (`auth.uid() = user_id`)
+- `DELETE` — user can only delete their own favorites
 
 ---
 
@@ -146,6 +233,14 @@ When the user clicks the Home page random picker card, the app:
 
 Then it navigates to `/wiki/:wikiSlug`.
 
+#### Logging random reads
+
+When a signed-in user lands on `/wiki/:wikiSlug` with navigation state `{ source: 'random' }`, the app **auto-inserts a `reading_log` row** for that slug + day (best-effort). This is done client-side via the same `markAsRead` mutation used elsewhere, and includes a short retry loop for the `reading_log.wiki_slug -> articles.wiki_slug` foreign key timing edge case.
+
+When the user triggers a random navigation from the article page ("New random article"), the app also **best-effort upserts the random article into `articles`** (same as the Home random picker). This improves the chance that the `reading_log` insert can satisfy the FK constraint.
+
+If the user is not signed in, no `reading_log` entry is created.
+
 > Note: if your project keeps `articles` as strict read-only for anon/authenticated clients, this client-side upsert will be blocked by RLS. In that case, move random upserts to a trusted server/edge function (service role) or add a tightly scoped write policy for the intended client role.
 
 ---
@@ -162,6 +257,13 @@ auth.users
                       │
                       └─── reading_log.wiki_slug matches articles.wiki_slug
                            (FK with ON DELETE SET NULL)
+
+profiles.user_id
+  │
+  └─── favorites.user_id  (1-to-many)
+            │
+            └─── favorites.wiki_slug matches articles.wiki_slug
+                 (FK with ON DELETE RESTRICT)
 ```
 
 > `reading_log.wiki_slug` is a foreign key to `articles(wiki_slug)` with `ON DELETE SET NULL`. This means if an article row is ever deleted, the reading log entry is preserved but `wiki_slug` becomes null rather than the row being deleted. This enables Supabase nested joins between the two tables.

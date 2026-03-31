@@ -1,9 +1,7 @@
 import { useDailyArticle } from '../hooks/useDailyArticle'
-import { todayUtcYmd } from '../lib/date'
 import ArticleCard from '../components/ArticleCard'
 import HeroAside from '../components/HeroAside'
-import WeeklyLeaderboard from '../components/WeeklyLeaderboard'
-import MarkAsReadButton from '../components/MarkAsReadButton'
+import StreakLeaderboard from '../components/StreakLeaderboard'
 import RandomWikiSection from '../components/RandomWikiSection'
 
 function HomeHeroRow({ children }) {
@@ -11,7 +9,7 @@ function HomeHeroRow({ children }) {
     <section className="space-y-4">
       <div className="flex flex-col gap-4 md:flex-row md:items-stretch md:gap-6">
         <HeroAside>
-          <WeeklyLeaderboard />
+          <StreakLeaderboard rows={10} />
         </HeroAside>
         <div className="w-full shrink-0 md:w-[70%]">{children}</div>
       </div>
@@ -75,7 +73,6 @@ export default function Home() {
     const wikiSlug = dailyArticle.wiki_slug
     const wikiUrl = `https://en.wikipedia.org/wiki/${encodeURIComponent(wikiSlug)}`
     const cardHref = `/wiki/${encodeURIComponent(wikiSlug)}`
-    const readDateYmd = todayUtcYmd()
 
     heroRightColumn = (
       <ArticleCard
@@ -86,12 +83,6 @@ export default function Home() {
         wikiUrl={wikiUrl}
         cardHref={cardHref}
         isFallback={isFallback}
-        actions={
-          <MarkAsReadButton
-            wikiSlug={wikiSlug}
-            readDateYmd={readDateYmd}
-          />
-        }
       />
     )
   }

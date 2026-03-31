@@ -13,6 +13,7 @@ export function useReadingHistory({ userId } = {}) {
         .select(
           `
           wiki_slug,
+          read_at,
           read_date,
           source,
           articles (
@@ -25,6 +26,7 @@ export function useReadingHistory({ userId } = {}) {
         `,
         )
         .eq('user_id', userId)
+        .order('read_at', { ascending: false })
         .order('read_date', { ascending: false })
 
       if (error) throw error

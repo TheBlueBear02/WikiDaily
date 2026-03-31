@@ -26,7 +26,7 @@ WikiDaily/
 │       ├── components/
 │       │   ├── ArticleCard.jsx        # Presentational article card (`h-full w-full` in hero; optional `className`); Home places it in a ~70% column beside `HeroAside` with gap. Full-card navigates to `cardHref`; for internal `/wiki/...` routes it stays in-app, and for external Wikipedia URLs it opens in a new tab; "Read now" uses the same target; image uses contain (no crop) with a bottom-start “Today’s article” badge in `bg-primary` (#1E2952); title prominent; date under title; description shows first two sentences with “...” when truncated
 │       │   ├── HeroAside.jsx          # Left column of the Home hero row: flex-1, bordered panel, `overflow-hidden`, no outer padding (content manages its own); stretches to match article height (`md:items-stretch`)
-│       │   ├── WeeklyLeaderboard.jsx  # Hero aside: `bg-primary` bar with uppercase “LEADERBOARD” (`text-xl` / `md:text-2xl`); countdown below on `bg-slate-50` (UTC Sunday 23:59:59 reset); body lists ranks or empty state
+│       │   ├── StreakLeaderboard.jsx  # Hero aside: ranks users by highest `profiles.current_streak` (via public Supabase RPC); header shows countdown until weekly reset (UTC Sunday 23:59:59.999); list shows fixed number of rows and pads with blank rows if not enough users; row layout: rank (left), username (middle), streak (right)
 │       │   ├── MarkAsReadButton.jsx   # Inserts reading_log + updates profile streaks (auth required)
 │       │   ├── RandomWikiSection.jsx     # Home panel: composes `WizardImageCard.jsx` (70% quote + wizard art) + `RandomWikiPickerCard.jsx` (30% clickable picker with dice image)
 │       │   │   ├── WizardImageCard.jsx  # Presentation card with a left-aligned inspirational quote (“knowledge is power... keep reading” – David Bailey) and a right-aligned wizard helper image
@@ -42,13 +42,13 @@ WikiDaily/
 │       │   ├── useDailyArticle.js     # React Query: read today's featured daily `articles` row
 │       │   ├── useDailyArchive.js     # React Query: read public daily `articles` archive (History page)
 │       │   ├── useReadingLog.js       # React Query: user reading_log (read_date only) for “collected” markers
-│       │   ├── useLeaderboardCountdown.js # 1s interval: remaining days/hours/minutes until leaderboard reset
+│       │   ├── useStreakLeaderboard.js # React Query: calls public Supabase RPC `public_streak_leaderboard(limit_count)` to get top users by current streak
 │       │   └── useUserProgress.js     # React Query: auth user + profiles + mark-as-read mutation
 │       └── pages/
 │           ├── Auth.jsx
-│           ├── Home.jsx                # Hero row (`HomeHeroRow`): `HeroAside` + `WeeklyLeaderboard` always shown on the left for loading, error, empty, and success; right column (~70%) is skeleton, message, or `ArticleCard`
+│           ├── Home.jsx                # Hero row (`HomeHeroRow`): `HeroAside` + `StreakLeaderboard` always shown on the left; right column (~70%) is skeleton, message, or `ArticleCard` (no “Mark as read” control on Home)
 │           ├── History.jsx
-│           └── WikiIframe.jsx         # In-app Wikipedia viewer (`/wiki/:wikiSlug`) using an iframe + timed fallback link if embedding is blocked (uses `location.state?.displayTitle` for the iframe title). This page does NOT render a “Mark as read” control.
+│           └── WikiIframe.jsx         # In-app Wikipedia viewer (`/wiki/:wikiSlug`) using an iframe + timed fallback link if embedding is blocked (uses `location.state?.displayTitle` for the iframe title). Layout is a wide iframe column plus an “Article tools” sidebar on the right that can be collapsed/expanded. **Default behavior:** the tools sidebar starts **collapsed** on article open (and re-collapses when navigating to a different `wikiSlug`) to keep the reading view focused. Above the iframe, the header row shows the article title plus controls in this order: a “Notes” / “Hide notes” toggle button (opens or closes the sidebar), the **DB-backed Favorites toggle** stored in Supabase `favorites` (RLS: per-user), then “New random article” on the far right (fetches a MediaWiki random page and navigates to its slug with `state.source="random"`). A one-time best-effort migration imports any legacy localStorage favorites from `wikidaily:favorites` into the DB after sign-in. When open, the sidebar focuses on note-taking: a per-article notes textarea stored in `localStorage` (`wikidaily:notes:{wikiSlug}`); the top-row “Hide notes” toggle closes the sidebar. This page does NOT render a “Mark as read” control.
 │
 ├── scripts/
 │   ├── daily-picker.js               # Node: random unused slug → WP summary → upsert daily row into `articles`
