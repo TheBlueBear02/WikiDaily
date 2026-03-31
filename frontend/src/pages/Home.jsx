@@ -1,8 +1,10 @@
 import { useDailyArticle } from '../hooks/useDailyArticle'
+import { useUserProgress } from '../hooks/useUserProgress'
 import ArticleCard from '../components/ArticleCard'
 import HeroAside from '../components/HeroAside'
 import StreakLeaderboard from '../components/StreakLeaderboard'
 import RandomWikiSection from '../components/RandomWikiSection'
+import ReadingProgressBar from '../components/ReadingProgressBar'
 
 function HomeHeroRow({ children }) {
   return (
@@ -20,6 +22,7 @@ function HomeHeroRow({ children }) {
 export default function Home() {
   const { dailyArticle, isFallback, isLoading, isError, error, refetch } =
     useDailyArticle()
+  const { userId, profile, profileQuery } = useUserProgress()
 
   let heroRightColumn = null
 
@@ -90,6 +93,26 @@ export default function Home() {
   return (
     <div className="space-y-6">
       <HomeHeroRow>{heroRightColumn}</HomeHeroRow>
+      {userId ? (
+        profileQuery.isError ? (
+          <div className="rounded-none border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900">
+            <span className="font-medium">Could not load reading progress.</span>{' '}
+            <button
+              type="button"
+              onClick={() => profileQuery.refetch()}
+              className="text-rose-950 underline decoration-rose-400 underline-offset-2 hover:text-rose-900"
+            >
+              Retry
+            </button>
+          </div>
+        ) : (
+          <ReadingProgressBar
+            userId={userId}
+            totalRead={profile?.total_read ?? 0}
+            isLoading={profileQuery.isLoading}
+          />
+        )
+      ) : null}
       <RandomWikiSection />
     </div>
   )
