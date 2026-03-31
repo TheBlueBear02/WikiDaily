@@ -4,7 +4,9 @@ import ArticleCard from '../components/ArticleCard'
 import HeroAside from '../components/HeroAside'
 import StreakLeaderboard from '../components/StreakLeaderboard'
 import RandomWikiSection from '../components/RandomWikiSection'
+import CollectiveReadingProgressBar from '../components/CollectiveReadingProgressBar'
 import ReadingProgressBar from '../components/ReadingProgressBar'
+import { useCollectiveReadingTotal } from '../hooks/useCollectiveReadingTotal'
 
 function HomeHeroRow({ children }) {
   return (
@@ -23,6 +25,7 @@ export default function Home() {
   const { dailyArticle, isFallback, isLoading, isError, error, refetch } =
     useDailyArticle()
   const { userId, profile, profileQuery } = useUserProgress()
+  const collectiveReadingQuery = useCollectiveReadingTotal()
 
   let heroRightColumn = null
 
@@ -114,6 +117,12 @@ export default function Home() {
         )
       ) : null}
       <RandomWikiSection />
+      <CollectiveReadingProgressBar
+        totalRead={collectiveReadingQuery.data ?? 0}
+        isLoading={collectiveReadingQuery.isLoading}
+        isError={collectiveReadingQuery.isError}
+        onRetry={() => collectiveReadingQuery.refetch()}
+      />
     </div>
   )
 }

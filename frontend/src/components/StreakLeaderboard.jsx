@@ -18,6 +18,36 @@ function clampRows(rows) {
   return Math.max(1, Math.min(25, Math.floor(n)))
 }
 
+/** Varying widths so skeleton rows do not look identical (percent of row). */
+const USERNAME_SKELETON_WIDTH_PCT = [72, 85, 64, 78, 90, 68, 82, 75, 88, 70, 80, 73, 86, 66, 79, 84, 71, 77, 83, 69, 76, 81, 74, 87, 65]
+
+function LeaderboardRowSkeleton({ rank }) {
+  const wPct = USERNAME_SKELETON_WIDTH_PCT[(rank - 1) % USERNAME_SKELETON_WIDTH_PCT.length]
+  return (
+    <>
+      <span
+        className={[
+          'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold tabular-nums',
+          rankBadgeClass(rank),
+        ].join(' ')}
+        aria-hidden
+      >
+        {rank}
+      </span>
+      <div className="min-w-0 flex-1 py-0.5">
+        <div
+          className="h-4 max-w-full animate-pulse rounded bg-slate-200 motion-reduce:animate-none"
+          style={{ width: `${wPct}%` }}
+        />
+      </div>
+      <div className="flex shrink-0 flex-col items-end gap-1.5 py-0.5 text-right">
+        <div className="h-4 w-10 animate-pulse rounded bg-slate-200 motion-reduce:animate-none" />
+        <div className="h-2.5 w-9 animate-pulse rounded bg-slate-200/90 motion-reduce:animate-none" />
+      </div>
+    </>
+  )
+}
+
 function CountdownLabel({ days, hours, minutes }) {
   const d = days === 1 ? '1 day' : `${days} days`
   const h = hours === 1 ? '1 hr' : `${hours} hrs`
@@ -65,8 +95,24 @@ export default function StreakLeaderboard({ rows = DEFAULT_ROWS } = {}) {
         <ol
           className="grid min-h-0 flex-1 divide-y divide-slate-200"
           style={{ gridTemplateRows: `repeat(${safeRows}, minmax(0, 1fr))` }}
+          aria-busy={isLoading}
+          aria-label={isLoading ? 'Loading leaderboard' : undefined}
         >
           {displayRows.map(({ rank, entry }) => {
+            if (isLoading) {
+              return (
+                <li
+                  key={`skeleton-${rank}`}
+                  className={[
+                    'flex items-center gap-2.5 rounded-none px-3',
+                    rank % 2 === 0 ? 'bg-slate-50' : 'bg-white',
+                  ].join(' ')}
+                >
+                  <LeaderboardRowSkeleton rank={rank} />
+                </li>
+              )
+            }
+
             const isEmpty = !entry
             const username = entry?.username ?? '—'
             const streak = entry?.currentStreak ?? null
@@ -102,7 +148,7 @@ export default function StreakLeaderboard({ rows = DEFAULT_ROWS } = {}) {
                       isEmpty ? 'text-slate-400' : 'text-primary',
                     ].join(' ')}
                   >
-                    {isLoading && rank <= 3 ? 'Loading…' : username}
+                    {username}
                   </div>
                 </div>
 

@@ -15,6 +15,40 @@ export async function fetchWikipediaSummary(wikiSlug) {
   return res.json()
 }
 
+/**
+ * MediaWiki opensearch: title suggestions for the main namespace.
+ * @returns {{ titles: string[], descriptions: string[] }}
+ */
+export async function fetchWikipediaOpenSearch(query, { limit = 8 } = {}) {
+  const q = String(query ?? '').trim()
+  if (!q) return { titles: [], descriptions: [] }
+
+  const url = new URL('https://en.wikipedia.org/w/api.php')
+  url.searchParams.set('action', 'opensearch')
+  url.searchParams.set('search', q)
+  url.searchParams.set('limit', String(limit))
+  url.searchParams.set('namespace', '0')
+  url.searchParams.set('format', 'json')
+  url.searchParams.set('origin', '*')
+
+  const res = await fetch(url.toString(), {
+    headers: { Accept: 'application/json' },
+  })
+
+  if (!res.ok) {
+    throw new Error(`Wikipedia search failed: HTTP ${res.status}`)
+  }
+
+  const json = await res.json()
+  if (!Array.isArray(json) || json.length < 2) {
+    return { titles: [], descriptions: [] }
+  }
+
+  const titles = Array.isArray(json[1]) ? json[1] : []
+  const descriptions = Array.isArray(json[2]) ? json[2] : []
+  return { titles, descriptions }
+}
+
 export async function fetchWikipediaRandomPage() {
   const res = await fetch(WP_RANDOM_API_URL, {
     headers: { Accept: 'application/json' },

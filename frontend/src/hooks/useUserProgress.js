@@ -228,9 +228,12 @@ export function useUserProgress() {
       if (profileErr) throw profileErr
       return { status: 'ok' }
     },
-    onSuccess: async () => {
+    onSuccess: async (data) => {
       await queryClient.invalidateQueries({ queryKey: ['profile', userId] })
       await queryClient.invalidateQueries({ queryKey: ['readingHistory', userId] })
+      if (data?.status === 'ok') {
+        await queryClient.invalidateQueries({ queryKey: ['collectiveReadingTotal'] })
+      }
     },
   })
 

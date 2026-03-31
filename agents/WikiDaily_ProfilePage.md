@@ -209,7 +209,7 @@ With a button linking to `/`.
 ```
 Profile.jsx  (page)
 ├── ProfileHeader.jsx
-│     ├── Avatar (initials circle, 64px)
+│     ├── Avatar (initials circle, 64px; initials from `lib/profileAvatar.js`)
 │     ├── Username (@username, serif 24px)
 │     ├── Member since (13px muted)
 │     └── Tagline ("Knowledge is Power", italic serif faint)
@@ -261,10 +261,7 @@ Profile.jsx  (page)
 
 ## Navbar Integration
 
-When signed in, the Navbar should show a profile entry point. Two options:
-- A small avatar circle (same initials style as the header) that links to `/profile`
-- Or a plain `"Profile"` text link next to `"History"`
-Additionally, the signed-in user menu (opened from the avatar button) should include a `"Profile"` menu item above `"Sign out"` that also navigates to `/profile`.
+When signed in, the Navbar shows a **`Profile`** text link next to **`History`** (same active styling), plus a user menu opened from a control that includes an **amber circular initials avatar** (`bg-amber-100`, `text-amber-950`, `rounded-full`) using the same **`initialsFromUsername`** rules and username fallbacks as the profile header (`frontend/src/lib/profileAvatar.js`). The menu lists **`Profile`** above **`Sign out`**.
 
 Clicking either navigates to `/profile`.
 

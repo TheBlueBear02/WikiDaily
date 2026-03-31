@@ -2,7 +2,9 @@ import { NavLink, useLocation } from 'react-router-dom'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import StreakBadge from './StreakBadge'
+import WikiSearchBar from './WikiSearchBar'
 import { useUserProgress } from '../hooks/useUserProgress'
+import { initialsFromUsername } from '../lib/profileAvatar'
 import { getSupabase } from '../lib/supabaseClient'
 import { buildAuthUrl } from '../lib/returnTo'
 
@@ -26,6 +28,12 @@ export default function Navbar() {
     if (email) return email.split('@')[0] || email
     return 'Account'
   }, [profile?.username, user?.user_metadata?.username, user?.email])
+
+  const initials = useMemo(() => {
+    const fallback =
+      user?.user_metadata?.username ?? (user?.email ? user.email.split('@')[0] : null)
+    return initialsFromUsername(profile?.username ?? fallback)
+  }, [profile?.username, user?.email, user?.user_metadata?.username])
 
   async function onSignOut() {
     try {
@@ -67,11 +75,11 @@ export default function Navbar() {
 
   return (
     <header className="border-b border-slate-200">
-      <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-4">
+      <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-4 gap-y-3 px-4 py-4">
         <NavLink
           to="/"
           aria-label="Go to home"
-          className="flex items-center gap-3 rounded-md focus:outline-none"
+          className="flex shrink-0 items-center gap-3 rounded-md focus:outline-none"
         >
           <div className="grid h-9 w-9 place-items-center rounded-lg bg-primary text-sm font-semibold text-white">
             WD
@@ -82,7 +90,9 @@ export default function Navbar() {
           </div>
         </NavLink>
 
-        <div className="flex items-center gap-3">
+        <WikiSearchBar className="ml-5 min-w-[8rem] flex-1 basis-[10rem] max-w-xs sm:ml-10" />
+
+        <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-3">
           <nav className="flex items-center gap-2">
             <NavLink
               to="/history"
@@ -115,20 +125,11 @@ export default function Navbar() {
                 aria-expanded={isUserMenuOpen}
                 className="flex items-center gap-2 bg-white py-1 pl-1 pr-3 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-300"
               >
-                <span className="grid h-8 w-8 place-items-center rounded-full bg-slate-100 text-slate-500">
-                  <svg
-                    viewBox="0 0 24 24"
-                    width="18"
-                    height="18"
-                    aria-hidden="true"
-                    focusable="false"
-                    className="block"
-                  >
-                    <path
-                      fill="currentColor"
-                      d="M12 12a4.25 4.25 0 1 0-4.25-4.25A4.26 4.26 0 0 0 12 12Zm0 2c-4.23 0-7.75 2.4-7.75 5.25a.75.75 0 0 0 .75.75h14a.75.75 0 0 0 .75-.75C19.75 16.4 16.23 14 12 14Z"
-                    />
-                  </svg>
+                <span
+                  className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-amber-100 text-xs font-semibold text-amber-950"
+                  aria-hidden="true"
+                >
+                  {initials}
                 </span>
                 <span className="max-w-[14rem] truncate">{displayName}</span>
               </button>

@@ -1,16 +1,6 @@
 import { useMemo } from 'react'
 
-function initialsFromUsername(username) {
-  const raw = String(username ?? '').trim()
-  if (!raw) return 'WD'
-  const parts = raw
-    .replace(/^@+/, '')
-    .split(/[\s._-]+/g)
-    .filter(Boolean)
-  const first = parts[0]?.[0] ?? raw[0]
-  const second = parts[1]?.[0] ?? raw[1] ?? ''
-  return `${first ?? ''}${second ?? ''}`.toUpperCase()
-}
+import { initialsFromUsername } from '../lib/profileAvatar'
 
 function formatHandle(username, fallback) {
   const v = String(username ?? '').trim().replace(/^@+/, '')

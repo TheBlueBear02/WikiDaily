@@ -126,6 +126,36 @@ grant execute on function public.public_streak_leaderboard(int) to anon, authent
 > - This is intentionally **read-only** and returns only leaderboard-safe fields.
 > - If you later want “weekly leaderboard” logic, add a second RPC based on `reading_log` aggregates; do not overload this one.
 
+### RPC: `public.collective_reads_count()`
+
+**Purpose:** Home page **community reading goals** bar. `reading_log` is RLS-protected, so a **security definer** aggregate is required for a global count.
+
+**Returns:** a single `bigint` — `COUNT(*)` on `public.reading_log` (no user data, slugs, or timestamps).
+
+**SQL (run in Supabase SQL editor):**
+
+```sql
+create or replace function public.collective_reads_count()
+returns bigint
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select count(*)
+  from public.reading_log;
+$$;
+
+revoke all on function public.collective_reads_count() from public;
+grant execute on function public.collective_reads_count() to anon, authenticated;
+```
+
+> Notes:
+> - **Safe:** one aggregate number only; `anon` and `authenticated` need **execute** so the public Home page can load the bar.
+> - **SECURITY DEFINER** bypasses RLS only to count rows; nothing sensitive is returned.
+> - Uses `reading_log` as the source of truth (aligned with per-user reconciliation in the app).
+> - If this RPC is missing, the Home collective bar shows an error state with **Retry** until the function is deployed.
+
 ## Table: `reading_log`
 
 Records every article a user has read. One row per user per day (enforced by the unique constraint). This is the source of truth for the History page.

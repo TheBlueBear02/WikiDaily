@@ -1,57 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 
-/**
- * Lifetime article-read milestones; tune `value` / `displayName` here only.
- * Includes intermediate **200** between 100 and 365 to keep momentum.
- */
-export const READING_MILESTONES = [
-  { key: 'reads_10', value: 10, displayName: 'Apprentice' },
-  { key: 'reads_50', value: 50, displayName: 'Scholar' },
-  { key: 'reads_100', value: 100, displayName: 'Master' },
-  { key: 'reads_200', value: 200, displayName: 'Expert' },
-  { key: 'reads_365', value: 365, displayName: 'Sage' },
-  { key: 'reads_500', value: 500, displayName: 'Legend' },
-]
+import {
+  READING_MILESTONES,
+  computeSegmentProgress,
+  computeVisibleWindow,
+  fillPercentFromZero,
+  starLeftPctOnTrack,
+} from '../lib/readingMilestones'
 
-/**
- * Shows **every milestone up to and including the next goal**: previous tiers stay as filled stars,
- * current goal at the right. Fill is **0 → nextGoal** (`total / nextGoal`).
- * At max tier: full ladder, bar 100%.
- */
-function computeVisibleWindow(totalRead) {
-  const ms = READING_MILESTONES
-  const last = ms[ms.length - 1]
-
-  if (totalRead >= last.value) {
-    return {
-      complete: true,
-      visible: ms,
-      windowEnd: last.value,
-    }
-  }
-
-  const nextIdx = ms.findIndex((m) => totalRead < m.value)
-  if (nextIdx < 0) {
-    return { complete: true, visible: ms, windowEnd: last.value }
-  }
-
-  const visible = ms.slice(0, nextIdx + 1)
-  const windowEnd = ms[nextIdx].value
-
-  return { complete: false, visible, windowEnd }
-}
-
-/** Fill from 0 reads toward the current `windowEnd` (the next milestone value). */
-function fillPercentFromZero(totalRead, windowEnd) {
-  if (windowEnd <= 0) return 100
-  return Math.min(100, Math.max(0, (totalRead / windowEnd) * 100))
-}
-
-function starLeftPctOnTrack(milestoneValue, windowEnd) {
-  if (windowEnd <= 0) return 100
-  return (milestoneValue / windowEnd) * 100
-}
+export { READING_MILESTONES }
 
 function storageKey(userId, milestoneKey) {
   return `wikidaily:milestone:celebrated:${userId}:${milestoneKey}`
@@ -92,43 +50,6 @@ function usePrefersReducedMotion() {
   }, [])
 
   return reduced
-}
-
-function computeSegmentProgress(totalRead) {
-  const t = Math.max(0, Number(totalRead) || 0)
-  const last = READING_MILESTONES[READING_MILESTONES.length - 1]
-
-  if (t >= last.value) {
-    return {
-      prev: last.value,
-      next: null,
-      pct: 1,
-      nextMilestone: null,
-    }
-  }
-
-  let prev = 0
-  let next = READING_MILESTONES[0]
-  for (let i = 0; i < READING_MILESTONES.length; i += 1) {
-    const m = READING_MILESTONES[i]
-    if (t < m.value) {
-      next = m
-      break
-    }
-    prev = m.value
-    if (i === READING_MILESTONES.length - 1) {
-      next = null
-    }
-  }
-
-  if (!next) {
-    return { prev: last.value, next: null, pct: 1, nextMilestone: null }
-  }
-
-  const denom = next.value - prev
-  const pct = denom <= 0 ? 1 : Math.min(1, Math.max(0, (t - prev) / denom))
-
-  return { prev, next, pct, nextMilestone: next }
 }
 
 function StarIcon({ className, filled }) {
@@ -285,14 +206,14 @@ export default function ReadingProgressBar({ userId, totalRead, isLoading }) {
   return (
     <section
       className="w-full rounded-none border border-slate-200 bg-white px-4 py-4"
-      aria-labelledby="reading-journey-heading"
+      aria-labelledby="reading-goals-heading"
     >
       <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
         <h2
-          id="reading-journey-heading"
+          id="reading-goals-heading"
           className="text-xs font-semibold uppercase tracking-wide text-slate-500"
         >
-          Reading journey
+          Reading goals
         </h2>
       </div>
 

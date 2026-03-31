@@ -26,28 +26,33 @@ WikiDaily/
 │       ├── components/
 │       │   ├── ArticleCard.jsx        # Presentational article card (`h-full w-full` in hero; optional `className`); Home places it in a ~70% column beside `HeroAside` with gap. Full-card navigates to `cardHref`; for internal `/wiki/...` routes it stays in-app, and for external Wikipedia URLs it opens in a new tab; "Read now" uses the same target; image uses contain (no crop) with a bottom-start “Today’s article” badge in `bg-primary` (#1E2952); title prominent; date under title; description shows first two sentences with “...” when truncated
 │       │   ├── HeroAside.jsx          # Left column of the Home hero row: flex-1, bordered panel, `overflow-hidden`, no outer padding (content manages its own); stretches to match article height (`md:items-stretch`)
-│       │   ├── StreakLeaderboard.jsx  # Hero aside: ranks users by highest `profiles.current_streak` (via public Supabase RPC); header shows countdown until weekly reset (UTC Sunday 23:59:59.999); list shows fixed number of rows and pads with blank rows if not enough users; row layout: rank (left), username (middle), streak (right)
+│       │   ├── StreakLeaderboard.jsx  # Hero aside: ranks users by highest `profiles.current_streak` (via public Supabase RPC); header shows countdown until weekly reset (UTC Sunday 23:59:59.999); while `useStreakLeaderboard` is loading, rows show pulsing skeleton placeholders (rank + bars); then fixed rows with padding for short lists; row layout: rank (left), username (middle), streak (right)
 │       │   ├── MarkAsReadButton.jsx   # Inserts reading_log + updates profile streaks (auth required)
-│       │   ├── ReadingProgressBar.jsx # Signed-in Home only: `profiles.total_read` vs **10…500**; stars for **first…next** goal (previous filled); **fill 0→nextGoal**; **≥500** full ladder + 100%; `Next: {Name} ({value})` / **All milestones unlocked**; celebrations `wikidaily:milestone:celebrated:{userId}:{milestoneKey}`; optional preview (`READING_PROGRESS_PREVIEW_ENABLED`, `previewReads`) **off by default**; `prefers-reduced-motion`
+│       │   ├── ReadingProgressBar.jsx # Signed-in Home only: `profiles.total_read` vs personal milestones from `lib/readingMilestones.js`; stars for **first…next** goal; **fill 0→nextGoal**; celebrations + optional preview (`READING_PROGRESS_PREVIEW_ENABLED`, `previewReads`) **off by default**; `prefers-reduced-motion`
+│       │   ├── CollectiveReadingProgressBar.jsx # Home **bottom**: community total via RPC `collective_reads_count` (`useCollectiveReadingTotal`); same ladder UX as personal bar with **COLLECTIVE_READING_MILESTONES** (12 tiers: 250…100k); under-bar labels use `milestoneTrackLabel` (plain below 1k, else compact **k** with one decimal when needed, e.g. `2.5k`); subtle `bg-slate-50/80` panel; loading skeleton; error + **Retry** if RPC missing
 │       │   ├── RandomWikiSection.jsx     # Home panel: composes `WizardImageCard.jsx` (70% quote + wizard art) + `RandomWikiPickerCard.jsx` (30% clickable picker with dice image)
 │       │   │   ├── WizardImageCard.jsx  # Presentation card with a left-aligned inspirational quote (now includes a “Quote of the day” `bg-primary` tag above the quote) and a right-aligned wizard helper image
 │       │   │   └── RandomWikiPickerCard.jsx  # 30% clickable picker card (random page fetch + Wikipedia summary fetch + `articles` upsert as random + navigate to `/wiki/:wikiSlug`)
 │       │   ├── AuthSync.jsx             # onAuthStateChange → invalidates user-scoped React Query caches (mounted in main.jsx)
-│       │   ├── Navbar.jsx             # App header; logo/title links to / (no focus ring); History link; user menu (display name → Sign out, menu panel and control are content-width)
+│       │   ├── Navbar.jsx             # App header; logo/title links to / (no focus ring); **`WikiSearchBar`** (Wikipedia opensearch suggestions → `/wiki/:wikiSlug`); History link; signed-in user menu: **amber initials avatar** (same logic as `ProfileHeader` via `lib/profileAvatar.js`) + display name → Profile / Sign out
+│       │   ├── WikiSearchBar.jsx      # Header search: debounced MediaWiki opensearch, dropdown navigation with keyboard; opens in-app reader with `state.source="search"`
 │       │   └── StreakBadge.jsx        # Nav streak icon (`streak-icon.png`) + centered white number overlay (no “Streak:” label); borderless, zoom/cropped image (slightly shifted up with `-translate-y-1`) to reduce PNG white bg; native tooltip (`title="Streak days"`); avoids auth “flash” with loading state
 │       ├── lib/
 │       │   ├── supabaseClient.js      # Supabase client getter (reads VITE_* env)
-│       │   ├── wikipedia.js           # fetch wrapper for WP summary + MediaWiki random page
+│       │   ├── wikipedia.js           # fetch wrapper for WP summary + MediaWiki random page + **`fetchWikipediaOpenSearch`** (opensearch API for navbar article search)
+│       │   ├── profileAvatar.js       # `initialsFromUsername` — shared by `ProfileHeader` and `Navbar` (warm amber circle avatars)
+│       │   ├── readingMilestones.js   # `READING_MILESTONES` + `COLLECTIVE_READING_MILESTONES` and shared math (`computeVisibleWindow`, `fillPercentFromZero`, `starLeftPctOnTrack`, `computeSegmentProgress`)
 │       │   └── date.js                # UTC date helpers (YYYY-MM-DD); `getNextLeaderboardResetDate` / `getLeaderboardCountdownParts` for weekly reset (UTC Sunday 23:59:59.999)
 │       ├── hooks/
 │       │   ├── useDailyArticle.js     # React Query: read today's featured daily `articles` row
 │       │   ├── useDailyArchive.js     # React Query: read public daily `articles` archive (History page)
 │       │   ├── useReadingLog.js       # React Query: user reading_log (read_date only) for “collected” markers
 │       │   ├── useStreakLeaderboard.js # React Query: calls public Supabase RPC `public_streak_leaderboard(limit_count)` to get top users by current streak
-│       │   └── useUserProgress.js     # React Query: auth user + profiles + mark-as-read mutation
+│       │   ├── useCollectiveReadingTotal.js # React Query: `collective_reads_count()` → global `reading_log` count (Home community bar)
+│       │   └── useUserProgress.js     # React Query: auth user + profiles + mark-as-read mutation; on successful new read invalidates `collectiveReadingTotal`
 │       └── pages/
 │           ├── Auth.jsx
-│           ├── Home.jsx                # Order: **`HomeHeroRow` first** (today’s article is primary), then **`ReadingProgressBar`** when signed in (`useUserProgress` → `profile.total_read`), then **`RandomWikiSection`**. Hero: `HeroAside` + `StreakLeaderboard` left; right ~70% is skeleton, message, or `ArticleCard` (no “Mark as read” on Home). If the profile query errors, a compact retry strip replaces the progress bar.
+│           ├── Home.jsx                # Order: **`HomeHeroRow` first**, then **`ReadingProgressBar`** when signed in, then **`RandomWikiSection`**, then **`CollectiveReadingProgressBar`** (bottom, all visitors). Hero: `HeroAside` + `StreakLeaderboard` left; right ~70% is skeleton, message, or `ArticleCard`. If the profile query errors, a compact retry strip replaces the personal progress bar.
 │           ├── History.jsx
 │           └── WikiIframe.jsx         # In-app Wikipedia viewer (`/wiki/:wikiSlug`) using an iframe + timed fallback link if embedding is blocked (uses `location.state?.displayTitle` for the iframe title). Layout is a wide iframe column plus an “Article tools” sidebar on the right that can be collapsed/expanded. **Default behavior:** the tools sidebar starts **collapsed** on article open (and re-collapses when navigating to a different `wikiSlug`) to keep the reading view focused. Above the iframe, the header row shows the article title plus controls in this order: a “Notes” / “Hide notes” toggle button (opens or closes the sidebar), the **DB-backed Favorites toggle** stored in Supabase `favorites` (RLS: per-user), then “New random article” on the far right (fetches a MediaWiki random page and navigates to its slug with `state.source="random"`). A one-time best-effort migration imports any legacy localStorage favorites from `wikidaily:favorites` into the DB after sign-in. When open, the sidebar focuses on note-taking: a per-article notes textarea stored in `localStorage` (`wikidaily:notes:{wikiSlug}`); the top-row “Hide notes” toggle closes the sidebar. This page does NOT render a “Mark as read” control.
 │
@@ -96,6 +101,12 @@ GET https://en.wikipedia.org/w/api.php?action=query&list=random&rnnamespace=0&rn
 ```
 Returns: `query.random[0].title` (converted to `wikiSlug` by replacing spaces with underscores).
 
+### Wikipedia search (navbar)
+```
+GET https://en.wikipedia.org/w/api.php?action=opensearch&search={query}&limit=8&namespace=0&format=json&origin=*
+```
+Returns a JSON array: `[searchTerm, titles[], descriptions[], urls[]]`. The app uses `titles` (and optional `descriptions` in the dropdown) and navigates to `/wiki/{wikiSlug}` with spaces in the chosen title converted to underscores, matching the random-page slug convention.
+
 ### Mark as Read (streak logic)
 ```
 today = current date (UTC)
@@ -140,13 +151,22 @@ Notes:
 
 ## Home — Reading progress (gamification)
 
-- **Visibility**: Rendered only when the user is signed in (`userId` from `useUserProgress`). Signed-out users see no progress section (MVP).
+### Personal bar (`ReadingProgressBar`)
+
+- **Visibility**: Rendered only when the user is signed in (`userId` from `useUserProgress`). Signed-out users see no personal progress section.
 - **Data**: `profiles.total_read` from the existing `useUserProgress` / `profile` query (same reconciliation with `reading_log` count as Profile).
-- **Milestones** (config in `ReadingProgressBar.jsx` → `READING_MILESTONES`): **10, 50, 100, 200, 365, 500** with display names **Apprentice, Scholar, Master, Expert, Sage, Legend** (intermediate **200** for momentum). The bar lists **every milestone from the first through the current next goal** — **earlier tiers stay visible** as stars (filled when `total_read` ≥ that value). **Fill** runs **0 → nextGoal** (`total_read / nextGoal`). When **`total_read` ≥ 500**, **all six** milestones show, bar at 100%; right label **“All milestones unlocked”**. Goal counts sit **close** to the bar: shorter track row (`h-9`), label row `h-4` + **negative** `mt` (`-mt-2`) so numbers tuck under the stars; **fixed** layout height so it does not resize when milestone count changes.
-- **Copy**: Left: total articles read (or empty-state prompt at 0). Right (until complete): **`Next: {displayName} ({value})`**.
-- **Celebrations**: Short star twinkle when a milestone becomes unlocked **for the first time in this browser**; persistence key **`wikidaily:milestone:celebrated:{userId}:{milestoneKey}`** (e.g. `reads_365`). Cleanup on effect unmount writes keys so React Strict Mode does not double-celebrate.
-- **Preview (design / QA)**: Implemented in `ReadingProgressBar.jsx` but **disabled by default** via **`READING_PROGRESS_PREVIEW_ENABLED = false`** (set to `true` to show the collapsible **“Preview article count”** UI and honor **`previewReads`** in the URL; otherwise the site uses real `profiles.total_read` only). When enabled: dev or **`VITE_ENABLE_PROGRESS_PREVIEW=true`** for production; celebrations are skipped while preview is active.
+- **Milestones** (config in `lib/readingMilestones.js` → `READING_MILESTONES`): **10, 50, 100, 200, 365, 500** with display names **Apprentice, Scholar, Master, Expert, Sage, Legend**. Same ladder / fill / star behavior as documented previously.
+- **Copy**: Section **h2**: **Reading goals** (`id="reading-goals-heading"`).
+- **Celebrations**: Short star twinkle when a milestone becomes unlocked **for the first time in this browser**; persistence key **`wikidaily:milestone:celebrated:{userId}:{milestoneKey}`**.
+- **Preview (design / QA)**: In `ReadingProgressBar.jsx`, **disabled by default** via **`READING_PROGRESS_PREVIEW_ENABLED = false`**.
 - **Accessibility**: `prefers-reduced-motion: reduce` disables the twinkle and shortens bar motion.
+
+### Community bar (`CollectiveReadingProgressBar`)
+
+- **Visibility**: **Bottom of Home**, after `RandomWikiSection`; shown to **everyone** (signed in or out).
+- **Data**: `useCollectiveReadingTotal` → Supabase RPC **`collective_reads_count()`** → **`COUNT(*)` on `reading_log`**. After a successful new read (`markAsRead` returns `{ status: 'ok' }`), `useUserProgress` invalidates the **`collectiveReadingTotal`** query so the bar refreshes.
+- **Milestones** (`COLLECTIVE_READING_MILESTONES`, `lib/readingMilestones.js`): **250, 750, 1k, 2.5k, 5k, 7.5k, 10k, 17.5k, 25k, 35k, 50k, 100k** — display names **Spark, Ember, Gathering, Ripple, Momentum, Drift, Movement, Swell, Wave, Flood, Tide, Ocean**. Under-bar labels: `milestoneTrackLabel` (values under 1000 as digits; **k** form at 1000+, with one decimal when not a whole thousand, e.g. `2.5k`, `17.5k`). Right label at max tier: **“All community milestones unlocked”**.
+- **UX**: Panel uses **`bg-slate-50/80`** to distinguish from the personal bar. If the RPC is not deployed, **isError** shows a short message and **Retry** (`refetch`).
 
 ## Frontend Fallback Behavior
 
