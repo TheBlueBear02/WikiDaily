@@ -68,6 +68,18 @@ supabase
 
 Returns: array of favorite entries with nested article metadata.
 
+### Notes (article notes)
+
+Notes are stored in Supabase in `article_notes` (private, per user per article). The Wiki article viewer (`/wiki/:wikiSlug`) loads and saves notes automatically when signed in.
+
+Key behaviors:
+
+- Signed out: notes are saved to `localStorage` under `wikidaily:notes:<wikiSlug>`.
+- Signed in: notes are loaded from `article_notes` and saved (debounced) via upsert on `(user_id, wiki_slug)`.
+- One-time migration: on first view of an article while signed in, if there is a legacy localStorage note and no DB note yet, the app upserts it into `article_notes` and removes the local copy.
+- Clear: user can clear the note (deletes the `article_notes` row for that article).
+
+> Note: `article_notes.wiki_slug` is an FK to `articles(wiki_slug)`. To reduce FK failures on direct navigation, the wiki page does a best-effort cache upsert into `articles` on load (may be blocked by RLS; treated as best-effort).
 ### Auth data
 - `useUserProgress().user` (from `supabase.auth.getUser()`) — for `created_at` (member since date) and `email`
 
@@ -80,8 +92,8 @@ Returns: array of favorite entries with nested article metadata.
 **Layout:** horizontal row, left-aligned, padding bottom with a bottom border separator.
 
 **Contents:**
-- Avatar circle — 64px diameter, filled with a muted warm tone, displays the first two initials of `username` in uppercase. No photo upload for MVP.
-- Username — displayed as plain `username` (no leading `@`) in serif font, large (24px), dark ink color.
+- Avatar circle — 64px diameter, filled with a muted warm tone, displays the first two initials of `username` in uppercase with larger initials text. No photo upload for MVP.
+- Username — displayed as plain `username` (no leading `@`) using the same font styling as the Navbar username (sans, medium weight, slate tone), scaled up for the page title (24px on mobile, 30px on `sm`+), with slightly tighter tracking.
 - Member since — `"Member since [Month Year]"` formatted from `auth.users.created_at`. Small muted sans-serif text (13px).
 - Tagline — static text: `"Knowledge is Power"` in small italic serif, faint color, displayed to the immediate left of the wizard illustration on the right side of the header.
 - Wizard illustration — static image rendered on the right side of the profile header row, using the asset at `/images/wizard 1.jpg` (served as `/images/wizard%201.jpg`), sized roughly 96×96px with a subtle rounded rectangle mask and soft shadow.

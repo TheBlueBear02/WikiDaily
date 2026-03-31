@@ -2,9 +2,9 @@
 
 ## Overview
 
-The database has 4 tables:
+The database has 5 tables:
 
-- `profiles`, `reading_log`, and `favorites` are user-specific and protected by Row Level Security (RLS).
+- `profiles`, `reading_log`, `favorites`, and `article_notes` are user-specific and protected by Row Level Security (RLS).
 - `articles` is public read-only and stores cached article metadata for BOTH daily and random articles.
 
 ```
@@ -15,6 +15,8 @@ auth.users (Supabase built-in)
             ├── reading_log (one row per article read)
             │
             └── favorites (one row per favorited article)
+
+            └── article_notes (one note per user per article)
 
 articles (one row per unique wiki page; daily rows are flagged; treated as append-only)
 ```
@@ -177,6 +179,95 @@ Recommended for Profile favorites list:
 
 ---
 
+## Table: `article_notes`
+
+Stores a user's private notes per Wikipedia article. One row per user per article.
+
+| Column       | Type        | Nullable | Default | Description |
+|--------------|-------------|----------|---------|-------------|
+| `id`         | bigserial   | NO       | auto-increment | Primary key. Auto-incrementing integer. |
+| `user_id`    | uuid        | NO       | —       | References `profiles(user_id)`. Deleted automatically if the profile is deleted (`ON DELETE CASCADE`). |
+| `wiki_slug`  | text        | NO       | —       | References `articles(wiki_slug)` with `ON DELETE RESTRICT` to enforce `articles` as append-only. |
+| `content`    | text        | NO       | —       | Note content. Constrained to 10,000 characters to prevent abuse: `CHECK (char_length(content) <= 10000)`. |
+| `created_at` | timestamptz | NO       | `NOW()` | When the note row was created. |
+| `updated_at` | timestamptz | NO       | `NOW()` | Updated automatically via trigger on every update. |
+
+**Unique Constraint: one note per user+article**
+
+`UNIQUE (user_id, wiki_slug)`
+
+**Index (fast list):**
+
+Recommended for Profile “Recent notes” list:
+
+`INDEX (user_id, updated_at DESC)`
+
+**RLS Policies:**
+
+- `SELECT` — user can only read their own notes
+- `INSERT` — user can only insert notes for themselves (`auth.uid() = user_id`)
+- `UPDATE` — user can only update their own notes
+- `DELETE` — user can only delete their own notes
+
+**SQL (run in Supabase SQL editor):**
+
+```sql
+-- ARTICLE_NOTES
+create table article_notes (
+  id         bigserial primary key,
+  user_id    uuid not null references profiles(user_id) on delete cascade,
+  wiki_slug  text not null references articles(wiki_slug) on delete restrict,
+  content    text not null check (char_length(content) <= 10000),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint unique_user_article_note unique (user_id, wiki_slug)
+);
+
+-- Index for fast single note lookup (used in WikiIframe)
+create index idx_article_notes_user_slug
+  on article_notes (user_id, wiki_slug);
+
+-- Index for recent notes list (used in Profile)
+create index idx_article_notes_user_updated
+  on article_notes (user_id, updated_at desc);
+
+-- Trigger: auto-update updated_at on edit
+create or replace function update_updated_at()
+returns trigger as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$ language plpgsql;
+
+create trigger article_notes_updated_at
+  before update on article_notes
+  for each row
+  execute function update_updated_at();
+
+-- RLS: article_notes
+alter table article_notes enable row level security;
+
+create policy "Users can read own notes"
+  on article_notes for select
+  using (auth.uid() = user_id);
+
+create policy "Users can insert own notes"
+  on article_notes for insert
+  with check (auth.uid() = user_id);
+
+create policy "Users can update own notes"
+  on article_notes for update
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+create policy "Users can delete own notes"
+  on article_notes for delete
+  using (auth.uid() = user_id);
+```
+
+---
+
 ## Table: `articles`
 
 Unified replacement for the old `daily_articles` + `article_cache`.
@@ -263,6 +354,13 @@ profiles.user_id
   └─── favorites.user_id  (1-to-many)
             │
             └─── favorites.wiki_slug matches articles.wiki_slug
+                 (FK with ON DELETE RESTRICT)
+
+profiles.user_id
+  │
+  └─── article_notes.user_id  (1-to-many)
+            │
+            └─── article_notes.wiki_slug matches articles.wiki_slug
                  (FK with ON DELETE RESTRICT)
 ```
 

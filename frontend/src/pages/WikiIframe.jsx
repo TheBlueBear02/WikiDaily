@@ -7,6 +7,7 @@ import { getSupabase } from '../lib/supabaseClient'
 import { fetchWikipediaSummary } from '../lib/wikipedia'
 import { useFavorites } from '../hooks/useFavorites'
 import { buildAuthUrl } from '../lib/returnTo'
+import { useArticleNote, useDeleteArticleNote, useUpsertArticleNote } from '../hooks/useArticleNote'
 
 function titleToWikiSlug(title) {
   return String(title ?? '')
@@ -71,15 +72,22 @@ export default function WikiIframe() {
   const [randomError, setRandomError] = useState(null)
   const [favoriteError, setFavoriteError] = useState(null)
   const [isToolsOpen, setIsToolsOpen] = useState(false)
+  const [noteError, setNoteError] = useState(null)
 
   const [showFallback, setShowFallback] = useState(false)
   const timeoutRef = useRef(null)
   const timedOutRef = useRef(false)
   const lastAutoLogKeyRef = useRef(null)
+  const noteSaveTimeoutRef = useRef(null)
+
+  const noteQuery = useArticleNote({ userId, wikiSlug })
+  const upsertNoteMutation = useUpsertArticleNote({ userId, user })
+  const deleteNoteMutation = useDeleteArticleNote({ userId })
 
   // Default to a focused reading view: keep tools collapsed on each article open.
   useEffect(() => {
     setIsToolsOpen(false)
+    setNoteError(null)
   }, [wikiSlug])
 
   const isFavorite = useMemo(() => {
@@ -90,18 +98,110 @@ export default function WikiIframe() {
   const isFavoriteMutating =
     addFavoriteMutation.isPending || removeFavoriteMutation.isPending
 
-  // Load per-article notes from localStorage.
+  // Best-effort: ensure this article exists in Supabase so FK inserts (notes, reads) can succeed.
+  // This is intentionally best-effort because client writes may be blocked by RLS.
   useEffect(() => {
     if (!wikiSlug) return
+
+    let cancelled = false
+
+    async function cacheArticleRow() {
+      try {
+        const summary = await fetchWikipediaSummary(wikiSlug)
+        if (cancelled) return
+        const row = buildRandomArticleRow({
+          wikiSlug,
+          fallbackTitle: displayTitle ?? wikiSlug.replaceAll('_', ' '),
+          summary,
+        })
+        const supabase = getSupabase()
+        const { error } = await supabase.from('articles').upsert(row, {
+          onConflict: 'wiki_slug',
+          ignoreDuplicates: true,
+        })
+        if (error) throw error
+      } catch (err) {
+        console.warn('Article cache skipped:', err)
+      }
+    }
+
+    void cacheArticleRow()
+    return () => {
+      cancelled = true
+    }
+  }, [displayTitle, wikiSlug])
+
+  // Load per-article notes (DB when signed in; otherwise localStorage).
+  useEffect(() => {
+    if (!wikiSlug) return
+    if (userId) return
+
     try {
-      const rawNotes = window.localStorage.getItem(
-        `wikidaily:notes:${String(wikiSlug)}`,
-      )
+      const rawNotes = window.localStorage.getItem(`wikidaily:notes:${String(wikiSlug)}`)
       setNotes(rawNotes ?? '')
     } catch {
       setNotes('')
     }
-  }, [wikiSlug])
+  }, [userId, wikiSlug])
+
+  // When signed in, sync local state from the DB.
+  useEffect(() => {
+    if (!userId) return
+    if (!wikiSlug) return
+    if (!noteQuery.isSuccess) return
+    setNotes(noteQuery.data?.content ?? '')
+  }, [noteQuery.data?.content, noteQuery.isSuccess, userId, wikiSlug])
+
+  // One-time import: migrate legacy localStorage notes into the DB (per user per article).
+  useEffect(() => {
+    if (!userId) return
+    if (!wikiSlug) return
+    if (!noteQuery.isSuccess) return
+    if (noteQuery.data?.content) return
+
+    const migrationKey = `wikidaily:notes:migrated:${String(userId)}:${String(wikiSlug)}`
+    try {
+      if (window.localStorage.getItem(migrationKey) === '1') return
+    } catch {
+      return
+    }
+
+    let legacy = ''
+    try {
+      legacy = window.localStorage.getItem(`wikidaily:notes:${String(wikiSlug)}`) ?? ''
+    } catch {
+      legacy = ''
+    }
+    if (!legacy) {
+      try {
+        window.localStorage.setItem(migrationKey, '1')
+      } catch {
+        // ignore
+      }
+      return
+    }
+
+    setNoteError(null)
+    void upsertNoteMutation
+      .mutateAsync({ wikiSlug, content: legacy })
+      .then(() => {
+        try {
+          window.localStorage.setItem(migrationKey, '1')
+          window.localStorage.removeItem(`wikidaily:notes:${String(wikiSlug)}`)
+        } catch {
+          // ignore
+        }
+      })
+      .catch((err) => {
+        setNoteError(err instanceof Error ? err.message : 'Could not import legacy note')
+      })
+  }, [
+    noteQuery.data?.content,
+    noteQuery.isSuccess,
+    upsertNoteMutation,
+    userId,
+    wikiSlug,
+  ])
 
   // Optional one-time import: migrate legacy localStorage favorites into the DB.
   useEffect(() => {
@@ -147,18 +247,48 @@ export default function WikiIframe() {
       })
   }, [importLegacyFavorites, userId])
 
-  // Persist notes for the current article.
+  // Persist notes for the current article:
+  // - Signed out: localStorage
+  // - Signed in: DB (debounced)
   useEffect(() => {
     if (!wikiSlug) return
+    if (userId) return
+
     try {
-      window.localStorage.setItem(
-        `wikidaily:notes:${String(wikiSlug)}`,
-        notes ?? '',
-      )
+      window.localStorage.setItem(`wikidaily:notes:${String(wikiSlug)}`, notes ?? '')
     } catch {
       // Ignore storage failures (e.g. private mode).
     }
-  }, [wikiSlug, notes])
+  }, [userId, wikiSlug, notes])
+
+  useEffect(() => {
+    if (!wikiSlug) return
+    if (!userId) return
+    if (!noteQuery.isSuccess) return
+    if (notes === (noteQuery.data?.content ?? '')) return
+
+    if (noteSaveTimeoutRef.current) clearTimeout(noteSaveTimeoutRef.current)
+    noteSaveTimeoutRef.current = setTimeout(() => {
+      setNoteError(null)
+      void upsertNoteMutation
+        .mutateAsync({ wikiSlug, content: notes ?? '' })
+        .catch((err) => {
+          setNoteError(err instanceof Error ? err.message : 'Could not save note')
+        })
+    }, 500)
+
+    return () => {
+      if (noteSaveTimeoutRef.current) clearTimeout(noteSaveTimeoutRef.current)
+      noteSaveTimeoutRef.current = null
+    }
+  }, [
+    noteQuery.data?.content,
+    noteQuery.isSuccess,
+    notes,
+    upsertNoteMutation,
+    userId,
+    wikiSlug,
+  ])
 
   function handleToggleFavorite() {
     if (!wikiSlug) return
@@ -328,6 +458,7 @@ export default function WikiIframe() {
         {favoriteError ? (
           <div className="text-xs text-rose-700">{favoriteError}</div>
         ) : null}
+        {noteError ? <div className="text-xs text-rose-700">{noteError}</div> : null}
       </div>
 
       <div className="flex flex-col gap-4 lg:flex-row">
@@ -362,6 +493,23 @@ export default function WikiIframe() {
               <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                 Article tools
               </div>
+              {userId ? (
+                <button
+                  type="button"
+                  disabled={deleteNoteMutation.isPending || upsertNoteMutation.isPending}
+                  onClick={() => {
+                    if (!wikiSlug) return
+                    setNoteError(null)
+                    setNotes('')
+                    void deleteNoteMutation.mutateAsync({ wikiSlug }).catch((err) => {
+                      setNoteError(err instanceof Error ? err.message : 'Could not delete note')
+                    })
+                  }}
+                  className="text-[11px] font-medium text-slate-600 hover:text-slate-900 disabled:opacity-60"
+                >
+                  Clear
+                </button>
+              ) : null}
             </div>
             <div className="space-y-3">
               <div className="pt-2">
@@ -376,7 +524,11 @@ export default function WikiIframe() {
                   placeholder="Write your thoughts, key takeaways, or questions…"
                 />
                 <div className="mt-1 text-[11px] text-slate-500">
-                  Saved locally in this browser, per article.
+                  {userId
+                    ? upsertNoteMutation.isPending
+                      ? 'Saving…'
+                      : 'Saved to your account, per article.'
+                    : 'Saved locally in this browser, per article.'}
                 </div>
               </div>
             </div>

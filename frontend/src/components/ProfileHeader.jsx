@@ -36,12 +36,12 @@ export default function ProfileHeader({ profile, user, memberSince }) {
   return (
     <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-center gap-4">
-        <div className="grid h-16 w-16 flex-shrink-0 place-items-center rounded-full bg-amber-100 text-lg font-semibold text-amber-950">
+        <div className="grid h-16 w-16 flex-shrink-0 place-items-center rounded-full bg-amber-100 text-2xl font-semibold text-amber-950">
           {initials}
         </div>
 
         <div className="min-w-0 flex-1 space-y-1">
-          <div className="font-serif text-2xl font-semibold leading-tight text-primary">
+          <div className="text-2xl font-medium leading-tight tracking-tight text-slate-700 sm:text-3xl">
             {handle}
           </div>
           <div className="text-sm text-slate-500">
