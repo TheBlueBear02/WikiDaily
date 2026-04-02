@@ -20,10 +20,25 @@ Profile stats come from the `profiles` query inside `useUserProgress`:
 
 > Note: `useUserProgress` reconciles `profiles.total_read` against the total number of rows in `reading_log` for that user so the "Total Articles Read" stat reflects both **daily** and **random** reads even if a prior profile update ever drifted.
 
+### Hook: `useAchievements`
+Profile also renders an Achievements section backed by two tables:
+
+- `achievements` (public read): global achievement definitions
+- `user_achievements` (RLS): current user unlocks, including `notified` for toast queueing
+
+Implementation:
+
+- `useAchievements({ userId })` queries:
+  - `achievements`: `select('id, type, threshold, label, description, icon')`, ordered by `type` then `threshold`, `staleTime: Infinity`
+  - `user_achievements`: `select('achievement_id, unlocked_at, notified')` filtered by `user_id`
+- Derived values:
+  - `unlocked`: `Set<achievement_id>`
+  - `pending`: rows where `notified = false` (used by the global toast queue)
+
 ### Hook: `useReadingHistory`
 Fetches the full reading history with article metadata in a single joined query.
 
-Supports an optional `limit` param for capped lists (e.g. Home “Latest reads” uses `limit: 5`), while Profile fetches the full list by omitting `limit`.
+Supports an optional `limit` param for capped lists (e.g. Home “Your recent reads” uses `limit: 5`), while Profile fetches the full list by omitting `limit`.
 
 ```js
 supabase
@@ -159,6 +174,34 @@ Each card:
 
 ---
 
+### 3.5. Achievements
+
+**Placement:** between **Stats Row** and **Activity Heatmap**.
+
+**Layout:**
+- Section label: `Achievements`
+- Right-aligned count: `X / 14 unlocked`
+- Compact vertical spacing and narrower card columns than a full-width achievements view
+- 3 grouped rows (one per achievement `type`), each with:
+  - A compact row header: type label (left) and a **text-only** progress summary (right) — current/next threshold, next achievement label, or `"All unlocked"` — no progress bar
+  - A horizontal, scrollable strip of achievement cards for that type (`AchievementCard` with `compact` sizing)
+
+**Card states:**
+- Unlocked: full opacity, subtle teal accent border; shows icon, label, description, and `unlocked_at` formatted as `"Unlocked Mar 29, 2026"`
+- Locked: 40% opacity + grayscale; shows icon + label; description is hidden as `???`
+
+**Per-type progress text (no bar on Profile):**
+- Types are derived from `achievements.type`:
+  - `total_read` → uses `profiles.total_read`
+  - `random_read` → uses `profiles.total_random_read`
+  - `streak` → uses `profiles.current_streak`
+- For each type, labels are computed with `frontend/src/lib/achievementProgress.js` (`computeAchievementTypeProgress`): next locked achievement by ascending `threshold`, current value vs next threshold, and `"All unlocked"` when every achievement in that type is unlocked. The helper also exposes `nextLabel`, `nextDescription`, and `nextIcon` for that tier (used on the home hero achievements strip; when maxed, all three reflect the final tier).
+
+**Loading:** show 3 skeleton rows (one per type), each with a skeleton header line + skeleton cards (no bar skeleton).
+
+**Toast notifications (global):**
+- Achievements are unlocked by the app-root runner after reads and inserted into `user_achievements` with `notified=false`.
+- A single global toast queue shows pending unlocks one at a time and flips `notified=true` after display.
 ### 4. Favorites Grid
 
 **Layout:** CSS grid, 3 columns on desktop, 2 on tablet, 1 on mobile. Gap 12px. Full width.
@@ -219,6 +262,9 @@ Profile.jsx  (page)
 ├── StatsRow.jsx
 │     └── StatCard.jsx × 3
 │           (current_streak, max_streak, total_read)
+│
+├── AchievementsGrid.jsx
+│     └── AchievementCard.jsx × N (per type; `compact` on Profile)
 │
 ├── ActivityHeatmap.jsx
 │     ├── Month labels row

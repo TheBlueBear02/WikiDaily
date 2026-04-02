@@ -1,8 +1,15 @@
+import { CARD_SURFACE_STATIC } from '../lib/cardSurface'
+
 const WIZARD_IMAGE_SRC = '/images/wizard%201.jpg'
 
 export default function WizardImageCard() {
   return (
-    <div className="flex w-full items-stretch justify-between gap-4 rounded-none border border-slate-200 bg-white px-6 py-4 sm:w-[70%]">
+    <div
+      className={[
+        'flex w-full items-stretch justify-between gap-4 px-6 py-4 sm:w-[70%]',
+        CARD_SURFACE_STATIC,
+      ].join(' ')}
+    >
       <div className="flex min-w-0 flex-1 flex-col justify-start">
         <div className="mb-2">
           <span className="inline-flex w-fit items-center bg-primary px-4 py-2 text-sm font-semibold tracking-wide text-white">

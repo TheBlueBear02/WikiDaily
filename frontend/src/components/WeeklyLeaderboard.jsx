@@ -30,13 +30,13 @@ export default function WeeklyLeaderboard({ entries = PLACEHOLDER_ENTRIES } = {}
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col">
       <header className="w-full shrink-0">
-        <div className="w-full bg-primary px-5 py-3 md:px-6 md:py-4">
+        <div className="w-full bg-primary px-5 py-2 md:px-6 md:py-3">
           <h2 className="w-full text-center text-xl font-bold uppercase tracking-[0.14em] text-white md:text-2xl">
             Leaderboard
           </h2>
         </div>
         <p
-          className="w-full border-b border-slate-200 bg-slate-50 px-5 py-3 text-center text-sm font-medium text-slate-600 md:px-6"
+          className="w-full border-b border-slate-200 bg-slate-50 px-5 py-2 text-center text-xs font-medium text-slate-600 md:px-6"
           aria-live="polite"
           aria-atomic="true"
           title={`Resets ${target.toISOString()}`}

@@ -1,5 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 
+import { cardInteractiveSurfaceClasses } from '../lib/cardSurface'
+
 /** First two sentences; appends "..." when the text was truncated. */
 function descriptionPreview(text) {
   if (!text?.trim()) return ''
@@ -16,9 +18,12 @@ export default function ArticleCard({
   imageUrl,
   wikiUrl,
   cardHref = null,
+  navigationState = null,
   actions = null,
   isCollected = false,
   className = '',
+  /** When true (e.g. hero fixed-height slot), body scrolls so the card can honor a fixed outer height. */
+  bodyScrollable = false,
 }) {
   const isCardClickable = Boolean(cardHref)
   const navigate = useNavigate()
@@ -32,7 +37,7 @@ export default function ArticleCard({
   const openCard = () => {
     if (!cardHref) return
     if (isInternalHref) {
-      navigate(cardHref)
+      navigate(cardHref, navigationState ? { state: navigationState } : undefined)
       return
     }
 
@@ -74,11 +79,13 @@ export default function ArticleCard({
   return (
     <article
       className={[
-        'relative h-full w-full overflow-hidden rounded-none border bg-white',
-        isCollected ? 'border-emerald-300 ring-1 ring-emerald-200' : 'border-slate-200',
+        'relative h-full w-full overflow-hidden',
+        bodyScrollable ? 'flex min-h-0 flex-col' : null,
         isCardClickable
-          ? 'cursor-pointer hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2'
-          : null,
+          ? cardInteractiveSurfaceClasses({ collected: isCollected })
+          : isCollected
+            ? 'rounded-none border border-emerald-200 bg-emerald-50/80'
+            : 'rounded-none border border-slate-200 bg-white',
         className,
       ]
         .filter(Boolean)
@@ -101,7 +108,7 @@ export default function ArticleCard({
         </div>
       ) : null}
 
-      <div className="relative aspect-[16/9] w-full bg-slate-100">
+      <div className="relative aspect-[16/9] w-full shrink-0 bg-slate-100">
         {imageUrl ? (
           <img
             src={imageUrl}
@@ -146,7 +153,14 @@ export default function ArticleCard({
         </div>
       </div>
 
-      <div className="space-y-3 p-5">
+      <div
+        className={[
+          'space-y-3 p-5',
+          bodyScrollable ? 'min-h-0 flex-1 overflow-y-auto' : null,
+        ]
+          .filter(Boolean)
+          .join(' ')}
+      >
         <div className="space-y-2">
           <h2 className="text-2xl font-semibold leading-tight tracking-tight text-primary">
             {displayTitle}
@@ -165,6 +179,7 @@ export default function ArticleCard({
           {isReadNowInternal ? (
             <Link
               to={readNowHref}
+              state={navigationState ?? undefined}
               className="inline-flex items-center justify-center rounded-none bg-primary px-3 py-2 text-sm font-medium text-white hover:bg-primary-hover"
             >
               Read now

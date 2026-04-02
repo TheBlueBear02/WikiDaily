@@ -76,7 +76,9 @@ export function useUserProgress() {
       const supabase = getSupabase()
       const { data, error } = await supabase
         .from('profiles')
-        .select('user_id,username,current_streak,max_streak,last_read,total_read')
+        .select(
+          'user_id,username,current_streak,max_streak,last_read,total_read,total_random_read',
+        )
         .eq('user_id', userId)
         .single()
 
@@ -86,7 +88,9 @@ export function useUserProgress() {
           await ensureProfileExists({ supabase, userId, user })
           const { data: data2, error: error2 } = await supabase
             .from('profiles')
-            .select('user_id,username,current_streak,max_streak,last_read,total_read')
+            .select(
+              'user_id,username,current_streak,max_streak,last_read,total_read,total_random_read',
+            )
             .eq('user_id', userId)
             .single()
           if (error2) throw error2
@@ -134,7 +138,9 @@ export function useUserProgress() {
       async function fetchCurrentProfile() {
         return await supabase
           .from('profiles')
-          .select('user_id,username,current_streak,max_streak,last_read,total_read')
+          .select(
+            'user_id,username,current_streak,max_streak,last_read,total_read,total_random_read',
+          )
           .eq('user_id', userId)
           .single()
       }
@@ -216,6 +222,10 @@ export function useUserProgress() {
         nextCurrentStreak,
       )
       const nextTotalRead = (currentProfile?.total_read ?? 0) + 1
+      const nextTotalRandomRead =
+        normalizedSource === 'random'
+          ? (currentProfile?.total_random_read ?? 0) + 1
+          : currentProfile?.total_random_read ?? 0
 
       const { error: profileErr } = await supabase
         .from('profiles')
@@ -224,6 +234,7 @@ export function useUserProgress() {
           max_streak: nextMaxStreak,
           last_read: readDateYmd,
           total_read: nextTotalRead,
+          total_random_read: nextTotalRandomRead,
         })
         .eq('user_id', userId)
 

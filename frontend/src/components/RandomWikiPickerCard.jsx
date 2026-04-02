@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getSupabase } from '../lib/supabaseClient'
 import { fetchWikipediaRandomPage, fetchWikipediaSummary } from '../lib/wikipedia'
+import { cardInteractiveSurfaceClasses } from '../lib/cardSurface'
 
 function titleToWikiSlug(title) {
   return String(title ?? '')
@@ -17,7 +18,8 @@ function buildRandomArticleRow({ wikiSlug, fallbackTitle, summary }) {
     wikiSlug.replaceAll('_', ' ')
 
   return {
-    wiki_slug: titleToWikiSlug(normalizedTitle) || wikiSlug,
+    // Keep the PK aligned with the route slug to satisfy `reading_log` FK inserts.
+    wiki_slug: titleToWikiSlug(wikiSlug) || wikiSlug,
     display_title:
       String(summary?.title ?? '').trim() ||
       String(summary?.displaytitle ?? '').replace(/<[^>]*>/g, '').trim() ||
@@ -83,10 +85,10 @@ export default function RandomWikiPickerCard() {
       onClick={handleClick}
       disabled={isLoading}
       className={[
-        'flex w-full flex-col items-center justify-center rounded-none border border-slate-200 bg-white px-6 py-4 text-center sm:w-[30%]',
-        'cursor-pointer hover:bg-slate-50',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2',
-        'disabled:cursor-not-allowed disabled:opacity-70',
+        'flex w-full flex-col items-center justify-center px-6 py-4 text-center sm:w-[30%]',
+        cardInteractiveSurfaceClasses(),
+        'disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0 disabled:hover:shadow-sm',
+        'disabled:hover:bg-slate-50',
       ].join(' ')}
     >
       <img

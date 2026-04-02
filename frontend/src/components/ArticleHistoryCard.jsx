@@ -1,6 +1,8 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 
+import { CARD_SURFACE_STATIC, cardInteractiveSurfaceClasses } from '../lib/cardSurface'
+
 function parseYmdAsUtcDate(ymd) {
   if (typeof ymd !== 'string') return null
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(ymd.trim())
@@ -64,10 +66,8 @@ export default function ArticleHistoryCard({ entry }) {
   return (
     <article
       className={[
-        'relative overflow-hidden rounded-none border border-slate-200 bg-white',
-        clickable
-          ? 'cursor-pointer hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2'
-          : 'opacity-90',
+        'relative overflow-hidden',
+        clickable ? cardInteractiveSurfaceClasses() : [CARD_SURFACE_STATIC, 'opacity-90'].join(' '),
       ].join(' ')}
       onClick={clickable ? onOpen : undefined}
       onKeyDown={

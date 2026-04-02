@@ -1,6 +1,8 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 
+import { CARD_SURFACE_STATIC, cardInteractiveSurfaceClasses } from '../lib/cardSurface'
+
 function formatSavedAt(isoString) {
   if (typeof isoString !== 'string') return null
   const d = new Date(isoString)
@@ -47,10 +49,8 @@ export default function FavoriteArticleCard({ entry }) {
   return (
     <article
       className={[
-        'relative overflow-hidden rounded-none border border-slate-200 bg-white',
-        clickable
-          ? 'cursor-pointer hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2'
-          : 'opacity-90',
+        'relative overflow-hidden',
+        clickable ? cardInteractiveSurfaceClasses() : [CARD_SURFACE_STATIC, 'opacity-90'].join(' '),
       ].join(' ')}
       onClick={clickable ? onOpen : undefined}
       onKeyDown={

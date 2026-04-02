@@ -3,7 +3,7 @@ import { useMemo } from 'react'
 import { useStreakLeaderboard } from '../hooks/useStreakLeaderboard'
 import { useLeaderboardCountdown } from '../hooks/useLeaderboardCountdown'
 
-const DEFAULT_ROWS = 10
+const DEFAULT_ROWS = 8
 
 function rankBadgeClass(rank) {
   if (rank === 1) return 'bg-amber-100 text-amber-900 ring-1 ring-amber-200/80'
@@ -75,13 +75,13 @@ export default function StreakLeaderboard({ rows = DEFAULT_ROWS } = {}) {
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col">
       <header className="w-full shrink-0">
-        <div className="w-full bg-primary px-5 py-3 md:px-6 md:py-4">
+        <div className="w-full bg-primary px-5 py-1 md:px-6 md:py-2">
           <h2 className="w-full text-center text-xl font-bold uppercase tracking-[0.14em] text-white md:text-2xl">
             Leaderboard
           </h2>
         </div>
         <p
-          className="w-full border-b border-slate-200 bg-slate-50 px-5 py-3 text-center text-sm font-medium text-slate-600 md:px-6"
+          className="w-full border-b border-slate-200 bg-slate-50 px-5 py-2 text-center text-xs font-medium text-slate-600 md:px-6"
           aria-live="polite"
           aria-atomic="true"
           title={`Resets ${target.toISOString()}`}
@@ -104,7 +104,7 @@ export default function StreakLeaderboard({ rows = DEFAULT_ROWS } = {}) {
                 <li
                   key={`skeleton-${rank}`}
                   className={[
-                    'flex items-center gap-2.5 rounded-none px-3',
+                    'flex items-center gap-2.5 rounded-none px-3 py-1.5',
                     rank % 2 === 0 ? 'bg-slate-50' : 'bg-white',
                   ].join(' ')}
                 >
@@ -122,7 +122,7 @@ export default function StreakLeaderboard({ rows = DEFAULT_ROWS } = {}) {
               <li
                 key={entry?.userId ?? `rank-${rank}`}
                 className={[
-                  'flex items-center gap-2.5 rounded-none px-3',
+                  'flex items-center gap-2.5 rounded-none px-3 py-1.5',
                   isEmpty
                     ? 'bg-slate-50/60'
                     : isStriped

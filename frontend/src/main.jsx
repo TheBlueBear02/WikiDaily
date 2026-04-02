@@ -5,6 +5,8 @@ import { BrowserRouter } from 'react-router-dom'
 import './index.css'
 import App from './App.jsx'
 import AuthSync from './components/AuthSync.jsx'
+import AchievementUnlockRunner from './components/AchievementUnlockRunner.jsx'
+import AchievementToast from './components/AchievementToast.jsx'
 
 const queryClient = new QueryClient()
 
@@ -13,6 +15,8 @@ createRoot(document.getElementById('root')).render(
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AuthSync />
+        <AchievementUnlockRunner />
+        <AchievementToast />
         <App />
       </BrowserRouter>
     </QueryClientProvider>

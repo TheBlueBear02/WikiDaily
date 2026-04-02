@@ -23,7 +23,10 @@ function buildRandomArticleRow({ wikiSlug, fallbackTitle, summary }) {
     wikiSlug.replaceAll('_', ' ')
 
   return {
-    wiki_slug: titleToWikiSlug(normalizedTitle) || wikiSlug,
+    // IMPORTANT: Always use the route slug as the primary key. Wikipedia "normalized"
+    // titles can differ from the URL slug (e.g. casing / punctuation), and using them
+    // here can break FK inserts into `reading_log` that reference the route slug.
+    wiki_slug: titleToWikiSlug(wikiSlug) || wikiSlug,
     display_title:
       String(summary?.title ?? '').trim() ||
       String(summary?.displaytitle ?? '').replace(/<[^>]*>/g, '').trim() ||
@@ -354,12 +357,10 @@ export default function WikiIframe() {
     }
   }
 
-  // Auto-log random reads for signed-in users.
-  // Daily reads remain an explicit action on the Home page (Phase flow).
+  // Auto-log reads for signed-in users when navigating into the in-app reader.
   useEffect(() => {
     if (!wikiSlug) return
     if (!userId) return
-    if (readingSource !== 'random' && readingSource !== 'search') return
 
     const key = `${userId}:${String(wikiSlug)}:${readDateYmd}:${readingSource}`
     if (lastAutoLogKeyRef.current === key) return

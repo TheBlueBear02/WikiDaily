@@ -2,10 +2,11 @@
 
 ## Overview
 
-The database has 5 tables:
+The database has 7 tables:
 
-- `profiles`, `reading_log`, `favorites`, and `article_notes` are user-specific and protected by Row Level Security (RLS).
+- `profiles`, `reading_log`, `favorites`, `article_notes`, and `user_achievements` are user-specific and protected by Row Level Security (RLS).
 - `articles` is public read-only and stores cached article metadata for BOTH daily and random articles.
+- `achievements` is public read-only and stores achievement definitions (admin-managed; service role writes only).
 
 ```
 auth.users (Supabase built-in)
@@ -14,11 +15,14 @@ auth.users (Supabase built-in)
             │
             ├── reading_log (one row per article read)
             │
-            └── favorites (one row per favorited article)
-
-            └── article_notes (one note per user per article)
+            ├── favorites (one row per favorited article)
+            │
+            ├── article_notes (one note per user per article)
+            │
+            └── user_achievements (one row per unlocked achievement)
 
 articles (one row per unique wiki page; daily rows are flagged; treated as append-only)
+achievements (achievement definitions; admin-managed; public read)
 ```
 
 ---
@@ -35,6 +39,7 @@ Stores each user's reading stats. One row per user, created automatically when t
 | `max_streak`     | integer | NO       | 0       | The highest `current_streak` the user has ever reached. Never decreases. |
 | `last_read`      | date    | YES      | null    | The date of the user's most recent read. Used to calculate whether the streak should increment, reset, or stay the same. Null for brand new users. |
 | `total_read`     | integer | NO       | 0       | Total number of articles the user has read. Incremented on every new `reading_log` insert. |
+| `total_random_read` | integer | NO       | 0       | Total number of random articles the user has read. Incremented on every new `reading_log` insert where `source = 'random'`. Used for random-read achievement unlocks. |
 
 **RLS Policies:**
 
@@ -94,7 +99,7 @@ Recommended approach: a **Security Definer RPC** that returns the top users by `
 **SQL (run in Supabase SQL editor):**
 
 ```sql
-create or replace function public.public_streak_leaderboard(limit_count int default 10)
+create or replace function public.public_streak_leaderboard(limit_count int default 8)
 returns table (
   user_id uuid,
   username text,
@@ -115,7 +120,7 @@ as $$
     p.max_streak desc,
     username asc,
     p.user_id asc
-  limit greatest(1, least(coalesce(limit_count, 10), 50));
+  limit greatest(1, least(coalesce(limit_count, 8), 50));
 $$;
 
 revoke all on function public.public_streak_leaderboard(int) from public;
@@ -298,6 +303,56 @@ create policy "Users can delete own notes"
 
 ---
 
+## Table: `achievements`
+
+Stores achievement definitions. Admin-managed — written once at setup, read by everyone. Never written to by client code.
+
+| Column      | Type        | Nullable | Default | Description |
+|-------------|-------------|----------|---------|-------------|
+| `id`        | bigserial   | NO       | auto    | Primary key. |
+| `type`      | text        | NO       | —       | Achievement category: CHECK (type IN ('total_read', 'random_read', 'streak')). |
+| `threshold` | integer     | NO       | —       | The number to reach to unlock (e.g. 10). |
+| `label`     | text        | NO       | —       | Display name shown to the user (e.g. "Apprentice"). |
+| `description`| text       | NO       | —       | Short description (e.g. "Read 10 articles"). |
+| `icon`      | text        | NO       | —       | Emoji used in the UI (e.g. "🎓"). |
+| `created_at`| timestamptz | NO       | NOW()   | When the definition was created. |
+
+Unique constraint: UNIQUE (type, threshold) — one definition per type+threshold combination.
+
+RLS Policies:
+- SELECT — anyone can read (including unauthenticated users)
+- No INSERT, UPDATE, or DELETE policies — only service role can modify definitions
+
+Seeded definitions (14 total):
+
+Total read: 1 (First Step), 5 (Getting Started), 10 (Apprentice), 50 (Scholar), 100 (Master)
+Random read: 1 (Explorer), 5 (Adventurer), 10 (Wanderer), 25 (Discoverer), 50 (Pioneer)
+Streak: 3 (Hat Trick), 7 (On Fire), 30 (Dedicated), 100 (Legend)
+
+## Table: `user_achievements`
+
+Records which achievements each user has unlocked. One row per user per achievement. Permanent — rows are never deleted.
+
+| Column          | Type        | Nullable | Default | Description |
+|-----------------|-------------|----------|---------|-------------|
+| `id`            | bigserial   | NO       | auto    | Primary key. |
+| `user_id`       | uuid        | NO       | —       | References profiles(user_id). ON DELETE CASCADE. |
+| `achievement_id`| bigint      | NO       | —       | References achievements(id). ON DELETE RESTRICT. |
+| `unlocked_at`   | timestamptz | NO       | NOW()   | When the achievement was earned. |
+| `notified`      | boolean     | NO       | false   | Whether the unlock toast has been shown to the user. Flipped to true after the toast displays. |
+
+Unique constraint: UNIQUE (user_id, achievement_id) — same achievement cannot be unlocked twice.
+
+Index: idx_user_achievements_notified ON (user_id, notified) WHERE notified = false — fast query for pending toast notifications.
+
+RLS Policies:
+- SELECT — authenticated users can only read their own rows
+- INSERT — authenticated users can only insert their own rows
+- UPDATE — authenticated users can only update their own rows (needed to flip notified = true after toast)
+- No DELETE policy — achievements are permanent once earned
+
+---
+
 ## Table: `articles`
 
 Unified replacement for the old `daily_articles` + `article_cache`.
@@ -354,13 +409,23 @@ When the user clicks the Home page random picker card, the app:
 
 Then it navigates to `/wiki/:wikiSlug`.
 
-#### Logging random reads
+#### Logging reads on article open
 
-When a signed-in user lands on `/wiki/:wikiSlug` with navigation state `{ source: 'random' }` **or** `{ source: 'search' }`, the app **auto-inserts a `reading_log` row** for that slug + day (best-effort). This is done client-side via the same `markAsRead` mutation used elsewhere, and includes a short retry loop for the `reading_log.wiki_slug -> articles.wiki_slug` foreign key timing edge case.
+When a signed-in user lands on `/wiki/:wikiSlug`, the app **auto-inserts a `reading_log` row** for that slug + day (best-effort). This is done client-side via the shared `markAsRead` mutation.
+
+The navigation state controls the recorded source:
+
+- Daily navigation: `{ source: 'daily' }`
+- Random navigation: `{ source: 'random' }`
+- Search navigation: `{ source: 'search' }` (normalized to `random` at write-time)
+
+For random/search navigations, the app also includes a short retry loop for the `reading_log.wiki_slug -> articles.wiki_slug` foreign key timing edge case (navigation can happen before the random `articles` row is cached).
 
 > Note: the DB enforces `CHECK (source IN ('daily','random'))`, so `source: 'search'` is normalized to `random` at write-time.
 
 When the user triggers a random navigation from the article page ("New random article"), the app also **best-effort upserts the random article into `articles`** (same as the Home random picker). This improves the chance that the `reading_log` insert can satisfy the FK constraint.
+
+**Important FK detail:** when caching metadata into `articles` client-side (random/search), the app always upserts using **the route slug** (`/wiki/:wikiSlug`) as `articles.wiki_slug`. Wikipedia's “normalized title” can differ from the URL slug; using the normalized title as the PK can cause `reading_log` inserts (which reference the route slug) to fail the `reading_log.wiki_slug -> articles.wiki_slug` foreign key.
 
 If the user is not signed in, no `reading_log` entry is created.
 
@@ -394,6 +459,13 @@ profiles.user_id
             │
             └─── article_notes.wiki_slug matches articles.wiki_slug
                  (FK with ON DELETE RESTRICT)
+
+profiles.user_id
+  │
+  └── user_achievements.user_id (1-to-many)
+            │
+            └── user_achievements.achievement_id matches achievements.id
+                (FK with ON DELETE RESTRICT)
 ```
 
 > `reading_log.wiki_slug` is a foreign key to `articles(wiki_slug)` with `ON DELETE SET NULL`. This means if an article row is ever deleted, the reading log entry is preserved but `wiki_slug` becomes null rather than the row being deleted. This enables Supabase nested joins between the two tables.
@@ -427,11 +499,28 @@ if current_streak > max_streak -> max_streak = current_streak
 
 last_read  = today
 total_read = total_read + 1
+total_random_read = total_random_read + 1  (only when source = 'random')
 ```
 
 Then a new row is inserted into `reading_log` (with `source = 'daily'` or `source = 'random'` depending on how the article was obtained).
 
 If the insert is rejected by the unique constraint (`UNIQUE (user_id, wiki_slug, read_date)`), the app knows the user already logged this article today and skips the profile update.
+
+## Achievement Unlock Logic
+
+After every successful markAsRead mutation, the frontend checks for newly unlocked achievements by comparing the updated profile values against all achievement thresholds:
+
+- type 'total_read'   → compare profiles.total_read against threshold
+- type 'random_read'  → compare profiles.total_random_read against threshold  
+- type 'streak'       → compare profiles.current_streak against threshold
+
+For each achievement where the value >= threshold and no existing row in user_achievements:
+1. Insert a row into user_achievements with notified = false
+2. On next page load (or immediately), query user_achievements WHERE notified = false
+3. Show a toast notification for each pending achievement
+4. Update notified = true for each shown achievement
+
+The notified column ensures the toast shows exactly once per achievement, even across sessions and devices.
 
 ### Self-healing `total_read`
 

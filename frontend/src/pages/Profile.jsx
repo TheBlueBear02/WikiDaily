@@ -5,11 +5,13 @@ import { useUserProgress } from '../hooks/useUserProgress'
 import { buildAuthUrl } from '../lib/returnTo'
 import { useReadingHistory } from '../hooks/useReadingHistory'
 import { useFavorites } from '../hooks/useFavorites'
+import { useAchievements } from '../hooks/useAchievements'
 import ProfileHeader from '../components/ProfileHeader'
 import StatsRow from '../components/StatsRow'
 import ActivityHeatmap from '../components/ActivityHeatmap'
 import FavoritesGrid from '../components/FavoritesGrid'
 import ReadingHistoryGrid from '../components/ReadingHistoryGrid'
+import AchievementsGrid from '../components/AchievementsGrid'
 
 function formatMemberSince(isoString) {
   if (!isoString) return null
@@ -25,6 +27,7 @@ export default function Profile() {
   const { userId, user, profile, authUserQuery, profileQuery } = useUserProgress()
   const readingHistoryQuery = useReadingHistory({ userId })
   const favoritesQuery = useFavorites({ userId, user })
+  const achievementsQuery = useAchievements({ userId })
 
   const memberSince = useMemo(() => formatMemberSince(user?.created_at ?? null), [user?.created_at])
 
@@ -97,6 +100,14 @@ export default function Profile() {
       <ProfileHeader profile={profile} user={user} memberSince={memberSince} />
 
       <StatsRow profile={profile} isLoading={profileQuery.isLoading} />
+
+      <AchievementsGrid
+        achievements={achievementsQuery.achievements}
+        unlocked={achievementsQuery.unlocked}
+        userAchievements={achievementsQuery.userAchievementsQuery.data ?? []}
+        isLoading={achievementsQuery.isLoading}
+        profile={profile}
+      />
 
       <div className="space-y-2">
         <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">

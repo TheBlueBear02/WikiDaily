@@ -4,20 +4,41 @@ import { useReadingHistory } from '../hooks/useReadingHistory'
 import ArticleCard from '../components/ArticleCard'
 import HeroAside from '../components/HeroAside'
 import StreakLeaderboard from '../components/StreakLeaderboard'
+import HeroAchievementsSection from '../components/HeroAchievementsSection'
 import RandomWikiSection from '../components/RandomWikiSection'
 import CollectiveReadingProgressBar from '../components/CollectiveReadingProgressBar'
 import ReadingProgressBar from '../components/ReadingProgressBar'
 import LatestReadsSection from '../components/LatestReadsSection'
 import { useCollectiveReadingTotal } from '../hooks/useCollectiveReadingTotal'
 
-function HomeHeroRow({ children }) {
+function HomeHeroRow({ userId, profile, dailySlot, collectiveReading }) {
+  const { totalRead, isLoading, isError, onRetry } = collectiveReading
+
   return (
     <section className="space-y-4">
       <div className="flex flex-col gap-4 md:flex-row md:items-stretch md:gap-6">
         <HeroAside>
-          <StreakLeaderboard rows={10} />
+          <div className="flex min-h-0 flex-1 flex-col gap-3 bg-slate-50/70">
+            <div className="shrink-0 border border-slate-200 bg-white">
+              <HeroAchievementsSection userId={userId} profile={profile} />
+            </div>
+            <div className="min-h-0 flex-1 overflow-hidden border border-slate-200 bg-white">
+              <StreakLeaderboard rows={8} />
+            </div>
+          </div>
         </HeroAside>
-        <div className="w-full shrink-0 md:w-[70%]">{children}</div>
+        <div className="flex min-h-0 w-full shrink-0 flex-col gap-3 md:w-[70%]">
+          {/* flex-1: takes all space above the community strip (same visual weight as ReadingProgressBar below). */}
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{dailySlot}</div>
+          <div className="shrink-0">
+            <CollectiveReadingProgressBar
+              totalRead={totalRead}
+              isLoading={isLoading}
+              isError={isError}
+              onRetry={onRetry}
+            />
+          </div>
+        </div>
       </div>
     </section>
   )
@@ -33,7 +54,7 @@ export default function Home() {
 
   if (isLoading) {
     heroRightColumn = (
-      <div className="h-full min-h-[280px] rounded-none border border-slate-200 bg-slate-50 p-5">
+      <div className="flex h-full min-h-0 flex-col rounded-none border border-slate-200 bg-slate-50 p-5">
         <div className="h-4 w-48 animate-pulse rounded bg-slate-200" />
         <div className="mt-3 space-y-2">
           <div className="h-3 w-full animate-pulse rounded bg-slate-200" />
@@ -44,7 +65,7 @@ export default function Home() {
     )
   } else if (isError) {
     heroRightColumn = (
-      <div className="rounded-none border border-rose-200 bg-rose-50 p-5">
+      <div className="flex h-full min-h-0 flex-col overflow-y-auto rounded-none border border-rose-200 bg-rose-50 p-5">
         <div className="text-sm font-medium text-rose-900">
           Couldn’t load today’s article
         </div>
@@ -64,7 +85,7 @@ export default function Home() {
     )
   } else if (!dailyArticle) {
     heroRightColumn = (
-      <div className="space-y-3 rounded-none border border-slate-200 bg-slate-50 p-5">
+      <div className="flex h-full min-h-0 flex-col overflow-y-auto space-y-3 rounded-none border border-slate-200 bg-slate-50 p-5">
         <p className="text-sm text-slate-600">
           No articles are available yet — check back soon.
         </p>
@@ -90,13 +111,33 @@ export default function Home() {
         imageUrl={dailyArticle.image_url}
         wikiUrl={wikiUrl}
         cardHref={cardHref}
+        navigationState={{ source: 'daily', displayTitle: dailyArticle.display_title }}
+        bodyScrollable
+        className="h-full"
       />
     )
   }
 
   return (
     <div className="space-y-6">
-      <HomeHeroRow>{heroRightColumn}</HomeHeroRow>
+      <HomeHeroRow
+        userId={userId}
+        profile={profile}
+        dailySlot={heroRightColumn}
+        collectiveReading={{
+          totalRead: collectiveReadingQuery.data ?? 0,
+          isLoading: collectiveReadingQuery.isLoading,
+          isError: collectiveReadingQuery.isError,
+          onRetry: () => collectiveReadingQuery.refetch(),
+        }}
+      />
+      <RandomWikiSection />
+      {userId &&
+      !latestReadsQuery.isLoading &&
+      !latestReadsQuery.isError &&
+      (latestReadsQuery.data?.length ?? 0) > 0 ? (
+        <LatestReadsSection entries={latestReadsQuery.data ?? []} />
+      ) : null}
       {userId ? (
         profileQuery.isError ? (
           <div className="rounded-none border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900">
@@ -116,19 +157,6 @@ export default function Home() {
             isLoading={profileQuery.isLoading}
           />
         )
-      ) : null}
-      <RandomWikiSection />
-      <CollectiveReadingProgressBar
-        totalRead={collectiveReadingQuery.data ?? 0}
-        isLoading={collectiveReadingQuery.isLoading}
-        isError={collectiveReadingQuery.isError}
-        onRetry={() => collectiveReadingQuery.refetch()}
-      />
-      {userId &&
-      !latestReadsQuery.isLoading &&
-      !latestReadsQuery.isError &&
-      (latestReadsQuery.data?.length ?? 0) > 0 ? (
-        <LatestReadsSection entries={latestReadsQuery.data ?? []} />
       ) : null}
     </div>
   )

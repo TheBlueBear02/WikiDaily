@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 
 import { getSupabase } from '../lib/supabaseClient'
 
-const DEFAULT_LIMIT = 10
+const DEFAULT_LIMIT = 8
 
 function normalizeLimit(limit) {
   const n = Number(limit)

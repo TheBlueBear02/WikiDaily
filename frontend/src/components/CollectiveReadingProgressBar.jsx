@@ -63,6 +63,9 @@ export default function CollectiveReadingProgressBar({
   isLoading,
   isError,
   onRetry,
+  className = '',
+  /** Tighter padding, smaller track, and smaller stars (e.g. home hero). */
+  compact = false,
 }) {
   const prefersReducedMotion = usePrefersReducedMotion()
   const ms = COLLECTIVE_READING_MILESTONES
@@ -86,30 +89,49 @@ export default function CollectiveReadingProgressBar({
     return fillPercentFromZero(total, windowModel.windowEnd)
   }, [total, windowModel])
 
+  const sectionClass = [
+    'w-full rounded-none border border-slate-200 bg-white',
+    compact ? 'px-3 py-2' : 'px-4 py-4',
+    className,
+  ]
+    .filter(Boolean)
+    .join(' ')
+
   if (isLoading) {
     return (
       <section
-        className="w-full rounded-none border border-slate-200 bg-slate-50/80 px-4 py-4"
+        className={sectionClass}
         aria-busy="true"
         aria-label="Loading community reading progress"
       >
-        <div className="h-3 w-48 animate-pulse rounded bg-slate-200" />
-        <div className="relative mt-4 w-full px-1">
-          <div className="relative h-9 w-full">
-            <div className="absolute inset-x-1 top-1/2 h-2.5 -translate-y-1/2 rounded-full bg-slate-100" />
+        <div className={compact ? 'h-2.5 w-40 animate-pulse rounded bg-slate-200' : 'h-3 w-48 animate-pulse rounded bg-slate-200'} />
+        <div className={compact ? 'relative mt-2 w-full px-0.5' : 'relative mt-4 w-full px-1'}>
+          <div className={compact ? 'relative h-7 w-full' : 'relative h-9 w-full'}>
+            <div
+              className={[
+                'absolute inset-x-1 top-1/2 -translate-y-1/2 rounded-full bg-slate-100',
+                compact ? 'h-2' : 'h-2.5',
+              ].join(' ')}
+            />
             {[20, 45, 70, 100].map((left) => (
               <div
                 key={left}
-                className="absolute top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 animate-pulse rounded-full bg-slate-200"
+                className={[
+                  'absolute top-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse rounded-full bg-slate-200',
+                  compact ? 'h-4 w-4' : 'h-5 w-5',
+                ].join(' ')}
                 style={{ left: `${left}%` }}
               />
             ))}
           </div>
-          <div className="relative -mt-2 h-4 w-full">
+          <div className={compact ? 'relative -mt-1 h-3 w-full' : 'relative -mt-2 h-4 w-full'}>
             {[20, 45, 70, 100].map((left) => (
               <div
                 key={left}
-                className="absolute top-0 h-3 w-5 -translate-x-1/2 animate-pulse rounded bg-slate-100"
+                className={[
+                  'absolute top-0 -translate-x-1/2 animate-pulse rounded bg-slate-100',
+                  compact ? 'h-2 w-4' : 'h-3 w-5',
+                ].join(' ')}
                 style={{ left: `${left}%` }}
               />
             ))}
@@ -138,21 +160,29 @@ export default function CollectiveReadingProgressBar({
 
   return (
     <section
-      className="w-full rounded-none border border-slate-200 bg-slate-50/80 px-4 py-4"
+      className={sectionClass}
       aria-labelledby="collective-reading-goals-heading"
     >
-      <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+      <div className="flex flex-col gap-0.5 sm:flex-row sm:items-start sm:justify-between">
         <h2
           id="collective-reading-goals-heading"
-          className="text-xs font-semibold uppercase tracking-wide text-slate-500"
+          className={[
+            'font-semibold uppercase tracking-wide text-slate-500',
+            compact ? 'text-[10px] leading-tight' : 'text-xs',
+          ].join(' ')}
         >
           Community reading goals
         </h2>
       </div>
 
       {isError ? (
-        <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-rose-800">
+        <div
+          className={[
+            'flex flex-col sm:flex-row sm:items-center sm:justify-between',
+            compact ? 'mt-1.5 gap-1.5' : 'mt-2 gap-2',
+          ].join(' ')}
+        >
+          <p className={compact ? 'text-xs leading-snug text-rose-800' : 'text-sm text-rose-800'}>
             Couldn’t load the community total. Deploy the{' '}
             <code className="rounded bg-slate-100 px-1 font-mono text-[11px]">
               collective_reads_count
@@ -163,7 +193,10 @@ export default function CollectiveReadingProgressBar({
             <button
               type="button"
               onClick={() => onRetry()}
-              className="shrink-0 self-start bg-primary px-3 py-2 text-sm font-medium text-white hover:bg-primary-hover"
+              className={[
+                'shrink-0 self-start bg-primary font-medium text-white hover:bg-primary-hover',
+                compact ? 'px-2 py-1 text-xs' : 'px-3 py-2 text-sm',
+              ].join(' ')}
             >
               Retry
             </button>
@@ -173,8 +206,15 @@ export default function CollectiveReadingProgressBar({
 
       {!isError ? (
         <>
-          <div className="mt-2 flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
-            <div className="text-sm font-medium text-slate-800">
+          <div
+            className={[
+              'flex flex-col sm:flex-row sm:items-baseline sm:justify-between',
+              compact
+                ? 'mt-1 gap-0.5 sm:gap-2'
+                : 'mt-2 gap-1 sm:gap-4',
+            ].join(' ')}
+          >
+            <div className={compact ? 'text-xs font-medium leading-tight text-slate-800' : 'text-sm font-medium text-slate-800'}>
               {total === 0 ? (
                 <span>Every read counts toward our shared goal</span>
               ) : (
@@ -184,12 +224,18 @@ export default function CollectiveReadingProgressBar({
                 </span>
               )}
             </div>
-            <div className="min-h-[1.25rem] text-sm sm:max-w-[55%]">{rightLabel}</div>
+            <div
+              className={[
+                compact ? 'min-h-0 text-[11px] leading-tight sm:max-w-[58%]' : 'min-h-[1.25rem] text-sm sm:max-w-[55%]',
+              ].join(' ')}
+            >
+              {rightLabel}
+            </div>
           </div>
 
-          <div className="relative mt-3 w-full px-1 sm:px-2">
+          <div className={compact ? 'relative mt-1.5 w-full px-0.5 sm:px-1' : 'relative mt-3 w-full px-1 sm:px-2'}>
             <div
-              className="relative h-12 w-full"
+              className={compact ? 'relative h-8 w-full' : 'relative h-12 w-full'}
               role="progressbar"
               aria-valuemin={0}
               aria-valuemax={maxRead}
@@ -200,7 +246,12 @@ export default function CollectiveReadingProgressBar({
                   : `Community articles read progress from zero toward ${windowEnd}`
               }
             >
-              <div className="absolute inset-x-0 top-1/2 h-2.5 -translate-y-1/2 overflow-hidden rounded-full bg-slate-100">
+              <div
+                className={[
+                  'absolute inset-x-0 top-1/2 -translate-y-1/2 overflow-hidden rounded-full bg-slate-100',
+                  compact ? 'h-2' : 'h-2.5',
+                ].join(' ')}
+              >
                 <div
                   className={[
                     'h-full rounded-full bg-primary shadow-[0_0_12px_rgba(30,41,82,0.35)]',
@@ -232,13 +283,14 @@ export default function CollectiveReadingProgressBar({
                       </span>
                       <div
                         className={[
-                          'flex h-6 w-6 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-slate-200/80 sm:h-7 sm:w-7',
+                          'flex items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-slate-200/80',
+                          compact ? 'h-5 w-5' : 'h-6 w-6 sm:h-7 sm:w-7',
                           unlocked ? 'text-amber-500 ring-amber-200/60' : 'text-slate-300 ring-slate-200/80',
                           trophyRow ? 'ring-2 ring-amber-400/80 shadow-md' : '',
                         ].join(' ')}
                       >
                         <StarIcon
-                          className="h-3.5 w-3.5 sm:h-4 sm:w-4"
+                          className={compact ? 'h-3 w-3' : 'h-3.5 w-3.5 sm:h-4 sm:w-4'}
                           filled={unlocked}
                         />
                       </div>
@@ -248,7 +300,10 @@ export default function CollectiveReadingProgressBar({
               </div>
             </div>
 
-            <div className="relative -mt-2 h-4 w-full leading-none" aria-hidden>
+            <div
+              className={compact ? 'relative -mt-1 h-3 w-full leading-none' : 'relative -mt-2 h-4 w-full leading-none'}
+              aria-hidden
+            >
               {visible.map((m) => {
                 const leftPct = starLeftPctOnTrack(m.value, windowEnd)
                 const done = total >= m.value
@@ -256,7 +311,8 @@ export default function CollectiveReadingProgressBar({
                   <div
                     key={`${m.key}-goal`}
                     className={[
-                      'absolute top-0 max-w-[2.75rem] -translate-x-1/2 text-center text-[10px] font-medium tabular-nums text-slate-500 sm:text-xs',
+                      'absolute top-0 max-w-[2.75rem] -translate-x-1/2 text-center font-medium tabular-nums text-slate-500',
+                      compact ? 'text-[9px]' : 'text-[10px] sm:text-xs',
                       done ? 'font-semibold text-primary' : '',
                     ].join(' ')}
                     style={{ left: `${leftPct}%` }}

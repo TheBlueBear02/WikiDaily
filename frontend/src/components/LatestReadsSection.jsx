@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 
 import ArticleHistoryCard from './ArticleHistoryCard'
 
-export default function LatestReadsSection({ entries, title = 'Latest reads' }) {
+export default function LatestReadsSection({ entries, title = 'Your recent reads' }) {
   const items = Array.isArray(entries) ? entries.slice(0, 5) : []
   if (items.length === 0) return null
 
@@ -19,7 +19,7 @@ export default function LatestReadsSection({ entries, title = 'Latest reads' }) 
       </div>
 
       {/* Desktop: show all 5 without scrolling. */}
-      <div className="hidden w-full grid-cols-5 gap-3 lg:grid" aria-label="Latest read articles">
+      <div className="hidden w-full grid-cols-5 gap-3 lg:grid" aria-label="Your recently read articles">
         {items.map((entry) => (
           <ArticleHistoryCard
             key={`${entry?.read_date ?? 'date'}-${entry?.wiki_slug ?? 'null'}-${entry?.source ?? 'source'}`}
@@ -35,7 +35,7 @@ export default function LatestReadsSection({ entries, title = 'Latest reads' }) 
           'snap-x snap-mandatory',
           '[scrollbar-gutter:stable]',
         ].join(' ')}
-        aria-label="Latest read articles"
+        aria-label="Your recently read articles"
       >
         {items.map((entry) => (
           <div
