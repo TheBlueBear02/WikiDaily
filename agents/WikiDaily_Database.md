@@ -356,7 +356,9 @@ Then it navigates to `/wiki/:wikiSlug`.
 
 #### Logging random reads
 
-When a signed-in user lands on `/wiki/:wikiSlug` with navigation state `{ source: 'random' }`, the app **auto-inserts a `reading_log` row** for that slug + day (best-effort). This is done client-side via the same `markAsRead` mutation used elsewhere, and includes a short retry loop for the `reading_log.wiki_slug -> articles.wiki_slug` foreign key timing edge case.
+When a signed-in user lands on `/wiki/:wikiSlug` with navigation state `{ source: 'random' }` **or** `{ source: 'search' }`, the app **auto-inserts a `reading_log` row** for that slug + day (best-effort). This is done client-side via the same `markAsRead` mutation used elsewhere, and includes a short retry loop for the `reading_log.wiki_slug -> articles.wiki_slug` foreign key timing edge case.
+
+> Note: the DB enforces `CHECK (source IN ('daily','random'))`, so `source: 'search'` is normalized to `random` at write-time.
 
 When the user triggers a random navigation from the article page ("New random article"), the app also **best-effort upserts the random article into `articles`** (same as the Home random picker). This improves the chance that the `reading_log` insert can satisfy the FK constraint.
 

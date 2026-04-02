@@ -1,11 +1,13 @@
 import { useDailyArticle } from '../hooks/useDailyArticle'
 import { useUserProgress } from '../hooks/useUserProgress'
+import { useReadingHistory } from '../hooks/useReadingHistory'
 import ArticleCard from '../components/ArticleCard'
 import HeroAside from '../components/HeroAside'
 import StreakLeaderboard from '../components/StreakLeaderboard'
 import RandomWikiSection from '../components/RandomWikiSection'
 import CollectiveReadingProgressBar from '../components/CollectiveReadingProgressBar'
 import ReadingProgressBar from '../components/ReadingProgressBar'
+import LatestReadsSection from '../components/LatestReadsSection'
 import { useCollectiveReadingTotal } from '../hooks/useCollectiveReadingTotal'
 
 function HomeHeroRow({ children }) {
@@ -22,10 +24,10 @@ function HomeHeroRow({ children }) {
 }
 
 export default function Home() {
-  const { dailyArticle, isFallback, isLoading, isError, error, refetch } =
-    useDailyArticle()
+  const { dailyArticle, isLoading, isError, error, refetch } = useDailyArticle()
   const { userId, profile, profileQuery } = useUserProgress()
   const collectiveReadingQuery = useCollectiveReadingTotal()
+  const latestReadsQuery = useReadingHistory({ userId, limit: 5 })
 
   let heroRightColumn = null
 
@@ -88,7 +90,6 @@ export default function Home() {
         imageUrl={dailyArticle.image_url}
         wikiUrl={wikiUrl}
         cardHref={cardHref}
-        isFallback={isFallback}
       />
     )
   }
@@ -123,6 +124,12 @@ export default function Home() {
         isError={collectiveReadingQuery.isError}
         onRetry={() => collectiveReadingQuery.refetch()}
       />
+      {userId &&
+      !latestReadsQuery.isLoading &&
+      !latestReadsQuery.isError &&
+      (latestReadsQuery.data?.length ?? 0) > 0 ? (
+        <LatestReadsSection entries={latestReadsQuery.data ?? []} />
+      ) : null}
     </div>
   )
 }

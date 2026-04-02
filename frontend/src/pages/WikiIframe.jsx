@@ -359,14 +359,15 @@ export default function WikiIframe() {
   useEffect(() => {
     if (!wikiSlug) return
     if (!userId) return
-    if (readingSource !== 'random') return
+    if (readingSource !== 'random' && readingSource !== 'search') return
 
     const key = `${userId}:${String(wikiSlug)}:${readDateYmd}:${readingSource}`
     if (lastAutoLogKeyRef.current === key) return
     if (markAsReadMutation.isPending) return
 
     lastAutoLogKeyRef.current = key
-    void markAsRead({ wikiSlug, readDateYmd, source: 'random' }).catch(() => {
+    // `reading_log.source` only allows ('daily','random'); treat search as "random".
+    void markAsRead({ wikiSlug, readDateYmd, source: readingSource }).catch(() => {
       // Auto-log is best-effort.
     })
   }, [wikiSlug, userId, readingSource, readDateYmd, markAsRead, markAsReadMutation.isPending])

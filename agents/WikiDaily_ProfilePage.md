@@ -23,6 +23,8 @@ Profile stats come from the `profiles` query inside `useUserProgress`:
 ### Hook: `useReadingHistory`
 Fetches the full reading history with article metadata in a single joined query.
 
+Supports an optional `limit` param for capped lists (e.g. Home “Latest reads” uses `limit: 5`), while Profile fetches the full list by omitting `limit`.
+
 ```js
 supabase
   .from('reading_log')
@@ -187,7 +189,7 @@ With a button linking to `/`.
 
 **Each card contains:**
 - Thumbnail image — full width of card, fixed height 100px, `object-fit: cover`. If `image_url` is null, show a warm parchment placeholder with the first letter of the title centered.
-- Source badge — top-right corner overlay on the image. Pill shaped, small font (10px uppercase):
+- Source badge — top-right corner overlay on the image. **Square corners (no rounding)**, small font (10px uppercase):
   - Daily article → amber/gold background, `"Daily"`
   - Random article → teal background, `"Random"`
 - Article title — `display_title` from articles join. Serif font, 14px, font-weight 500, 2-line clamp with ellipsis overflow.

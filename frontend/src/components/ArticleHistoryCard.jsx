@@ -103,7 +103,7 @@ export default function ArticleHistoryCard({ entry }) {
 
         <div
           className={[
-            'absolute right-2 top-2 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
+            'absolute right-2 top-2 rounded-none border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
             sourceBadgeClass(source),
           ].join(' ')}
         >

@@ -16,7 +16,6 @@ export default function ArticleCard({
   imageUrl,
   wikiUrl,
   cardHref = null,
-  isFallback = false,
   actions = null,
   isCollected = false,
   className = '',
@@ -96,21 +95,14 @@ export default function ArticleCard({
           : undefined
       }
     >
-      {isFallback ? (
-        <div className="border-b border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          Today’s article isn’t available yet. Showing the most recent article in the
-          database.
-        </div>
-      ) : null}
-
       {isCollected ? (
         <div className="absolute right-3 top-3 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-900">
           Collected
         </div>
       ) : null}
 
-      {imageUrl ? (
-        <div className="relative aspect-[16/9] w-full bg-slate-100">
+      <div className="relative aspect-[16/9] w-full bg-slate-100">
+        {imageUrl ? (
           <img
             src={imageUrl}
             alt=""
@@ -118,14 +110,41 @@ export default function ArticleCard({
             loading="lazy"
             referrerPolicy="no-referrer"
           />
+        ) : (
           <div
-            className="pointer-events-none absolute bottom-4 start-0 bg-primary px-4 py-2.5 text-sm font-bold text-white"
+            className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-100 via-slate-50 to-slate-200"
             aria-hidden
           >
-            {"Today's article"}
+            <div className="flex items-center gap-3 rounded-none border border-slate-200 bg-white/70 px-4 py-3 text-slate-700 backdrop-blur">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                className="text-slate-600"
+              >
+                <path
+                  d="M8 9.5C8 10.3284 7.32843 11 6.5 11C5.67157 11 5 10.3284 5 9.5C5 8.67157 5.67157 8 6.5 8C7.32843 8 8 8.67157 8 9.5Z"
+                  fill="currentColor"
+                />
+                <path
+                  d="M3 6.5C3 5.11929 4.11929 4 5.5 4H18.5C19.8807 4 21 5.11929 21 6.5V17.5C21 18.8807 19.8807 20 18.5 20H5.5C4.11929 20 3 18.8807 3 17.5V6.5ZM5.5 6C5.22386 6 5 6.22386 5 6.5V15.9L8.3 12.6C8.69052 12.2095 9.32369 12.2095 9.71421 12.6L12.2 15.0858L15.3 11.9858C15.6905 11.5953 16.3237 11.5953 16.7142 11.9858L19 14.2716V6.5C19 6.22386 18.7761 6 18.5 6H5.5Z"
+                  fill="currentColor"
+                />
+              </svg>
+              <div className="text-sm font-medium">No image available</div>
+            </div>
           </div>
+        )}
+
+        <div
+          className="pointer-events-none absolute bottom-4 start-0 bg-primary px-4 py-2.5 text-sm font-bold text-white"
+          aria-hidden
+        >
+          {"Today's article"}
         </div>
-      ) : null}
+      </div>
 
       <div className="space-y-3 p-5">
         <div className="space-y-2">

@@ -19,10 +19,7 @@ export function useDailyArticle() {
 
       if (error) throw error
       if (data) {
-        return {
-          row: { ...data, date: data.featured_date },
-          isFallback: false,
-        }
+        return { row: { ...data, date: data.featured_date } }
       }
 
       const { data: latest, error: latestErr } = await supabase
@@ -34,18 +31,16 @@ export function useDailyArticle() {
         .maybeSingle()
 
       if (latestErr) throw latestErr
-      if (!latest) return { row: null, isFallback: false }
-      return { row: { ...latest, date: latest.featured_date }, isFallback: true }
+      if (!latest) return { row: null }
+      return { row: { ...latest, date: latest.featured_date } }
     },
   })
 
   const dailyArticle = query.data?.row ?? null
-  const isFallback = query.data?.isFallback ?? false
 
   return {
     todayStr,
     dailyArticle,
-    isFallback,
     wikiSlug: dailyArticle?.wiki_slug ?? null,
     ...query,
   }
