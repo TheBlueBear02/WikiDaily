@@ -1,7 +1,7 @@
 import { useUserProgress } from '../hooks/useUserProgress'
 
 export default function StreakBadge() {
-  const { userId, profile, authUserQuery } = useUserProgress()
+  const { userId, profile, authUserQuery, profileQuery } = useUserProgress()
 
   if (authUserQuery.isLoading) {
     return (
@@ -16,6 +16,18 @@ export default function StreakBadge() {
       <div className="rounded-full bg-white px-3 py-1 text-xs text-slate-600">
         Sign in to track streak
       </div>
+    )
+  }
+
+  // Do not use `isPending` alone: disabled queries stay `pending` with no fetch.
+  // Wait until profile data exists (same source as level in Navbar).
+  if (!profile && !profileQuery.isError) {
+    return (
+      <div
+        className="h-9 w-9 shrink-0 animate-pulse rounded-full bg-slate-200 motion-reduce:animate-none"
+        role="status"
+        aria-label="Loading streak"
+      />
     )
   }
 

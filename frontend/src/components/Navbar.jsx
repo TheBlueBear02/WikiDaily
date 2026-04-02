@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import StreakBadge from './StreakBadge'
 import WikiSearchBar from './WikiSearchBar'
 import { useUserProgress } from '../hooks/useUserProgress'
+import { getCurrentLevel } from '../lib/levels'
 import { initialsFromUsername } from '../lib/profileAvatar'
 import { getSupabase } from '../lib/supabaseClient'
 import { buildAuthUrl } from '../lib/returnTo'
@@ -14,7 +15,7 @@ const linkActive = 'bg-slate-100 text-primary'
 
 export default function Navbar() {
   const location = useLocation()
-  const { userId, user, profile } = useUserProgress()
+  const { userId, user, profile, profileQuery } = useUserProgress()
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isSigningOut, setIsSigningOut] = useState(false)
   const userMenuRef = useRef(null)
@@ -34,6 +35,10 @@ export default function Navbar() {
       user?.user_metadata?.username ?? (user?.email ? user.email.split('@')[0] : null)
     return initialsFromUsername(profile?.username ?? fallback)
   }, [profile?.username, user?.email, user?.user_metadata?.username])
+
+  const level = getCurrentLevel(profile?.total_read ?? 0)
+  // Wait for profile row, not `isPending` (disabled queries stay pending without fetching).
+  const levelLineLoading = Boolean(userId) && !profile && !profileQuery.isError
 
   async function onSignOut() {
     try {
@@ -74,7 +79,7 @@ export default function Navbar() {
   }, [isUserMenuOpen])
 
   return (
-    <header className="border-b border-slate-200">
+    <header className="sticky top-0 z-50 border-b border-slate-200 bg-white">
       <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-4 gap-y-3 px-4 py-4">
         <NavLink
           to="/"
@@ -123,6 +128,7 @@ export default function Navbar() {
                 onClick={() => setIsUserMenuOpen((v) => !v)}
                 aria-haspopup="menu"
                 aria-expanded={isUserMenuOpen}
+                aria-busy={levelLineLoading}
                 className="flex items-center gap-2 bg-white py-1 pl-1 pr-3 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-300"
               >
                 <span
@@ -131,7 +137,19 @@ export default function Navbar() {
                 >
                   {initials}
                 </span>
-                <span className="max-w-[14rem] truncate">{displayName}</span>
+                <span className="min-w-0 max-w-[14rem] text-left">
+                  <span className="block truncate text-sm font-medium">{displayName}</span>
+                  <span className="block min-h-[1rem] truncate text-[11px] font-normal leading-tight text-slate-500">
+                    {levelLineLoading ? (
+                      <span
+                        className="inline-block h-3 w-[9.5rem] max-w-full animate-pulse rounded bg-slate-200 motion-reduce:animate-none"
+                        aria-hidden
+                      />
+                    ) : (
+                      `Level ${level.level} · ${level.name}`
+                    )}
+                  </span>
+                </span>
               </button>
 
               {isUserMenuOpen ? (

@@ -88,6 +88,7 @@ Recommended approach: a **Security Definer RPC** that returns the top users by `
 - `user_id` (uuid)
 - `username` (text, coerced to `'Anonymous'` when null/blank)
 - `current_streak` (int)
+- `total_read` (int) — used by the Home streak leaderboard UI for reader level (`lib/levels.js`)
 
 **Ordering:**
 
@@ -99,11 +100,15 @@ Recommended approach: a **Security Definer RPC** that returns the top users by `
 **SQL (run in Supabase SQL editor):**
 
 ```sql
+-- Adding/removing columns changes the function’s return type; drop first if replacing.
+drop function if exists public.public_streak_leaderboard(int);
+
 create or replace function public.public_streak_leaderboard(limit_count int default 8)
 returns table (
   user_id uuid,
   username text,
-  current_streak int
+  current_streak int,
+  total_read int
 )
 language sql
 stable
@@ -113,7 +118,8 @@ as $$
   select
     p.user_id,
     coalesce(nullif(btrim(p.username), ''), 'Anonymous') as username,
-    p.current_streak
+    p.current_streak,
+    coalesce(p.total_read, 0)::int as total_read
   from public.profiles p
   order by
     p.current_streak desc,
@@ -129,6 +135,7 @@ grant execute on function public.public_streak_leaderboard(int) to anon, authent
 
 > Notes:
 > - This is intentionally **read-only** and returns only leaderboard-safe fields.
+> - If you already deployed the older 3-column version, run the `drop function` above once so the new `returns table` can be applied.
 > - If you later want “weekly leaderboard” logic, add a second RPC based on `reading_log` aggregates; do not overload this one.
 
 ### RPC: `public.collective_reads_count()`

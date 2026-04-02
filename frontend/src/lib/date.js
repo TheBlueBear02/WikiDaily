@@ -51,3 +51,26 @@ export function getLeaderboardCountdownParts(now = new Date()) {
   return { days, hours, minutes, target }
 }
 
+/** Next UTC midnight (start of next UTC day). */
+export function getNextDailyResetDate(now = new Date()) {
+  const y = now.getUTCFullYear()
+  const m = now.getUTCMonth()
+  const d = now.getUTCDate()
+  return new Date(Date.UTC(y, m, d + 1, 0, 0, 0, 0))
+}
+
+/** Remaining time until `getNextDailyResetDate`, broken into hour/minute/second parts. */
+export function getDailyCountdownParts(now = new Date()) {
+  const target = getNextDailyResetDate(now)
+  let ms = target.getTime() - now.getTime()
+  if (ms < 0) ms = 0
+
+  const hours = Math.floor(ms / 3_600_000)
+  ms -= hours * 3_600_000
+  const minutes = Math.floor(ms / 60_000)
+  ms -= minutes * 60_000
+  const seconds = Math.floor(ms / 1000)
+
+  return { hours, minutes, seconds, target }
+}
+

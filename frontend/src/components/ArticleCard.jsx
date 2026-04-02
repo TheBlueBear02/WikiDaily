@@ -1,4 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom'
+import { useDailyResetCountdown } from '../hooks/useDailyResetCountdown'
 
 import { cardInteractiveSurfaceClasses } from '../lib/cardSurface'
 
@@ -21,12 +22,14 @@ export default function ArticleCard({
   navigationState = null,
   actions = null,
   isCollected = false,
+  showDailyResetCountdown = false,
   className = '',
   /** When true (e.g. hero fixed-height slot), body scrolls so the card can honor a fixed outer height. */
   bodyScrollable = false,
 }) {
   const isCardClickable = Boolean(cardHref)
   const navigate = useNavigate()
+  const dailyCountdown = useDailyResetCountdown()
 
   const isInternalHref =
     typeof cardHref === 'string' && cardHref.length > 0 && cardHref.startsWith('/')
@@ -75,6 +78,15 @@ export default function ArticleCard({
       openCard()
     }
   }
+
+  const countdownLabel = (() => {
+    if (!showDailyResetCountdown) return null
+    const { hours, minutes, seconds } = dailyCountdown
+    const hh = String(hours).padStart(2, '0')
+    const mm = String(minutes).padStart(2, '0')
+    const ss = String(seconds).padStart(2, '0')
+    return `${hh}:${mm}:${ss}`
+  })()
 
   return (
     <article
@@ -196,6 +208,19 @@ export default function ArticleCard({
           )}
           {actions}
         </div>
+
+        {countdownLabel ? (
+          <div
+            className="pt-1 text-right text-xs font-medium text-slate-500"
+            title={`Next daily article at ${dailyCountdown.target.toISOString()}`}
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            <span className="sr-only">Time until next daily article: </span>
+            <span>New daily article in: </span>{' '}
+            <span className="tabular-nums">{countdownLabel}</span>
+          </div>
+        ) : null}
       </div>
     </article>
   )

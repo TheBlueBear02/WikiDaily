@@ -15,7 +15,7 @@ function normalizeLimit(limit) {
  *
  * Requires a public Supabase RPC:
  *   public.public_streak_leaderboard(limit_count int)
- * that returns rows with: user_id, username, current_streak.
+ * that returns rows with: user_id, username, current_streak, total_read.
  */
 export function useStreakLeaderboard({ limit = DEFAULT_LIMIT } = {}) {
   const safeLimit = normalizeLimit(limit)
@@ -36,6 +36,7 @@ export function useStreakLeaderboard({ limit = DEFAULT_LIMIT } = {}) {
         userId: row.user_id ?? null,
         username: row.username ?? 'Anonymous',
         currentStreak: row.current_streak ?? 0,
+        totalRead: row.total_read ?? 0,
       }))
     },
   })

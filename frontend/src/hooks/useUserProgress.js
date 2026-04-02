@@ -4,6 +4,8 @@ import { getSupabase } from '../lib/supabaseClient'
 import { yesterdayUtcYmd } from '../lib/date'
 
 const AUTH_USER_STALE_TIME_MS = 5 * 60 * 1000
+/** Keeps Navbar/header profile from refetching on every remount; still invalidated after reads. */
+const PROFILE_STALE_TIME_MS = 60 * 1000
 
 function isUniqueUserDateViolation(err) {
   const code = err?.code ?? err?.cause?.code
@@ -66,6 +68,7 @@ export function useUserProgress() {
   const profileQuery = useQuery({
     queryKey: ['profile', userId],
     enabled: Boolean(userId),
+    staleTime: PROFILE_STALE_TIME_MS,
     retry: (failureCount, err) => {
       const code = err?.code ?? err?.cause?.code
       if (code === 'PGRST116') return failureCount < 3
@@ -99,24 +102,40 @@ export function useUserProgress() {
         throw error
       }
 
-      // Self-heal: ensure `profiles.total_read` reflects ALL reads (daily + random)
-      // from the source of truth (`reading_log`). This prevents drift if a prior
-      // client-side profile update failed but the log insert succeeded.
-      const currentTotalRead = data?.total_read ?? 0
-      const { count, error: countErr } = await supabase
-        .from('reading_log')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', userId)
+      // Return immediately so streak/level can render; reconcile `total_read` vs
+      // `reading_log` in the background (count query + possible UPDATE was blocking UI).
+      const snapshot = data
+      const uid = userId
+      void (async () => {
+        try {
+          const authed = queryClient.getQueryData(['authUser'])
+          const authedId = authed?.id
+          if (authedId !== uid) return
 
-      if (!countErr && typeof count === 'number' && count !== currentTotalRead) {
-        const { error: fixErr } = await supabase
-          .from('profiles')
-          .update({ total_read: count })
-          .eq('user_id', userId)
-        if (!fixErr) return { ...data, total_read: count }
-      }
+          const currentTotalRead = snapshot?.total_read ?? 0
+          const { count, error: countErr } = await supabase
+            .from('reading_log')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', uid)
 
-      return data
+          if (countErr || typeof count !== 'number' || count === currentTotalRead) return
+          const { error: fixErr } = await supabase
+            .from('profiles')
+            .update({ total_read: count })
+            .eq('user_id', uid)
+          if (fixErr) return
+
+          const stillAuthed = queryClient.getQueryData(['authUser'])
+          if (stillAuthed?.id !== uid) return
+          queryClient.setQueryData(['profile', uid], (old) =>
+            old && typeof old === 'object' ? { ...old, total_read: count } : old,
+          )
+        } catch {
+          // best-effort self-heal
+        }
+      })()
+
+      return snapshot
     },
   })
 

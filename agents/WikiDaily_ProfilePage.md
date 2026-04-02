@@ -20,6 +20,10 @@ Profile stats come from the `profiles` query inside `useUserProgress`:
 
 > Note: `useUserProgress` reconciles `profiles.total_read` against the total number of rows in `reading_log` for that user so the "Total Articles Read" stat reflects both **daily** and **random** reads even if a prior profile update ever drifted.
 
+### Reader level (UI-only)
+
+**Reader level** (Level 0–10 with display names) is **not** stored in the database. It is derived on the client from `profiles.total_read` using `getCurrentLevel()` and `getNextLevel()` in `frontend/src/lib/levels.js` (`LEVELS` thresholds are editable in that single file; no migrations). The profile header appends progress: `({total_read} reads → Level {next} at {threshold})` until max level, then `({total_read} reads — max level)`. This is separate from **achievements** (`achievements` / `user_achievements` tiers, toasts, and the profile achievements grid).
+
 ### Hook: `useAchievements`
 Profile also renders an Achievements section backed by two tables:
 
@@ -38,7 +42,7 @@ Implementation:
 ### Hook: `useReadingHistory`
 Fetches the full reading history with article metadata in a single joined query.
 
-Supports an optional `limit` param for capped lists (e.g. Home “Your recent reads” uses `limit: 5`), while Profile fetches the full list by omitting `limit`.
+Supports an optional `limit` param for capped lists (e.g. Home “Your recent reads” uses `limit: 5`), while Profile fetches the full list by omitting `limit` (needed for the activity heatmap and for the reading history grid’s client-side “Show more” pagination).
 
 ```js
 supabase
@@ -111,6 +115,7 @@ Key behaviors:
 **Contents:**
 - Avatar circle — 64px diameter, filled with a muted warm tone, displays the first two initials of `username` in uppercase with larger initials text. No photo upload for MVP.
 - Username — displayed as plain `username` (no leading `@`) using the same font styling as the Navbar username (sans, medium weight, slate tone), scaled up for the page title (24px on mobile, 30px on `sm`+), with slightly tighter tracking.
+- Reader level — `Level {n} · {name} ({total_read} reads → Level {next} at {threshold})` when a next level exists; at max level, `… ({total_read} reads — max level)`. Derived with `getCurrentLevel` + `getNextLevel(profile.total_read ?? 0)` (`frontend/src/lib/levels.js`). Small muted sans-serif (13px, `text-slate-500`).
 - Member since — `"Member since [Month Year]"` formatted from `auth.users.created_at`. Small muted sans-serif text (13px).
 - Tagline — static text: `"Knowledge is Power"` in small italic serif, faint color, displayed to the immediate left of the wizard illustration on the right side of the header.
 - Wizard illustration — static image rendered on the right side of the profile header row, using the asset at `/images/wizard 1.jpg` (served as `/images/wizard%201.jpg`), sized roughly 96×96px with a subtle rounded rectangle mask and soft shadow.
@@ -176,7 +181,7 @@ Each card:
 
 ### 3.5. Achievements
 
-**Placement:** between **Stats Row** and **Activity Heatmap**.
+**Placement:** after **Activity Heatmap**, before **Favorites Grid**.
 
 **Layout:**
 - Section label: `Achievements`
@@ -228,6 +233,8 @@ With a button linking to `/`.
 
 **Layout:** CSS grid, 3 columns on desktop, 2 on tablet, 1 on mobile. Gap 12px. Full width.
 
+**Pagination:** Show the **6** most recent reads first (same order as the query: newest `read_at` first). A **Show more** control below the grid adds **6** more entries each click until all loaded rows are shown. The header count remains the total number of articles in history (e.g. `"42 articles"`).
+
 **Section label above:** `"Reading history"` with a count in muted text: `"42 articles"`.
 
 **Each card contains:**
@@ -255,21 +262,22 @@ With a button linking to `/`.
 Profile.jsx  (page)
 ├── ProfileHeader.jsx
 │     ├── Avatar (initials circle, 64px; initials from `lib/profileAvatar.js`)
-│     ├── Username (@username, serif 24px)
+│     ├── Username (plain username, sans; page title scale)
+│     ├── Reader level (`Level n · name` + next-level progress from `getNextLevel`, 13px muted)
 │     ├── Member since (13px muted)
-│     └── Tagline ("Knowledge is Power", italic serif faint)
+│     └── Tagline ("Knowledge is Power", italic serif faint; right column with wizard)
 │
 ├── StatsRow.jsx
 │     └── StatCard.jsx × 3
 │           (current_streak, max_streak, total_read)
 │
-├── AchievementsGrid.jsx
-│     └── AchievementCard.jsx × N (per type; `compact` on Profile)
-│
 ├── ActivityHeatmap.jsx
 │     ├── Month labels row
 │     ├── Day grid (52 × 7 cells)
 │     └── Cell hover tooltip
+│
+├── AchievementsGrid.jsx
+│     └── AchievementCard.jsx × N (per type; `compact` on Profile)
 │
 ├── FavoritesGrid.jsx
 │     └── FavoriteArticleCard.jsx × N
@@ -309,7 +317,7 @@ Profile.jsx  (page)
 
 ## Navbar Integration
 
-When signed in, the Navbar shows a **`Profile`** text link next to **`History`** (same active styling), plus a user menu opened from a control that includes an **amber circular initials avatar** (`bg-amber-100`, `text-amber-950`, `rounded-full`) using the same **`initialsFromUsername`** rules and username fallbacks as the profile header (`frontend/src/lib/profileAvatar.js`). The menu lists **`Profile`** above **`Sign out`**.
+When signed in, the Navbar shows a **`Profile`** text link next to **`History`** (same active styling), plus a user menu opened from a control that includes an **amber circular initials avatar** (`bg-amber-100`, `text-amber-950`, `rounded-full`) using the same **`initialsFromUsername`** rules and username fallbacks as the profile header (`frontend/src/lib/profileAvatar.js`). Under the truncated display name, a second line shows **`Level {n} · {name}`** from `getCurrentLevel(profile.total_read)` (`frontend/src/lib/levels.js`), `11px` muted. The menu lists **`Profile`** above **`Sign out`**.
 
 Clicking either navigates to `/profile`.
 

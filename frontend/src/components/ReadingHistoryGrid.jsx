@@ -1,6 +1,9 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import ArticleHistoryCard from './ArticleHistoryCard'
+
+const PAGE_SIZE = 6
 
 function SkeletonCard() {
   return (
@@ -21,7 +24,10 @@ export default function ReadingHistoryGrid({
   error,
   onRetry,
 }) {
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const count = Array.isArray(entries) ? entries.length : 0
+  const visibleEntries = Array.isArray(entries) ? entries.slice(0, visibleCount) : []
+  const hasMore = count > visibleCount
 
   return (
     <section className="space-y-3">
@@ -68,14 +74,27 @@ export default function ReadingHistoryGrid({
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {entries.map((entry) => (
-            <ArticleHistoryCard
-              key={`${entry?.read_date ?? 'date'}-${entry?.wiki_slug ?? 'null'}-${entry?.source ?? 'source'}`}
-              entry={entry}
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {visibleEntries.map((entry) => (
+              <ArticleHistoryCard
+                key={`${entry?.read_date ?? 'date'}-${entry?.wiki_slug ?? 'null'}-${entry?.source ?? 'source'}`}
+                entry={entry}
+              />
+            ))}
+          </div>
+          {hasMore ? (
+            <div className="flex justify-center pt-1">
+              <button
+                type="button"
+                onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+                className="rounded-none border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-primary hover:bg-slate-50"
+              >
+                Show more
+              </button>
+            </div>
+          ) : null}
+        </>
       )}
     </section>
   )

@@ -101,14 +101,6 @@ export default function Profile() {
 
       <StatsRow profile={profile} isLoading={profileQuery.isLoading} />
 
-      <AchievementsGrid
-        achievements={achievementsQuery.achievements}
-        unlocked={achievementsQuery.unlocked}
-        userAchievements={achievementsQuery.userAchievementsQuery.data ?? []}
-        isLoading={achievementsQuery.isLoading}
-        profile={profile}
-      />
-
       <div className="space-y-2">
         <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
           Reading activity
@@ -119,6 +111,14 @@ export default function Profile() {
           <ActivityHeatmap entries={readingHistoryQuery.data ?? []} />
         )}
       </div>
+
+      <AchievementsGrid
+        achievements={achievementsQuery.achievements}
+        unlocked={achievementsQuery.unlocked}
+        userAchievements={achievementsQuery.userAchievementsQuery.data ?? []}
+        isLoading={achievementsQuery.isLoading}
+        profile={profile}
+      />
 
       <FavoritesGrid
         entries={favoritesQuery.favorites ?? []}

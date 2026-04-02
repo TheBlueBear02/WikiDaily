@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 
+import { getCurrentLevel, getNextLevel } from '../lib/levels'
 import { initialsFromUsername } from '../lib/profileAvatar'
 
 function formatHandle(username, fallback) {
@@ -23,6 +24,19 @@ export default function ProfileHeader({ profile, user, memberSince }) {
     return initialsFromUsername(profile?.username ?? fallback)
   }, [profile?.username, user?.email, user?.user_metadata?.username])
 
+  const totalRead = profile?.total_read ?? 0
+  const level = getCurrentLevel(totalRead)
+  const nextLevel = getNextLevel(totalRead)
+
+  const levelLine = useMemo(() => {
+    const base = `Level ${level.level} · ${level.name}`
+    if (!nextLevel) {
+      return `${base} (${totalRead} ${totalRead === 1 ? 'read' : 'reads'} — max level)`
+    }
+    const readsWord = totalRead === 1 ? 'read' : 'reads'
+    return `${base} (${totalRead} ${readsWord} → Level ${nextLevel.level} at ${nextLevel.threshold})`
+  }, [level.level, level.name, nextLevel, totalRead])
+
   return (
     <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-center gap-4">
@@ -34,6 +48,7 @@ export default function ProfileHeader({ profile, user, memberSince }) {
           <div className="text-2xl font-medium leading-tight tracking-tight text-slate-700 sm:text-3xl">
             {handle}
           </div>
+          <div className="text-[13px] text-slate-500">{levelLine}</div>
           <div className="text-sm text-slate-500">
             {memberSince ? `Member since ${memberSince}` : 'Member since —'}
           </div>

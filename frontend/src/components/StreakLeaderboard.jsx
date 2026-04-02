@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 
 import { useStreakLeaderboard } from '../hooks/useStreakLeaderboard'
 import { useLeaderboardCountdown } from '../hooks/useLeaderboardCountdown'
+import { getCurrentLevel } from '../lib/levels'
 
 const DEFAULT_ROWS = 8
 
@@ -34,10 +35,14 @@ function LeaderboardRowSkeleton({ rank }) {
       >
         {rank}
       </span>
-      <div className="min-w-0 flex-1 py-0.5">
+      <div className="min-w-0 flex-1 space-y-1 py-0.5">
         <div
           className="h-4 max-w-full animate-pulse rounded bg-slate-200 motion-reduce:animate-none"
           style={{ width: `${wPct}%` }}
+        />
+        <div
+          className="h-3 max-w-[55%] animate-pulse rounded bg-slate-200/90 motion-reduce:animate-none"
+          aria-hidden
         />
       </div>
       <div className="flex shrink-0 flex-col items-end gap-1.5 py-0.5 text-right">
@@ -116,6 +121,7 @@ export default function StreakLeaderboard({ rows = DEFAULT_ROWS } = {}) {
             const isEmpty = !entry
             const username = entry?.username ?? '—'
             const streak = entry?.currentStreak ?? null
+            const level = getCurrentLevel(entry?.totalRead ?? 0)
             const isStriped = rank % 2 === 0
 
             return (
@@ -150,6 +156,11 @@ export default function StreakLeaderboard({ rows = DEFAULT_ROWS } = {}) {
                   >
                     {username}
                   </div>
+                  {!isEmpty ? (
+                    <div className="truncate text-[11px] leading-tight text-slate-500">
+                      {`Level ${level.level} · ${level.name}`}
+                    </div>
+                  ) : null}
                 </div>
 
                 <div className="shrink-0 text-right">

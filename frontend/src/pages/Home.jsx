@@ -112,6 +112,7 @@ export default function Home() {
         wikiUrl={wikiUrl}
         cardHref={cardHref}
         navigationState={{ source: 'daily', displayTitle: dailyArticle.display_title }}
+        showDailyResetCountdown
         bodyScrollable
         className="h-full"
       />
