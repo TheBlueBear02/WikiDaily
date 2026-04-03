@@ -209,6 +209,51 @@ Each card:
 **Toast notifications (global):**
 - Achievements are unlocked by the app-root runner after reads and inserted into `user_achievements` with `notified=false`.
 - A single global toast queue shows pending unlocks one at a time and flips `notified=true` after display.
+
+---
+
+### 3.75. Your notes
+
+**Placement:** after **Achievements**, before **Interesting articles** (`FavoritesGrid`).
+
+**What it is:** a grid of the user’s saved article notes, ordered by most recently updated.
+
+**Data:** query `article_notes` joined to `articles`, ordered by `updated_at DESC`.
+
+Example query (hook: `useRecentNotes`):
+
+```js
+supabase
+  .from('article_notes')
+  .select(`
+    wiki_slug,
+    content,
+    created_at,
+    updated_at,
+    articles (
+      display_title,
+      image_url,
+      description,
+      is_daily,
+      featured_date
+    )
+  `)
+  .eq('user_id', userId)
+  .order('updated_at', { ascending: false })
+```
+
+**Card behavior:**
+- Shows article thumbnail (or warm placeholder letter), article title, a 3-line snippet of the note, and `Updated {date}` (UTC formatting).
+- Clicking navigates to `/wiki/${wiki_slug}`.
+
+**Pagination:** client-side “Show more” pagination like Reading History (start with 6, add 6 per click).
+
+**Empty state:**
+```
+"No notes yet."
+"Open an article and write notes in the right sidebar."
+```
+With a button linking to `/`.
 ### 4. Interesting articles (Favorites Grid)
 
 **Layout:** CSS grid, 3 columns on desktop, 2 on tablet, 1 on mobile. Gap 12px. Full width.
@@ -281,6 +326,9 @@ Profile.jsx  (page)
 ├── AchievementsGrid.jsx
 │     └── AchievementCard.jsx × N (per type; `compact` on Profile)
 │
+├── NotesGrid.jsx
+│     └── NoteCard.jsx × N
+│
 ├── FavoritesGrid.jsx
 │     └── FavoriteArticleCard.jsx × N
 │           ├── Thumbnail (or placeholder)
@@ -306,12 +354,15 @@ Profile.jsx  (page)
 | Add | `frontend/src/components/StatsRow.jsx` |
 | Add | `frontend/src/components/StatCard.jsx` |
 | Add | `frontend/src/components/ActivityHeatmap.jsx` |
+| Add | `frontend/src/components/NotesGrid.jsx` |
+| Add | `frontend/src/components/NoteCard.jsx` |
 | Add | `frontend/src/components/FavoritesGrid.jsx` |
 | Add | `frontend/src/components/FavoriteArticleCard.jsx` |
 | Add | `frontend/src/components/ReadingHistoryGrid.jsx` |
 | Add | `frontend/src/components/ArticleHistoryCard.jsx` |
 | Add | `frontend/src/hooks/useReadingHistory.js` |
 | Add | `frontend/src/hooks/useFavorites.js` |
+| Add | `frontend/src/hooks/useRecentNotes.js` |
 | Update | `frontend/src/App.jsx` — add `/profile` route |
 | Update | `frontend/src/components/Navbar.jsx` — add profile link/avatar |
 

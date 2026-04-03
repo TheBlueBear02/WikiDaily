@@ -66,7 +66,7 @@ Tweet script + GitHub Action
 
 ## Phase 5 — Components & Pages
 - [X] `Navbar.jsx` — logo/title links to `/`; nav link to `/history`; user menu (name+avatar) with dropdown “Sign out”
-- [X] `StreakBadge.jsx` — reads streak from `useUserProgress` and displays it as a centered number overlay on `streak-icon.png` (no “Streak:” label; borderless, zoom/cropped image slightly shifted up with `-translate-y-1`; native tooltip `title="Streak days"`; has a loading state to avoid auth “flash”)
+- [X] `StreakBadge.jsx` — reads streak from `useUserProgress` and displays it as a centered number overlay on `streak-icon-noBG.png` (no “Streak:” label; borderless, zoom/cropped image slightly shifted up with `-translate-y-1`; native tooltip `title="Streak days"`; has a loading state to avoid auth “flash”)
 - [X] `ArticleCard.jsx` — presentational card (thumbnail, title, extract, "Read now" link; internal `/wiki/:wikiSlug` navigation)
 - [X] `MarkAsReadButton.jsx` — inserts into `reading_log` and updates `profiles` streak fields (works if user is already signed in)
 - [X] `RandomWikiSection.jsx` — Home panel that composes `WizardImageCard.jsx` (70% wizard image) + `RandomWikiPickerCard.jsx` (30% clickable picker) that fetches random + summary, upserts random metadata into `articles` (`is_daily=false`), and navigates to `/wiki/:wikiSlug` (passes `displayTitle` for the iframe title)

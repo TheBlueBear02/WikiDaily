@@ -92,7 +92,7 @@ export default function RandomWikiPickerCard() {
       ].join(' ')}
     >
       <img
-        src="/images/random-cube.png"
+        src="/images/random-cube-noBG.png"
         alt="Random article dice"
           className="mb-3 h-20 w-20 flex-shrink-0"
       />

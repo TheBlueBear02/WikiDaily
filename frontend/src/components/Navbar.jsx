@@ -86,12 +86,15 @@ export default function Navbar() {
           aria-label="Go to home"
           className="flex shrink-0 items-center gap-3 rounded-md focus:outline-none"
         >
-          <div className="grid h-9 w-9 place-items-center rounded-lg bg-primary text-sm font-semibold text-white">
-            WD
-          </div>
+          <img
+            src="/images/site-logo-noBG.png"
+            alt=""
+            className="h-12 w-12 shrink-0 object-contain"
+            draggable={false}
+          />
           <div className="leading-tight">
             <div className="text-sm font-semibold">WikiDaily</div>
-            <div className="text-xs text-slate-500">One article a day</div>
+            <div className="text-xs text-slate-500">Knowledge is Power</div>
           </div>
         </NavLink>
 

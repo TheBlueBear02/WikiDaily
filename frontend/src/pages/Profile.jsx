@@ -6,12 +6,14 @@ import { buildAuthUrl } from '../lib/returnTo'
 import { useReadingHistory } from '../hooks/useReadingHistory'
 import { useFavorites } from '../hooks/useFavorites'
 import { useAchievements } from '../hooks/useAchievements'
+import { useRecentNotes } from '../hooks/useRecentNotes'
 import ProfileHeader from '../components/ProfileHeader'
 import StatsRow from '../components/StatsRow'
 import ActivityHeatmap from '../components/ActivityHeatmap'
 import FavoritesGrid from '../components/FavoritesGrid'
 import ReadingHistoryGrid from '../components/ReadingHistoryGrid'
 import AchievementsGrid from '../components/AchievementsGrid'
+import NotesGrid from '../components/NotesGrid'
 
 function formatMemberSince(isoString) {
   if (!isoString) return null
@@ -28,6 +30,7 @@ export default function Profile() {
   const readingHistoryQuery = useReadingHistory({ userId })
   const favoritesQuery = useFavorites({ userId, user })
   const achievementsQuery = useAchievements({ userId })
+  const notesQuery = useRecentNotes({ userId })
 
   const memberSince = useMemo(() => formatMemberSince(user?.created_at ?? null), [user?.created_at])
 
@@ -118,6 +121,14 @@ export default function Profile() {
         userAchievements={achievementsQuery.userAchievementsQuery.data ?? []}
         isLoading={achievementsQuery.isLoading}
         profile={profile}
+      />
+
+      <NotesGrid
+        entries={notesQuery.data ?? []}
+        isLoading={notesQuery.isLoading}
+        isError={notesQuery.isError}
+        error={notesQuery.error}
+        onRetry={() => notesQuery.refetch()}
       />
 
       <FavoritesGrid

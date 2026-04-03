@@ -41,7 +41,7 @@ export default function StreakBadge() {
       title="Streak days"
     >
       <img
-        src="/images/streak-icon.png"
+        src="/images/streak-icon-noBG.png"
         alt=""
         className="h-full w-full scale-125 object-cover object-center -translate-y-1"
         draggable={false}

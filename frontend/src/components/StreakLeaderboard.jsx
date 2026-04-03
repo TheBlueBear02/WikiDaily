@@ -98,7 +98,7 @@ function LeaderboardUserTooltip({ entry, rect, tooltipId }) {
     <div
       id={tooltipId}
       role="tooltip"
-      className="pointer-events-none fixed z-[100] w-[min(18rem,calc(100vw-1.5rem))] rounded-lg border border-slate-200 bg-white p-3.5 shadow-lg ring-1 ring-slate-900/5"
+      className="pointer-events-none fixed z-[100] w-[min(18rem,calc(100vw-1.5rem))] rounded-none border border-slate-200 bg-white p-3.5 shadow-lg ring-1 ring-slate-900/5"
       style={{ left: clampedLeft, top, transform }}
     >
       <div className="flex gap-3">
