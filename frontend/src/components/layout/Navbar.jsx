@@ -110,6 +110,14 @@ export default function Navbar() {
             >
               History
             </NavLink>
+            <NavLink
+              to="/game"
+              className={({ isActive }) =>
+                `${linkBase} ${isActive ? linkActive : ''}`
+              }
+            >
+              Game
+            </NavLink>
             {userId ? (
               <NavLink
                 to="/profile"
