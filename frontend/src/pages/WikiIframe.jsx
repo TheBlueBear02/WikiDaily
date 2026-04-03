@@ -14,6 +14,8 @@ import { getSupabase } from '../lib/supabaseClient'
 import { useFavorites } from '../hooks/useFavorites'
 import { buildAuthUrl } from '../lib/returnTo'
 import { useArticleNote, useDeleteArticleNote, useUpsertArticleNote } from '../hooks/useArticleNote'
+import { useSubmitFact } from '../hooks/useSubmitFact'
+import FactSubmitModal from '../components/home/FactSubmitModal'
 
 function titleToWikiSlug(title) {
   return String(title ?? '')
@@ -51,7 +53,7 @@ export default function WikiIframe() {
   const { wikiSlug } = useParams()
   const location = useLocation()
   const navigate = useNavigate()
-  const { userId, user, markAsRead } = useUserProgress()
+  const { userId, user, profile, markAsRead } = useUserProgress()
   const {
     favorites,
     favoritesQuery,
@@ -94,22 +96,40 @@ export default function WikiIframe() {
   const [htmlLoading, setHtmlLoading] = useState(true)
   const [htmlFetchError, setHtmlFetchError] = useState(null)
   const wikiNavCleanupRef = useRef(null)
-  const readingSourceRef = useRef(readingSource)
+  const wikiIframeElRef = useRef(null)
+  const userIdRef = useRef(userId)
   const wikiSlugRef = useRef(canonicalWikiSlug)
   const lastAutoLogKeyRef = useRef(null)
   const noteSaveTimeoutRef = useRef(null)
 
-  readingSourceRef.current = readingSource
   wikiSlugRef.current = canonicalWikiSlug
+  userIdRef.current = userId
 
   const noteQuery = useArticleNote({ userId, wikiSlug: canonicalWikiSlug })
   const upsertNoteMutation = useUpsertArticleNote({ userId, user })
   const deleteNoteMutation = useDeleteArticleNote({ userId })
+  const submitFactMutation = useSubmitFact({ userId, user, profile })
+
+  const selectionDebounceRef = useRef(null)
+  const [factSelectUi, setFactSelectUi] = useState(null)
+  const [factModalOpen, setFactModalOpen] = useState(false)
+  const [factModalDraft, setFactModalDraft] = useState('')
+  const [factModalError, setFactModalError] = useState(null)
+  const [factModalSubmitSucceeded, setFactModalSubmitSucceeded] = useState(false)
 
   // Default to a focused reading view: keep tools collapsed on each article open.
   useEffect(() => {
     setIsToolsOpen(false)
     setNoteError(null)
+    setFactSelectUi(null)
+    setFactModalOpen(false)
+    setFactModalDraft('')
+    setFactModalError(null)
+    setFactModalSubmitSucceeded(false)
+    if (selectionDebounceRef.current) {
+      clearTimeout(selectionDebounceRef.current)
+      selectionDebounceRef.current = null
+    }
   }, [canonicalWikiSlug])
 
   const isFavorite = useMemo(() => {
@@ -391,7 +411,7 @@ export default function WikiIframe() {
     if (lastAutoLogKeyRef.current === key) return
 
     lastAutoLogKeyRef.current = key
-    // `reading_log.source` only allows ('daily','random'); treat search as "random".
+    // `reading_log.source` allows ('daily','random','link','search').
     void markAsRead({
       wikiSlug: canonicalWikiSlug,
       readDateYmd,
@@ -442,11 +462,74 @@ export default function WikiIframe() {
     }
   }, [])
 
+  function clearFactSelectionUi() {
+    setFactSelectUi(null)
+    if (selectionDebounceRef.current) {
+      clearTimeout(selectionDebounceRef.current)
+      selectionDebounceRef.current = null
+    }
+  }
+
+  function readFactSelectionFromIframe(iframe, doc) {
+    if (!userIdRef.current) {
+      clearFactSelectionUi()
+      return
+    }
+    const sel = doc.getSelection?.()
+    if (!sel || sel.isCollapsed || sel.rangeCount === 0) {
+      clearFactSelectionUi()
+      return
+    }
+    let text = ''
+    try {
+      text = String(sel.toString() ?? '').replace(/\s+/g, ' ').trim()
+    } catch {
+      clearFactSelectionUi()
+      return
+    }
+    if (text.length < 10 || text.length > 500) {
+      clearFactSelectionUi()
+      return
+    }
+    let range
+    try {
+      range = sel.getRangeAt(0)
+    } catch {
+      clearFactSelectionUi()
+      return
+    }
+    const rect = range.getBoundingClientRect()
+    if (rect.width === 0 && rect.height === 0) {
+      clearFactSelectionUi()
+      return
+    }
+    const iframeRect = iframe.getBoundingClientRect()
+    const top = iframeRect.top + rect.bottom + 8
+    const left = Math.min(
+      Math.max(iframeRect.left + rect.left, 8),
+      window.innerWidth - 220,
+    )
+    setFactSelectUi({ text, top, left })
+  }
+
+  function scheduleReadFactSelection(iframe, doc) {
+    if (!userIdRef.current) {
+      clearFactSelectionUi()
+      return
+    }
+    if (selectionDebounceRef.current) clearTimeout(selectionDebounceRef.current)
+    selectionDebounceRef.current = setTimeout(() => {
+      selectionDebounceRef.current = null
+      readFactSelectionFromIframe(iframe, doc)
+    }, 120)
+  }
+
   function handleIframeDocumentLoad(event) {
     wikiNavCleanupRef.current?.()
     wikiNavCleanupRef.current = null
 
     const iframe = event.currentTarget
+    wikiIframeElRef.current = iframe
     const doc = iframe.contentDocument
     if (!doc?.body) return
 
@@ -478,14 +561,27 @@ export default function WikiIframe() {
       navigate(`/wiki/${encodeURIComponent(nextCanonical)}`, {
         state: {
           displayTitle: display,
-          source: readingSourceRef.current,
+          source: 'link',
         },
       })
     }
 
     doc.addEventListener('click', handler, true)
+
+    const onSelectionMaybe = () => {
+      scheduleReadFactSelection(iframe, doc)
+    }
+
+    doc.addEventListener('selectionchange', onSelectionMaybe)
+    doc.addEventListener('mouseup', onSelectionMaybe)
+    doc.addEventListener('touchend', onSelectionMaybe, { passive: true })
+
     wikiNavCleanupRef.current = () => {
       doc.removeEventListener('click', handler, true)
+      doc.removeEventListener('selectionchange', onSelectionMaybe)
+      doc.removeEventListener('mouseup', onSelectionMaybe)
+      doc.removeEventListener('touchend', onSelectionMaybe)
+      clearFactSelectionUi()
     }
   }
 
@@ -546,6 +642,62 @@ export default function WikiIframe() {
         {noteError ? <div className="text-xs text-rose-700">{noteError}</div> : null}
       </div>
 
+      {factSelectUi && !factModalOpen ? (
+        <button
+          type="button"
+          className="fixed z-[90] max-w-[min(100vw-1rem,14rem)] rounded-none border border-primary bg-primary px-3 py-2 text-left text-xs font-medium text-white shadow-md hover:bg-primary-hover"
+          style={{ top: factSelectUi.top, left: factSelectUi.left }}
+          onClick={() => {
+            setFactModalDraft(factSelectUi.text)
+            setFactModalError(null)
+            setFactModalSubmitSucceeded(false)
+            setFactModalOpen(true)
+            clearFactSelectionUi()
+            try {
+              const doc = wikiIframeElRef.current?.contentDocument
+              doc?.getSelection?.()?.removeAllRanges?.()
+            } catch {
+              // ignore
+            }
+          }}
+        >
+          Submit as Crazy Fact
+        </button>
+      ) : null}
+
+      <FactSubmitModal
+        open={factModalOpen}
+        onClose={() => {
+          setFactModalOpen(false)
+          setFactModalError(null)
+          setFactModalSubmitSucceeded(false)
+          setFactModalDraft('')
+        }}
+        displayTitle={
+          displayTitle ?? canonicalWikiSlug.replaceAll('_', ' ')
+        }
+        selectedText={factModalDraft}
+        submitSucceeded={factModalSubmitSucceeded}
+        onSubmit={() => {
+          setFactModalError(null)
+          void submitFactMutation
+            .mutateAsync({
+              wikiSlug: canonicalWikiSlug,
+              factText: factModalDraft,
+            })
+            .then(() => {
+              setFactModalSubmitSucceeded(true)
+            })
+            .catch((err) => {
+              setFactModalError(
+                err instanceof Error ? err.message : 'Could not submit',
+              )
+            })
+        }}
+        isPending={submitFactMutation.isPending}
+        error={factModalError}
+      />
+
       <div className="flex flex-col gap-4 lg:flex-row">
         <div className="grow lg:basis-3/4 xl:basis-4/5">
           <div className="relative overflow-hidden rounded-none border border-slate-200 bg-white">
@@ -572,6 +724,7 @@ export default function WikiIframe() {
 
             {iframeHtml ? (
               <iframe
+                ref={wikiIframeElRef}
                 key={canonicalWikiSlug}
                 title={displayTitle ?? 'Wikipedia article'}
                 srcDoc={iframeHtml}

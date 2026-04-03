@@ -2,9 +2,10 @@
 
 ## Overview
 
-The database has 7 tables:
+The database has 9 tables:
 
-- `profiles`, `reading_log`, `favorites`, `article_notes`, and `user_achievements` are user-specific and protected by Row Level Security (RLS).
+- `profiles`, `reading_log`, `favorites`, `article_notes`, `user_achievements`, and `fact_votes` are user-specific and protected by Row Level Security (RLS).
+- `wiki_facts` is public read for non-deleted rows; inserts and soft-deletes are scoped to the submitter.
 - `articles` is public read-only and stores cached article metadata for BOTH daily and random articles.
 - `achievements` is public read-only and stores achievement definitions (admin-managed; service role writes only).
 
@@ -20,6 +21,10 @@ auth.users (Supabase built-in)
             ├── article_notes (one note per user per article)
             │
             └── user_achievements (one row per unlocked achievement)
+            │
+            ├── wiki_facts (submitted facts; snapshot columns for submitter display)
+            │
+            └── fact_votes (up/down vote per user per fact; references wiki_facts)
 
 articles (one row per unique wiki page; daily rows are flagged; treated as append-only)
 achievements (achievement definitions; admin-managed; public read)
@@ -179,7 +184,15 @@ Records every article a user has read. One row per user per day (enforced by the
 | `wiki_slug` | text        | YES      | —              | The Wikipedia article slug. Foreign key → `articles(wiki_slug)`. Set to null if the referenced article is ever deleted (`ON DELETE SET NULL`). |
 | `read_at`   | timestamptz | YES      | `NOW()`        | Full timestamp of when the article was marked as read. Useful for future analytics. |
 | `read_date` | date        | NO       | `CURRENT_DATE` | The date portion of the read, stored explicitly. Used by the unique constraint to prevent logging the same article twice on the same day. |
-| `source`    | text        | NO       | `'daily'`       | Tracks where the article came from: `CHECK (source IN ('daily', 'random'))`. |
+| `source`    | text        | NO       | `'daily'`       | Tracks where the article came from: `CHECK (source IN ('daily', 'random', 'link', 'search'))`. |
+
+**Migration (existing projects):** extend the check constraint so inserts with `source = 'link'` or `source = 'search'` succeed. If the constraint name differs, list checks on the table (`pg_constraint` where `conrelid = 'public.reading_log'::regclass`) and drop the correct one.
+
+```sql
+alter table public.reading_log drop constraint if exists reading_log_source_check;
+alter table public.reading_log add constraint reading_log_source_check
+  check (source in ('daily', 'random', 'link', 'search'));
+```
 
 **Unique Constraint: one row per user+article+day**
 
@@ -424,12 +437,12 @@ The navigation state controls the recorded source:
 
 - Daily navigation: `{ source: 'daily' }`
 - Random navigation: `{ source: 'random' }`
-- Search navigation: `{ source: 'search' }` (normalized to `random` at write-time)
-- **In-article Wikipedia links** (reader navigates from one `/wiki/:wikiSlug` to another): the app keeps the **current** `source` in `location.state` (e.g. following links from a daily article keeps `daily`), so each new slug still gets its own `reading_log` row for that day when signed in.
+- Search navigation: `{ source: 'search' }` (header wiki search; stored as `search` in `reading_log`)
+- **In-article Wikipedia links** (reader navigates from one `/wiki/:wikiSlug` to another): `{ source: 'link' }` so the new slug is logged separately from the daily/random entry point.
 
-The `markAsRead` mutation includes a short retry loop on **any** `reading_log.wiki_slug -> articles.wiki_slug` foreign key violation (navigation can happen before the client finishes upserting `articles`), including **daily** sessions where the user follows in-article links to slugs not yet cached.
+The `markAsRead` mutation includes a short retry loop on **any** `reading_log.wiki_slug -> articles.wiki_slug` foreign key violation (navigation can happen before the client finishes upserting `articles`), including sessions where the user follows in-article links to slugs not yet cached.
 
-> Note: the DB enforces `CHECK (source IN ('daily','random'))`, so `source: 'search'` is normalized to `random` at write-time.
+> Note: the DB enforces `CHECK (source IN ('daily','random','link','search'))`. Only `source = 'random'` increments `profiles.total_random_read` (search and link do not).
 
 When the user triggers a random navigation from the article page ("New random article"), the app also **best-effort upserts the random article into `articles`** (same as the Home random picker). This improves the chance that the `reading_log` insert can satisfy the FK constraint.
 
@@ -438,6 +451,244 @@ When the user triggers a random navigation from the article page ("New random ar
 If the user is not signed in, no `reading_log` entry is created.
 
 > Note: if your project keeps `articles` as strict read-only for anon/authenticated clients, this client-side upsert will be blocked by RLS. In that case, move random upserts to a trusted server/edge function (service role) or add a tightly scoped write policy for the intended client role.
+
+---
+
+## Table: `wiki_facts`
+
+Community-submitted “crazy facts” (excerpts from in-app Wikipedia articles). Submitter display uses **denormalized snapshot columns** (`submitter_username`, `submitter_total_read`) filled on insert so the Home feed does not join `profiles` (RLS would hide other users’ profile rows).
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| `id` | bigserial | NO | auto | Primary key. |
+| `user_id` | uuid | YES | — | FK → `profiles(user_id)` **ON DELETE SET NULL**. |
+| `wiki_slug` | text | NO | — | FK → `articles(wiki_slug)` **ON DELETE CASCADE**. |
+| `fact_text` | text | NO | — | Selected text; **CHECK** length 10–500. |
+| `up_count` | integer | NO | 0 | Cached up-votes; maintained by trigger on `fact_votes`. |
+| `down_count` | integer | NO | 0 | Cached down-votes; maintained by trigger on `fact_votes`. |
+| `net_score` | integer | NO | 0 | `up_count - down_count`; maintained by trigger. |
+| `is_deleted` | boolean | NO | false | Soft delete; owner may set to true. |
+| `created_at` | timestamptz | NO | `NOW()` | Submission time. |
+| `submitter_username` | text | YES | — | Snapshot from `profiles.username` at insert (blank → NULL). |
+| `submitter_total_read` | integer | YES | — | Snapshot from `profiles.total_read` at insert. |
+
+**Indexes (partial, `is_deleted = false`):**
+
+- `(net_score DESC)` — popularity sort.
+- `(created_at DESC)` — newest sort.
+- `(wiki_slug, net_score DESC)` — per-article lists (future).
+- `(user_id, created_at DESC)` — profile “my facts” (future).
+
+**RLS:**
+
+- `SELECT` — anyone may read rows where `is_deleted = false`.
+- `INSERT` — authenticated only; `user_id` must equal `auth.uid()`.
+- `UPDATE` — authenticated; only own rows (`user_id = auth.uid()`); **with check** `is_deleted = true` so the only allowed client transition is soft-delete (see SQL below).
+
+**Trigger: `wiki_facts_set_submitter_snapshot` (BEFORE INSERT)**
+
+Copies `username` / `total_read` from `profiles` for `NEW.user_id`. If there is **no** profile row, or `user_id` is null, snapshot columns stay **NULL** (insert still succeeds). Uses `NULLIF(btrim(username), '')` for blank names.
+
+**Client note:** The app’s pre-insert `profiles` upsert must not send `username: null` on conflict updates — that can clear `profiles.username` and produce empty snapshots for other readers. Prefer upserting `{ user_id }` only, or set `username` from the richer client snapshot (`profiles` row + auth metadata) when non-empty.
+
+---
+
+## Table: `fact_votes`
+
+One row per user per fact. The “Ok…” (skip) action on the Home card **does not** insert here.
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| `id` | bigserial | NO | auto | Primary key. |
+| `fact_id` | bigint | NO | — | FK → `wiki_facts(id)` **ON DELETE CASCADE**. |
+| `user_id` | uuid | NO | — | FK → `profiles(user_id)` **ON DELETE CASCADE**. |
+| `vote` | text | NO | — | **`CHECK (vote IN ('up', 'down'))`**. |
+| `created_at` | timestamptz | NO | `NOW()` | First cast. |
+| `updated_at` | timestamptz | NO | `NOW()` | Updated on row change (reuse `update_updated_at` trigger pattern). |
+
+**Unique:** `(fact_id, user_id)`.
+
+**Index:** `(user_id, fact_id)` for “my votes” lookups.
+
+**RLS:**
+
+- `SELECT` — authenticated; only rows where `user_id = auth.uid()`.
+- `INSERT` — authenticated; `user_id = auth.uid()`.
+- `UPDATE` — authenticated; own rows only.
+- `DELETE` — authenticated; own rows only.
+
+**Trigger: `fact_votes_sync_counts` (AFTER INSERT / UPDATE / DELETE)**
+
+Recounts all votes for the affected `fact_id` and updates `wiki_facts.up_count`, `down_count`, and `net_score`.
+
+**SQL (run in Supabase SQL editor):**
+
+```sql
+-- WIKI_FACTS
+create table public.wiki_facts (
+  id bigserial primary key,
+  user_id uuid references public.profiles(user_id) on delete set null,
+  wiki_slug text not null references public.articles(wiki_slug) on delete cascade,
+  fact_text text not null
+    check (char_length(fact_text) >= 10 and char_length(fact_text) <= 500),
+  up_count integer not null default 0 check (up_count >= 0),
+  down_count integer not null default 0 check (down_count >= 0),
+  net_score integer not null default 0,
+  is_deleted boolean not null default false,
+  created_at timestamptz not null default now(),
+  submitter_username text,
+  submitter_total_read integer
+);
+
+create index idx_wiki_facts_net_score
+  on public.wiki_facts (net_score desc)
+  where is_deleted = false;
+
+create index idx_wiki_facts_created_at
+  on public.wiki_facts (created_at desc)
+  where is_deleted = false;
+
+create index idx_wiki_facts_wiki_slug
+  on public.wiki_facts (wiki_slug, net_score desc)
+  where is_deleted = false;
+
+create index idx_wiki_facts_user_id
+  on public.wiki_facts (user_id, created_at desc)
+  where is_deleted = false;
+
+-- Snapshot submitter display at insert; never fail if profiles row missing
+create or replace function public.wiki_facts_set_submitter_snapshot()
+returns trigger
+language plpgsql
+security invoker
+set search_path = public
+as $$
+declare
+  v_username text;
+  v_total integer;
+begin
+  if new.user_id is null then
+    return new;
+  end if;
+
+  select p.username, p.total_read
+  into v_username, v_total
+  from public.profiles p
+  where p.user_id = new.user_id;
+
+  new.submitter_username := nullif(btrim(v_username), '');
+  new.submitter_total_read := v_total;
+
+  return new;
+end;
+$$;
+
+create trigger wiki_facts_submitter_snapshot
+  before insert on public.wiki_facts
+  for each row
+  execute function public.wiki_facts_set_submitter_snapshot();
+
+alter table public.wiki_facts enable row level security;
+
+create policy "wiki_facts_select_public"
+  on public.wiki_facts for select
+  using (is_deleted = false);
+
+create policy "wiki_facts_insert_own"
+  on public.wiki_facts for insert
+  to authenticated
+  with check (auth.uid() = user_id);
+
+create policy "wiki_facts_soft_delete_own"
+  on public.wiki_facts for update
+  to authenticated
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id and is_deleted = true);
+
+-- FACT_VOTES
+create table public.fact_votes (
+  id bigserial primary key,
+  fact_id bigint not null references public.wiki_facts(id) on delete cascade,
+  user_id uuid not null references public.profiles(user_id) on delete cascade,
+  vote text not null check (vote in ('up', 'down')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (fact_id, user_id)
+);
+
+create index idx_fact_votes_user
+  on public.fact_votes (user_id, fact_id);
+
+create or replace function public.fact_votes_sync_wiki_fact_counts()
+returns trigger
+language plpgsql
+security invoker
+set search_path = public
+as $$
+declare
+  fid bigint;
+  u integer;
+  d integer;
+begin
+  if tg_op = 'DELETE' then
+    fid := old.fact_id;
+  else
+    fid := new.fact_id;
+  end if;
+
+  select
+    count(*) filter (where vote = 'up')::int,
+    count(*) filter (where vote = 'down')::int
+  into u, d
+  from public.fact_votes
+  where fact_id = fid;
+
+  update public.wiki_facts
+  set
+    up_count = coalesce(u, 0),
+    down_count = coalesce(d, 0),
+    net_score = coalesce(u, 0) - coalesce(d, 0)
+  where id = fid;
+
+  return coalesce(new, old);
+end;
+$$;
+
+create trigger fact_votes_sync_counts
+  after insert or update or delete on public.fact_votes
+  for each row
+  execute function public.fact_votes_sync_wiki_fact_counts();
+
+create trigger fact_votes_updated_at
+  before update on public.fact_votes
+  for each row
+  execute function public.update_updated_at();
+
+alter table public.fact_votes enable row level security;
+
+create policy "fact_votes_select_own"
+  on public.fact_votes for select
+  to authenticated
+  using (auth.uid() = user_id);
+
+create policy "fact_votes_insert_own"
+  on public.fact_votes for insert
+  to authenticated
+  with check (auth.uid() = user_id);
+
+create policy "fact_votes_update_own"
+  on public.fact_votes for update
+  to authenticated
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+create policy "fact_votes_delete_own"
+  on public.fact_votes for delete
+  to authenticated
+  using (auth.uid() = user_id);
+```
+
+> **Note:** `fact_votes_updated_at` assumes `public.update_updated_at()` already exists (see `article_notes` section). If your project uses a different function name, point the trigger at that function or create `update_updated_at` first.
 
 ---
 
@@ -474,6 +725,20 @@ profiles.user_id
             │
             └── user_achievements.achievement_id matches achievements.id
                 (FK with ON DELETE RESTRICT)
+
+profiles.user_id
+  │
+  └── wiki_facts.user_id (1-to-many, ON DELETE SET NULL on submitter delete)
+            │
+            └── fact_votes.fact_id (1-to-many, CASCADE when fact removed)
+
+profiles.user_id
+  │
+  └── fact_votes.user_id (1-to-many, CASCADE when profile deleted)
+
+articles.wiki_slug
+  │
+  └── wiki_facts.wiki_slug (1-to-many, CASCADE when article row deleted)
 ```
 
 > `reading_log.wiki_slug` is a foreign key to `articles(wiki_slug)` with `ON DELETE SET NULL`. This means if an article row is ever deleted, the reading log entry is preserved but `wiki_slug` becomes null rather than the row being deleted. This enables Supabase nested joins between the two tables.
@@ -510,7 +775,7 @@ total_read = total_read + 1
 total_random_read = total_random_read + 1  (only when source = 'random')
 ```
 
-Then a new row is inserted into `reading_log` (with `source = 'daily'` or `source = 'random'` depending on how the article was obtained).
+Then a new row is inserted into `reading_log` (with `source` one of `daily`, `random`, `link`, or `search` depending on how the article was opened).
 
 If the insert is rejected by the unique constraint (`UNIQUE (user_id, wiki_slug, read_date)`), the app knows the user already logged this article today and skips the profile update.
 
@@ -532,6 +797,6 @@ The notified column ensures the toast shows exactly once per achievement, even a
 
 ### Self-healing `total_read`
 
-`reading_log` is the source of truth for "how many articles the user has read" (it includes both `daily` and `random` via the `source` column).
+`reading_log` is the source of truth for "how many articles the user has read" (the `source` column distinguishes `daily`, `random`, header `search`, and in-reader `link` navigation).
 
 To prevent drift (e.g. if a `reading_log` insert succeeds but a subsequent `profiles` update fails), the app periodically reconciles `profiles.total_read` to match `COUNT(*)` of that user's `reading_log` rows.

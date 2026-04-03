@@ -9,6 +9,7 @@ import HeroAside from '../components/home/HeroAside'
 import StreakLeaderboard from '../components/home/StreakLeaderboard'
 import HeroAchievementsSection from '../components/home/HeroAchievementsSection'
 import RandomWikiSection from '../components/home/RandomWikiSection'
+import CraziestFactsSection from '../components/home/CraziestFactsSection'
 import CollectiveReadingProgressBar from '../components/home/CollectiveReadingProgressBar'
 import ReadingProgressBar from '../components/home/ReadingProgressBar'
 import LatestReadsSection from '../components/home/LatestReadsSection'
@@ -153,6 +154,7 @@ export default function Home() {
         }}
       />
       <RandomWikiSection />
+      <CraziestFactsSection />
       {userId &&
       !latestReadsQuery.isLoading &&
       !latestReadsQuery.isError &&

@@ -262,8 +262,8 @@ With a button linking to `/`.
 
 **Each card contains:**
 - Thumbnail image — full width of card, fixed height 100px, `object-fit: cover`. If `image_url` is null, show a warm parchment placeholder with the first letter of the title centered.
-- Article title — `display_title` from articles join. Serif font, 14px, font-weight 500, 2-line clamp with ellipsis overflow.
-- Marked date — `created_at` formatted as `"Marked Mar 29, 2026"`. Sans-serif, 11px, muted color.
+- Article title — `display_title` from articles join. Same sans title treatment as daily `ArticleCard` (scaled for grid: `text-base font-semibold leading-tight tracking-tight text-primary`), 2-line clamp with ellipsis overflow.
+- Marked date — `created_at` formatted as `"Marked Mar 29, 2026"`. `text-xs text-slate-500`.
 - Clicking any card navigates to `/wiki/${wiki_slug}` — opens the article in the in-app iframe viewer.
 
 **Empty state:**
@@ -289,8 +289,8 @@ With a button linking to `/`.
 - Source badge — top-right corner overlay on the image. **Square corners (no rounding)**, small font (10px uppercase):
   - Daily article → amber/gold background, `"Daily"`
   - Random article → teal background, `"Random"`
-- Article title — `display_title` from articles join. Serif font, 14px, font-weight 500, 2-line clamp with ellipsis overflow.
-- Date read — `read_date` formatted as `"Mar 29, 2026"`. Sans-serif, 11px, muted color.
+- Article title — `display_title` from articles join. Same sans title treatment as daily `ArticleCard` (scaled: `text-base font-semibold leading-tight tracking-tight text-primary`), 2-line clamp with ellipsis overflow.
+- Date read — `read_date` formatted as `"Mar 29, 2026"`. `text-xs text-slate-500`.
 - Clicking any card navigates to `/wiki/${wiki_slug}` — opens the article in the in-app iframe viewer.
 
 **Empty state:**

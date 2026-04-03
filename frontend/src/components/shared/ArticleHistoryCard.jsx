@@ -26,13 +26,23 @@ function formatReadDate(ymd) {
 }
 
 function sourceLabel(source) {
-  return source === 'daily' ? 'Daily' : 'Random'
+  if (source === 'daily') return 'Daily'
+  if (source === 'link') return 'Link'
+  if (source === 'search') return 'Search'
+  return 'Random'
 }
 
 function sourceBadgeClass(source) {
-  return source === 'daily'
-    ? 'bg-amber-100 text-amber-950 border-amber-200'
-    : 'bg-emerald-100 text-emerald-950 border-emerald-200'
+  if (source === 'daily') {
+    return 'bg-amber-100 text-amber-950 border-amber-200'
+  }
+  if (source === 'link') {
+    return 'bg-sky-100 text-sky-950 border-sky-200'
+  }
+  if (source === 'search') {
+    return 'bg-violet-100 text-violet-950 border-violet-200'
+  }
+  return 'bg-emerald-100 text-emerald-950 border-emerald-200'
 }
 
 export default function ArticleHistoryCard({ entry }) {
@@ -54,13 +64,25 @@ export default function ArticleHistoryCard({ entry }) {
       : null
 
   const readDateText = useMemo(() => formatReadDate(entry?.read_date ?? null), [entry?.read_date])
-  const source = entry?.source === 'daily' ? 'daily' : 'random'
+  const rawSource = typeof entry?.source === 'string' ? entry.source : ''
+  const source =
+    rawSource === 'daily' ||
+    rawSource === 'link' ||
+    rawSource === 'random' ||
+    rawSource === 'search'
+      ? rawSource
+      : 'random'
 
   const clickable = Boolean(wikiSlug)
 
   const onOpen = () => {
     if (!wikiSlug) return
-    navigate(`/wiki/${encodeURIComponent(wikiSlug)}`)
+    navigate(`/wiki/${encodeURIComponent(wikiSlug)}`, {
+      state: {
+        displayTitle: title,
+        ...(source ? { source } : {}),
+      },
+    })
   }
 
   return (
@@ -112,10 +134,10 @@ export default function ArticleHistoryCard({ entry }) {
       </div>
 
       <div className="space-y-2 p-3">
-        <div className="line-clamp-2 font-serif text-sm font-semibold leading-snug text-primary">
+        <div className="line-clamp-2 text-base font-semibold leading-tight tracking-tight text-primary">
           {title}
         </div>
-        <div className="text-[11px] font-medium text-slate-500">
+        <div className="text-xs text-slate-500">
           {readDateText ?? entry?.read_date ?? '—'}
         </div>
       </div>

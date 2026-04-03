@@ -86,10 +86,10 @@ export default function FavoriteArticleCard({ entry }) {
       </div>
 
       <div className="space-y-2 p-3">
-        <div className="line-clamp-2 font-serif text-sm font-semibold leading-snug text-primary">
+        <div className="line-clamp-2 text-base font-semibold leading-tight tracking-tight text-primary">
           {title}
         </div>
-        <div className="text-[11px] font-medium text-slate-500">
+        <div className="text-xs text-slate-500">
           {savedAtText ? `Marked ${savedAtText}` : 'Marked —'}
         </div>
       </div>

@@ -1,36 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getSupabase } from '../../lib/supabaseClient'
-import { fetchWikipediaRandomPage, fetchWikipediaSummary } from '../../lib/wikipedia'
+import { navigateToRandomWikiArticle } from '../../lib/navigateToRandomWikiArticle'
 import { cardInteractiveSurfaceClasses } from '../../lib/cardSurface'
-
-function titleToWikiSlug(title) {
-  return String(title ?? '')
-    .trim()
-    .replaceAll(' ', '_')
-}
-
-function buildRandomArticleRow({ wikiSlug, fallbackTitle, summary }) {
-  const normalizedTitle =
-    summary?.titles?.normalized ??
-    summary?.title ??
-    fallbackTitle ??
-    wikiSlug.replaceAll('_', ' ')
-
-  return {
-    // Keep the PK aligned with the route slug to satisfy `reading_log` FK inserts.
-    wiki_slug: titleToWikiSlug(wikiSlug) || wikiSlug,
-    display_title:
-      String(summary?.title ?? '').trim() ||
-      String(summary?.displaytitle ?? '').replace(/<[^>]*>/g, '').trim() ||
-      fallbackTitle ||
-      wikiSlug.replaceAll('_', ' '),
-    image_url: summary?.originalimage?.source ?? null,
-    description: summary?.extract ?? null,
-    is_daily: false,
-    featured_date: null,
-  }
-}
 
 export default function RandomWikiPickerCard() {
   const navigate = useNavigate()
@@ -43,33 +14,7 @@ export default function RandomWikiPickerCard() {
     setErrorMessage(null)
 
     try {
-      const { wikiSlug, title } = await fetchWikipediaRandomPage()
-      // Navigate immediately. Caching to Supabase is best-effort (may be blocked by RLS).
-      setIsLoading(false)
-      navigate(`/wiki/${encodeURIComponent(wikiSlug)}`, {
-        state: { displayTitle: title, source: 'random' },
-      })
-
-      async function cacheRandomArticle() {
-        try {
-          const summary = await fetchWikipediaSummary(wikiSlug)
-          const row = buildRandomArticleRow({
-            wikiSlug,
-            fallbackTitle: title,
-            summary,
-          })
-          const supabase = getSupabase()
-          const { error: upsertErr } = await supabase.from('articles').upsert(row, {
-            onConflict: 'wiki_slug',
-            ignoreDuplicates: false,
-          })
-          if (upsertErr) throw upsertErr
-        } catch (cacheErr) {
-          console.warn('Random article cache skipped:', cacheErr)
-        }
-      }
-
-      void cacheRandomArticle()
+      await navigateToRandomWikiArticle(navigate)
     } catch (err) {
       const message =
         err instanceof Error ? err.message : 'Failed to load random page'

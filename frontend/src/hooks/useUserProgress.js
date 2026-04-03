@@ -20,9 +20,11 @@ function isNoRowsFound(err) {
 }
 
 function normalizeReadingSource(source) {
-  // DB constraint: reading_log.source CHECK (source IN ('daily','random')).
-  // Treat any non-daily navigation sources (e.g. navbar search) as "random" for logging.
-  return source === 'random' || source === 'search' ? 'random' : 'daily'
+  // DB constraint: reading_log.source CHECK (source IN ('daily','random','link','search')).
+  if (source === 'random') return 'random'
+  if (source === 'search') return 'search'
+  if (source === 'link') return 'link'
+  return 'daily'
 }
 
 function isForeignKeyViolation(err) {

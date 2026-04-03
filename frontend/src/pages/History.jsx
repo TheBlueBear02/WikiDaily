@@ -95,7 +95,7 @@ function DayCard({ dayNumber, row, wikiUrl, isCollected, isToday }) {
           )}
 
           <div className="p-3 pt-3">
-            <div className="line-clamp-2 text-sm font-semibold leading-snug text-primary">
+            <div className="line-clamp-2 text-sm font-semibold leading-tight tracking-tight text-primary">
               {row.display_title}
             </div>
             <div className="mt-1 text-xs text-slate-500">{row.date}</div>
