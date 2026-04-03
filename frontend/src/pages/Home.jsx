@@ -1,3 +1,5 @@
+import { NavLink } from 'react-router-dom'
+
 import { useDailyArticle } from '../hooks/useDailyArticle'
 import { useUserProgress } from '../hooks/useUserProgress'
 import { useReadingHistory } from '../hooks/useReadingHistory'
@@ -115,6 +117,21 @@ export default function Home() {
         showDailyResetCountdown
         bodyScrollable
         className="h-full"
+        actionsLeft={
+          <NavLink
+            to="/history"
+            className={({ isActive }) =>
+              [
+                'inline-flex items-center justify-center rounded-none border px-3 py-2 text-sm font-medium hover:bg-slate-50',
+                isActive
+                  ? 'border-slate-400 bg-slate-50 text-primary'
+                  : 'border-slate-300 bg-white text-slate-700',
+              ].join(' ')
+            }
+          >
+            Previous articles
+          </NavLink>
+        }
       />
     )
   }

@@ -20,6 +20,8 @@ export default function ArticleCard({
   wikiUrl,
   cardHref = null,
   navigationState = null,
+  /** Rendered to the left of the primary "Read now" action (bottom row). */
+  actionsLeft = null,
   actions = null,
   isCollected = false,
   showDailyResetCountdown = false,
@@ -120,12 +122,12 @@ export default function ArticleCard({
         </div>
       ) : null}
 
-      <div className="relative aspect-[16/9] w-full shrink-0 bg-slate-100">
+      <div className="relative h-[30vh] w-full shrink-0 bg-slate-100">
         {imageUrl ? (
           <img
             src={imageUrl}
             alt=""
-            className="h-full w-full object-contain object-center"
+            className="h-full w-full object-cover object-center"
             loading="lazy"
             referrerPolicy="no-referrer"
           />
@@ -167,13 +169,13 @@ export default function ArticleCard({
 
       <div
         className={[
-          'space-y-3 p-5',
+          'flex flex-col gap-3 p-5',
           bodyScrollable ? 'min-h-0 flex-1 overflow-y-auto' : null,
         ]
           .filter(Boolean)
           .join(' ')}
       >
-        <div className="space-y-2">
+        <div className="flex-1 space-y-2">
           <h2 className="text-2xl font-semibold leading-tight tracking-tight text-primary">
             {displayTitle}
           </h2>
@@ -187,40 +189,42 @@ export default function ArticleCard({
           )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          {isReadNowInternal ? (
-            <Link
-              to={readNowHref}
-              state={navigationState ?? undefined}
-              className="inline-flex items-center justify-center rounded-none bg-primary px-3 py-2 text-sm font-medium text-white hover:bg-primary-hover"
-            >
-              Read now
-            </Link>
-          ) : (
-            <a
-              href={readNowHref}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center justify-center rounded-none bg-primary px-3 py-2 text-sm font-medium text-white hover:bg-primary-hover"
-            >
-              Read now
-            </a>
-          )}
-          {actions}
-        </div>
-
-        {countdownLabel ? (
-          <div
-            className="pt-1 text-right text-xs font-medium text-slate-500"
-            title={`Next daily article at ${dailyCountdown.target.toISOString()}`}
-            aria-live="polite"
-            aria-atomic="true"
-          >
-            <span className="sr-only">Time until next daily article: </span>
-            <span>New daily article in: </span>{' '}
-            <span className="tabular-nums">{countdownLabel}</span>
+        <div className="mt-auto flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
+          <div className="flex min-w-0 flex-wrap items-center gap-3">
+            {actionsLeft}
+            {isReadNowInternal ? (
+              <Link
+                to={readNowHref}
+                state={navigationState ?? undefined}
+                className="inline-flex items-center justify-center rounded-none bg-primary px-3 py-2 text-sm font-medium text-white hover:bg-primary-hover"
+              >
+                Read now
+              </Link>
+            ) : (
+              <a
+                href={readNowHref}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center justify-center rounded-none bg-primary px-3 py-2 text-sm font-medium text-white hover:bg-primary-hover"
+              >
+                Read now
+              </a>
+            )}
+            {actions}
           </div>
-        ) : null}
+          {countdownLabel ? (
+            <div
+              className="shrink-0 self-end text-xs font-medium leading-none text-slate-500 sm:text-right"
+              title={`Next daily article at ${dailyCountdown.target.toISOString()}`}
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              <span className="sr-only">Time until next daily article: </span>
+              <span>New daily article in: </span>{' '}
+              <span className="tabular-nums">{countdownLabel}</span>
+            </div>
+          ) : null}
+        </div>
       </div>
     </article>
   )

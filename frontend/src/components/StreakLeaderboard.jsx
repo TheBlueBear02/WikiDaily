@@ -1,8 +1,10 @@
-import { useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 import { useStreakLeaderboard } from '../hooks/useStreakLeaderboard'
 import { useLeaderboardCountdown } from '../hooks/useLeaderboardCountdown'
-import { getCurrentLevel } from '../lib/levels'
+import { getCurrentLevel, getNextLevel } from '../lib/levels'
+import { initialsFromUsername } from '../lib/profileAvatar'
 
 const DEFAULT_ROWS = 8
 
@@ -64,11 +66,121 @@ function CountdownLabel({ days, hours, minutes }) {
   )
 }
 
+const TOOLTIP_HIDE_MS = 180
+const TOOLTIP_APPROX_HALF_W = 150
+
+function formatArticlesRead(n) {
+  const x = Number(n) || 0
+  return x === 1 ? '1 article read' : `${x} articles read`
+}
+
+function streakLeaderboardTooltipDomId(entry, rowRank) {
+  const key = entry?.userId != null ? String(entry.userId) : `r${rowRank}`
+  return `streak-lb-tip-${key}`
+}
+
+function LeaderboardUserTooltip({ entry, rect, tooltipId }) {
+  const totalRead = entry.totalRead ?? 0
+  const level = getCurrentLevel(totalRead)
+  const next = getNextLevel(totalRead)
+  const avatarInitials = initialsFromUsername(entry.username)
+
+  const centerX = rect.left + rect.width / 2
+  const clampedLeft = Math.min(
+    window.innerWidth - TOOLTIP_APPROX_HALF_W - 12,
+    Math.max(TOOLTIP_APPROX_HALF_W + 12, centerX),
+  )
+  const placeAbove = rect.top > 150
+  const top = placeAbove ? rect.top : rect.bottom + 6
+  const transform = placeAbove ? 'translate(-50%, -100%)' : 'translate(-50%, 0)'
+
+  return (
+    <div
+      id={tooltipId}
+      role="tooltip"
+      className="pointer-events-none fixed z-[100] w-[min(18rem,calc(100vw-1.5rem))] rounded-lg border border-slate-200 bg-white p-3.5 shadow-lg ring-1 ring-slate-900/5"
+      style={{ left: clampedLeft, top, transform }}
+    >
+      <div className="flex gap-3">
+        <div
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-amber-100 text-sm font-semibold text-amber-950 ring-1 ring-amber-200/80"
+          aria-hidden
+        >
+          {avatarInitials}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold text-primary">{entry.username}</p>
+          <p className="mt-0.5 text-xs text-slate-600">{`Level ${level.level} · ${level.name}`}</p>
+        </div>
+      </div>
+
+      <dl className="mt-3 space-y-2 border-t border-slate-100 pt-3 text-xs">
+        <div className="flex items-baseline justify-between gap-3">
+          <dt className="font-medium text-slate-500">Current streak</dt>
+          <dd className="tabular-nums font-semibold text-slate-800">{entry.currentStreak}</dd>
+        </div>
+        <div className="flex items-baseline justify-between gap-3">
+          <dt className="font-medium text-slate-500">Total reads</dt>
+          <dd className="tabular-nums font-semibold text-slate-800">{totalRead}</dd>
+        </div>
+      </dl>
+
+      {next ? (
+        <p className="mt-2.5 border-t border-slate-100 pt-2.5 text-[11px] leading-snug text-slate-500">
+          {`${formatArticlesRead(totalRead)} · Next: Level ${next.level} (${next.name}) at ${next.threshold.toLocaleString()} reads`}
+        </p>
+      ) : (
+        <p className="mt-2.5 border-t border-slate-100 pt-2.5 text-[11px] leading-snug text-slate-500">
+          {`${formatArticlesRead(totalRead)} · Max reader level`}
+        </p>
+      )}
+    </div>
+  )
+}
+
+function useLeaderboardTooltip() {
+  const [tooltip, setTooltip] = useState(null)
+  const hideTimerRef = useRef(null)
+
+  const clearHideTimer = useCallback(() => {
+    if (hideTimerRef.current != null) {
+      clearTimeout(hideTimerRef.current)
+      hideTimerRef.current = null
+    }
+  }, [])
+
+  const scheduleHide = useCallback(() => {
+    clearHideTimer()
+    hideTimerRef.current = window.setTimeout(() => {
+      hideTimerRef.current = null
+      setTooltip(null)
+    }, TOOLTIP_HIDE_MS)
+  }, [clearHideTimer])
+
+  const showForEntry = useCallback(
+    (entry, el, rowRank) => {
+      if (!entry || !el) return
+      clearHideTimer()
+      setTooltip({ entry, rect: el.getBoundingClientRect(), rowRank })
+    },
+    [clearHideTimer],
+  )
+
+  useEffect(() => () => clearHideTimer(), [clearHideTimer])
+
+  return { tooltip, showForEntry, scheduleHide, clearHideTimer }
+}
+
 export default function StreakLeaderboard({ rows = DEFAULT_ROWS } = {}) {
   const safeRows = clampRows(rows)
   const { days, hours, minutes, target } = useLeaderboardCountdown()
   const { data, isLoading } = useStreakLeaderboard({ limit: safeRows })
   const entries = data ?? []
+  const { tooltip, showForEntry, scheduleHide } = useLeaderboardTooltip()
+  const tooltipDomId =
+    tooltip?.entry != null && tooltip.rowRank != null
+      ? streakLeaderboardTooltipDomId(tooltip.entry, tooltip.rowRank)
+      : 'streak-lb-tip'
 
   const displayRows = useMemo(() => {
     return Array.from({ length: safeRows }, (_, idx) => ({
@@ -134,7 +246,17 @@ export default function StreakLeaderboard({ rows = DEFAULT_ROWS } = {}) {
                     : isStriped
                       ? 'bg-slate-50'
                       : 'bg-white',
+                  !isEmpty ? 'cursor-default' : '',
                 ].join(' ')}
+                onMouseEnter={
+                  isEmpty
+                    ? undefined
+                    : (e) => {
+                        showForEntry(entry, e.currentTarget, rank)
+                      }
+                }
+                onMouseLeave={isEmpty ? undefined : scheduleHide}
+                aria-describedby={!isEmpty && tooltip?.rowRank === rank ? tooltipDomId : undefined}
               >
                 <span
                   className={[
@@ -181,6 +303,17 @@ export default function StreakLeaderboard({ rows = DEFAULT_ROWS } = {}) {
           })}
         </ol>
       </div>
+
+      {typeof document !== 'undefined' &&
+        tooltip?.entry &&
+        createPortal(
+          <LeaderboardUserTooltip
+            entry={tooltip.entry}
+            rect={tooltip.rect}
+            tooltipId={tooltipDomId}
+          />,
+          document.body,
+        )}
     </div>
   )
 }
