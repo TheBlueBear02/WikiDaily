@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { getSupabase } from '../lib/supabaseClient'
 import { yesterdayUtcYmd } from '../lib/date'
+import { normalizeWikiSlugForDb } from '../lib/wikipedia'
 
 const AUTH_USER_STALE_TIME_MS = 5 * 60 * 1000
 /** Keeps Navbar/header profile from refetching on every remount; still invalidated after reads. */
@@ -140,10 +141,11 @@ export function useUserProgress() {
   })
 
   const markAsReadMutation = useMutation({
-    mutationFn: async ({ wikiSlug, readDateYmd, source } = {}) => {
+    mutationFn: async ({ wikiSlug: rawWikiSlug, readDateYmd, source } = {}) => {
       if (!userId) {
         throw new Error('You must be signed in to mark an article as read.')
       }
+      const wikiSlug = normalizeWikiSlugForDb(rawWikiSlug)
       if (!wikiSlug || !readDateYmd) {
         throw new Error('Missing required fields to mark as read.')
       }
@@ -179,10 +181,11 @@ export function useUserProgress() {
         insertErr = res.error ?? null
       }
 
-      // Random reads may navigate before the article row is cached/upserted.
-      // If the `reading_log.wiki_slug -> articles.wiki_slug` FK rejects the insert,
-      // wait briefly and retry a couple times.
-      if (insertErr && normalizedSource === 'random' && isForeignKeyViolation(insertErr)) {
+      // Reads may land before the client finishes upserting `articles` (random pick,
+      // search, in-article wiki links, etc.). If the `reading_log.wiki_slug -> articles.wiki_slug`
+      // FK rejects the insert, wait briefly and retry a couple times — regardless of `source`,
+      // because daily navigation can still open slugs that are not yet in `articles`.
+      if (insertErr && isForeignKeyViolation(insertErr)) {
         const delaysMs = [250, 750, 1500]
         for (const delayMs of delaysMs) {
           await sleep(delayMs)

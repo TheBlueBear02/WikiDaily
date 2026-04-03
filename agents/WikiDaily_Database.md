@@ -425,14 +425,15 @@ The navigation state controls the recorded source:
 - Daily navigation: `{ source: 'daily' }`
 - Random navigation: `{ source: 'random' }`
 - Search navigation: `{ source: 'search' }` (normalized to `random` at write-time)
+- **In-article Wikipedia links** (reader navigates from one `/wiki/:wikiSlug` to another): the app keeps the **current** `source` in `location.state` (e.g. following links from a daily article keeps `daily`), so each new slug still gets its own `reading_log` row for that day when signed in.
 
-For random/search navigations, the app also includes a short retry loop for the `reading_log.wiki_slug -> articles.wiki_slug` foreign key timing edge case (navigation can happen before the random `articles` row is cached).
+The `markAsRead` mutation includes a short retry loop on **any** `reading_log.wiki_slug -> articles.wiki_slug` foreign key violation (navigation can happen before the client finishes upserting `articles`), including **daily** sessions where the user follows in-article links to slugs not yet cached.
 
 > Note: the DB enforces `CHECK (source IN ('daily','random'))`, so `source: 'search'` is normalized to `random` at write-time.
 
 When the user triggers a random navigation from the article page ("New random article"), the app also **best-effort upserts the random article into `articles`** (same as the Home random picker). This improves the chance that the `reading_log` insert can satisfy the FK constraint.
 
-**Important FK detail:** when caching metadata into `articles` client-side (random/search), the app always upserts using **the route slug** (`/wiki/:wikiSlug`) as `articles.wiki_slug`. Wikipedia's “normalized title” can differ from the URL slug; using the normalized title as the PK can cause `reading_log` inserts (which reference the route slug) to fail the `reading_log.wiki_slug -> articles.wiki_slug` foreign key.
+**Important FK detail:** when caching metadata into `articles` client-side (random/search), the app always upserts using **the route slug** (`/wiki/:wikiSlug`) as `articles.wiki_slug`, with **spaces normalized to underscores** (same as Wikipedia URLs). Decoded route params may still contain spaces (`%20`); `reading_log` inserts use `normalizeWikiSlugForDb()` in `markAsRead` so `wiki_slug` always matches `articles.wiki_slug`. Wikipedia's “normalized title” can still differ from the route slug in edge cases; using the summary title as the PK can break FK inserts.
 
 If the user is not signed in, no `reading_log` entry is created.
 

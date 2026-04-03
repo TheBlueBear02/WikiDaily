@@ -1,10 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import { fetchWikipediaRandomPage } from '../lib/wikipedia'
+import {
+  fetchWikipediaRandomPage,
+  fetchWikipediaHtml,
+  fetchWikipediaSummary,
+  normalizeWikiSlugForDb,
+  parseWikiSlugFromHref,
+  sanitizeWikiHtmlForIframeSrc,
+} from '../lib/wikipedia'
 import { todayUtcYmd } from '../lib/date'
 import { useUserProgress } from '../hooks/useUserProgress'
 import { getSupabase } from '../lib/supabaseClient'
-import { fetchWikipediaSummary } from '../lib/wikipedia'
 import { useFavorites } from '../hooks/useFavorites'
 import { buildAuthUrl } from '../lib/returnTo'
 import { useArticleNote, useDeleteArticleNote, useUpsertArticleNote } from '../hooks/useArticleNote'
@@ -15,13 +21,15 @@ function titleToWikiSlug(title) {
     .replaceAll(' ', '_')
 }
 
-function buildRandomArticleRow({ wikiSlug, fallbackTitle, summary }) {
-  const normalizedTitle =
-    summary?.titles?.normalized ??
-    summary?.title ??
-    fallbackTitle ??
-    wikiSlug.replaceAll('_', ' ')
+function normalizeWikiSlugKey(slug) {
+  try {
+    return decodeURIComponent(String(slug ?? '').replace(/ /g, '_')).toLowerCase()
+  } catch {
+    return String(slug ?? '').replace(/ /g, '_').toLowerCase()
+  }
+}
 
+function buildRandomArticleRow({ wikiSlug, fallbackTitle, summary }) {
   return {
     // IMPORTANT: Always use the route slug as the primary key. Wikipedia "normalized"
     // titles can differ from the URL slug (e.g. casing / punctuation), and using them
@@ -43,7 +51,7 @@ export default function WikiIframe() {
   const { wikiSlug } = useParams()
   const location = useLocation()
   const navigate = useNavigate()
-  const { userId, user, markAsRead, markAsReadMutation } = useUserProgress()
+  const { userId, user, markAsRead } = useUserProgress()
   const {
     favorites,
     favoritesQuery,
@@ -54,11 +62,16 @@ export default function WikiIframe() {
     importLegacyFavorites,
   } = useFavorites({ userId, user })
 
+  /** Align with `articles.wiki_slug` (underscores; route params may contain spaces). */
+  const canonicalWikiSlug = useMemo(
+    () => normalizeWikiSlugForDb(wikiSlug),
+    [wikiSlug],
+  )
+
   const wikiUrl = useMemo(() => {
-    const slug = typeof wikiSlug === 'string' ? wikiSlug.trim() : ''
-    if (!slug) return null
-    return `https://en.wikipedia.org/wiki/${encodeURIComponent(slug)}`
-  }, [wikiSlug])
+    if (!canonicalWikiSlug) return null
+    return `https://en.wikipedia.org/wiki/${encodeURIComponent(canonicalWikiSlug)}`
+  }, [canonicalWikiSlug])
 
   const displayTitle =
     location.state && typeof location.state.displayTitle === 'string'
@@ -77,13 +90,19 @@ export default function WikiIframe() {
   const [isToolsOpen, setIsToolsOpen] = useState(false)
   const [noteError, setNoteError] = useState(null)
 
-  const [showFallback, setShowFallback] = useState(false)
-  const timeoutRef = useRef(null)
-  const timedOutRef = useRef(false)
+  const [iframeHtml, setIframeHtml] = useState(null)
+  const [htmlLoading, setHtmlLoading] = useState(true)
+  const [htmlFetchError, setHtmlFetchError] = useState(null)
+  const wikiNavCleanupRef = useRef(null)
+  const readingSourceRef = useRef(readingSource)
+  const wikiSlugRef = useRef(canonicalWikiSlug)
   const lastAutoLogKeyRef = useRef(null)
   const noteSaveTimeoutRef = useRef(null)
 
-  const noteQuery = useArticleNote({ userId, wikiSlug })
+  readingSourceRef.current = readingSource
+  wikiSlugRef.current = canonicalWikiSlug
+
+  const noteQuery = useArticleNote({ userId, wikiSlug: canonicalWikiSlug })
   const upsertNoteMutation = useUpsertArticleNote({ userId, user })
   const deleteNoteMutation = useDeleteArticleNote({ userId })
 
@@ -91,12 +110,12 @@ export default function WikiIframe() {
   useEffect(() => {
     setIsToolsOpen(false)
     setNoteError(null)
-  }, [wikiSlug])
+  }, [canonicalWikiSlug])
 
   const isFavorite = useMemo(() => {
-    if (!wikiSlug) return false
-    return favorites.some((fav) => fav?.wiki_slug === wikiSlug)
-  }, [favorites, wikiSlug])
+    if (!canonicalWikiSlug) return false
+    return favorites.some((fav) => fav?.wiki_slug === canonicalWikiSlug)
+  }, [favorites, canonicalWikiSlug])
 
   const isFavoriteMutating =
     addFavoriteMutation.isPending || removeFavoriteMutation.isPending
@@ -104,17 +123,17 @@ export default function WikiIframe() {
   // Best-effort: ensure this article exists in Supabase so FK inserts (notes, reads) can succeed.
   // This is intentionally best-effort because client writes may be blocked by RLS.
   useEffect(() => {
-    if (!wikiSlug) return
+    if (!canonicalWikiSlug) return
 
     let cancelled = false
 
     async function cacheArticleRow() {
       try {
-        const summary = await fetchWikipediaSummary(wikiSlug)
+        const summary = await fetchWikipediaSummary(canonicalWikiSlug)
         if (cancelled) return
         const row = buildRandomArticleRow({
-          wikiSlug,
-          fallbackTitle: displayTitle ?? wikiSlug.replaceAll('_', ' '),
+          wikiSlug: canonicalWikiSlug,
+          fallbackTitle: displayTitle ?? canonicalWikiSlug.replaceAll('_', ' '),
           summary,
         })
         const supabase = getSupabase()
@@ -132,37 +151,39 @@ export default function WikiIframe() {
     return () => {
       cancelled = true
     }
-  }, [displayTitle, wikiSlug])
+  }, [displayTitle, canonicalWikiSlug])
 
   // Load per-article notes (DB when signed in; otherwise localStorage).
   useEffect(() => {
-    if (!wikiSlug) return
+    if (!canonicalWikiSlug) return
     if (userId) return
 
     try {
-      const rawNotes = window.localStorage.getItem(`wikidaily:notes:${String(wikiSlug)}`)
+      const rawNotes = window.localStorage.getItem(
+        `wikidaily:notes:${String(canonicalWikiSlug)}`,
+      )
       setNotes(rawNotes ?? '')
     } catch {
       setNotes('')
     }
-  }, [userId, wikiSlug])
+  }, [userId, canonicalWikiSlug])
 
   // When signed in, sync local state from the DB.
   useEffect(() => {
     if (!userId) return
-    if (!wikiSlug) return
+    if (!canonicalWikiSlug) return
     if (!noteQuery.isSuccess) return
     setNotes(noteQuery.data?.content ?? '')
-  }, [noteQuery.data?.content, noteQuery.isSuccess, userId, wikiSlug])
+  }, [noteQuery.data?.content, noteQuery.isSuccess, userId, canonicalWikiSlug])
 
   // One-time import: migrate legacy localStorage notes into the DB (per user per article).
   useEffect(() => {
     if (!userId) return
-    if (!wikiSlug) return
+    if (!canonicalWikiSlug) return
     if (!noteQuery.isSuccess) return
     if (noteQuery.data?.content) return
 
-    const migrationKey = `wikidaily:notes:migrated:${String(userId)}:${String(wikiSlug)}`
+    const migrationKey = `wikidaily:notes:migrated:${String(userId)}:${String(canonicalWikiSlug)}`
     try {
       if (window.localStorage.getItem(migrationKey) === '1') return
     } catch {
@@ -171,7 +192,8 @@ export default function WikiIframe() {
 
     let legacy = ''
     try {
-      legacy = window.localStorage.getItem(`wikidaily:notes:${String(wikiSlug)}`) ?? ''
+      legacy =
+        window.localStorage.getItem(`wikidaily:notes:${String(canonicalWikiSlug)}`) ?? ''
     } catch {
       legacy = ''
     }
@@ -186,11 +208,11 @@ export default function WikiIframe() {
 
     setNoteError(null)
     void upsertNoteMutation
-      .mutateAsync({ wikiSlug, content: legacy })
+      .mutateAsync({ wikiSlug: canonicalWikiSlug, content: legacy })
       .then(() => {
         try {
           window.localStorage.setItem(migrationKey, '1')
-          window.localStorage.removeItem(`wikidaily:notes:${String(wikiSlug)}`)
+          window.localStorage.removeItem(`wikidaily:notes:${String(canonicalWikiSlug)}`)
         } catch {
           // ignore
         }
@@ -203,7 +225,7 @@ export default function WikiIframe() {
     noteQuery.isSuccess,
     upsertNoteMutation,
     userId,
-    wikiSlug,
+    canonicalWikiSlug,
   ])
 
   // Optional one-time import: migrate legacy localStorage favorites into the DB.
@@ -254,18 +276,21 @@ export default function WikiIframe() {
   // - Signed out: localStorage
   // - Signed in: DB (debounced)
   useEffect(() => {
-    if (!wikiSlug) return
+    if (!canonicalWikiSlug) return
     if (userId) return
 
     try {
-      window.localStorage.setItem(`wikidaily:notes:${String(wikiSlug)}`, notes ?? '')
+      window.localStorage.setItem(
+        `wikidaily:notes:${String(canonicalWikiSlug)}`,
+        notes ?? '',
+      )
     } catch {
       // Ignore storage failures (e.g. private mode).
     }
-  }, [userId, wikiSlug, notes])
+  }, [userId, canonicalWikiSlug, notes])
 
   useEffect(() => {
-    if (!wikiSlug) return
+    if (!canonicalWikiSlug) return
     if (!userId) return
     if (!noteQuery.isSuccess) return
     if (notes === (noteQuery.data?.content ?? '')) return
@@ -274,7 +299,7 @@ export default function WikiIframe() {
     noteSaveTimeoutRef.current = setTimeout(() => {
       setNoteError(null)
       void upsertNoteMutation
-        .mutateAsync({ wikiSlug, content: notes ?? '' })
+        .mutateAsync({ wikiSlug: canonicalWikiSlug, content: notes ?? '' })
         .catch((err) => {
           setNoteError(err instanceof Error ? err.message : 'Could not save note')
         })
@@ -290,11 +315,11 @@ export default function WikiIframe() {
     notes,
     upsertNoteMutation,
     userId,
-    wikiSlug,
+    canonicalWikiSlug,
   ])
 
   function handleToggleFavorite() {
-    if (!wikiSlug) return
+    if (!canonicalWikiSlug) return
     setFavoriteError(null)
 
     if (!userId) {
@@ -307,13 +332,13 @@ export default function WikiIframe() {
     if (isFavoriteMutating) return
 
     if (isFavorite) {
-      void removeFavorite({ wikiSlug }).catch((err) => {
+      void removeFavorite({ wikiSlug: canonicalWikiSlug }).catch((err) => {
         setFavoriteError(err instanceof Error ? err.message : 'Could not unmark')
       })
       return
     }
 
-    void addFavorite({ wikiSlug }).catch((err) => {
+    void addFavorite({ wikiSlug: canonicalWikiSlug }).catch((err) => {
       setFavoriteError(err instanceof Error ? err.message : 'Could not mark as interesting')
     })
   }
@@ -359,51 +384,109 @@ export default function WikiIframe() {
 
   // Auto-log reads for signed-in users when navigating into the in-app reader.
   useEffect(() => {
-    if (!wikiSlug) return
+    if (!canonicalWikiSlug) return
     if (!userId) return
 
-    const key = `${userId}:${String(wikiSlug)}:${readDateYmd}:${readingSource}`
+    const key = `${userId}:${canonicalWikiSlug}:${readDateYmd}:${readingSource}`
     if (lastAutoLogKeyRef.current === key) return
-    if (markAsReadMutation.isPending) return
 
     lastAutoLogKeyRef.current = key
     // `reading_log.source` only allows ('daily','random'); treat search as "random".
-    void markAsRead({ wikiSlug, readDateYmd, source: readingSource }).catch(() => {
-      // Auto-log is best-effort.
+    void markAsRead({
+      wikiSlug: canonicalWikiSlug,
+      readDateYmd,
+      source: readingSource,
+    }).catch(() => {
+      if (lastAutoLogKeyRef.current === key) lastAutoLogKeyRef.current = null
     })
-  }, [wikiSlug, userId, readingSource, readDateYmd, markAsRead, markAsReadMutation.isPending])
+  }, [
+    canonicalWikiSlug,
+    userId,
+    readingSource,
+    readDateYmd,
+    markAsRead,
+  ])
 
-  // Timed fallback: `iframe` framing blocks can be silent, and `onError` is not reliable.
   useEffect(() => {
-    if (!wikiUrl) return
-    timedOutRef.current = false
+    if (!canonicalWikiSlug) return
 
-    if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    let cancelled = false
+    setHtmlLoading(true)
+    setHtmlFetchError(null)
+    setIframeHtml(null)
 
-    // Hide fallback immediately after `wikiUrl` changes, but do it asynchronously
-    // to satisfy the `react-hooks/set-state-in-effect` lint rule.
-    setTimeout(() => setShowFallback(false), 0)
-    timeoutRef.current = setTimeout(() => {
-      timedOutRef.current = true
-      setShowFallback(true)
-      timeoutRef.current = null
-    }, 3000)
+    void (async () => {
+      try {
+        const raw = await fetchWikipediaHtml(canonicalWikiSlug)
+        if (cancelled) return
+        setIframeHtml(sanitizeWikiHtmlForIframeSrc(raw))
+      } catch (err) {
+        if (cancelled) return
+        setHtmlFetchError(
+          err instanceof Error ? err.message : 'Could not load article HTML',
+        )
+      } finally {
+        if (!cancelled) setHtmlLoading(false)
+      }
+    })()
 
     return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current)
-      timeoutRef.current = null
+      cancelled = true
     }
-  }, [wikiUrl])
+  }, [canonicalWikiSlug])
 
-  // If the iframe loads within the window, assume embedding is at least partially allowed.
-  function handleIframeLoad() {
-    if (!wikiUrl) return
-    if (timedOutRef.current) return
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current)
-      timeoutRef.current = null
+  useEffect(() => {
+    return () => {
+      wikiNavCleanupRef.current?.()
+      wikiNavCleanupRef.current = null
     }
-    setShowFallback(false)
+  }, [])
+
+  function handleIframeDocumentLoad(event) {
+    wikiNavCleanupRef.current?.()
+    wikiNavCleanupRef.current = null
+
+    const iframe = event.currentTarget
+    const doc = iframe.contentDocument
+    if (!doc?.body) return
+
+    const handler = (e) => {
+      const anchor = e.target?.closest?.('a')
+      if (!anchor) return
+
+      const href = anchor.getAttribute('href')
+      const nextSlug = parseWikiSlugFromHref(href, doc.baseURI)
+      if (!nextSlug) return
+
+      const nextCanonical = normalizeWikiSlugForDb(nextSlug)
+      if (!nextCanonical) return
+
+      if (
+        normalizeWikiSlugKey(nextCanonical) === normalizeWikiSlugKey(wikiSlugRef.current)
+      ) {
+        return
+      }
+
+      e.preventDefault()
+      e.stopPropagation()
+
+      const titleAttr = anchor.getAttribute('title')
+      const display =
+        (titleAttr && titleAttr.trim()) ||
+        nextCanonical.replaceAll('_', ' ')
+
+      navigate(`/wiki/${encodeURIComponent(nextCanonical)}`, {
+        state: {
+          displayTitle: display,
+          source: readingSourceRef.current,
+        },
+      })
+    }
+
+    doc.addEventListener('click', handler, true)
+    wikiNavCleanupRef.current = () => {
+      doc.removeEventListener('click', handler, true)
+    }
   }
 
   if (!wikiUrl) {
@@ -426,7 +509,7 @@ export default function WikiIframe() {
       <div className="flex flex-col gap-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="text-xs font-medium text-slate-500">
-            {displayTitle ?? wikiSlug?.replaceAll('_', ' ')}
+            {displayTitle ?? canonicalWikiSlug.replaceAll('_', ' ')}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <button
@@ -466,8 +549,16 @@ export default function WikiIframe() {
       <div className="flex flex-col gap-4 lg:flex-row">
         <div className="grow lg:basis-3/4 xl:basis-4/5">
           <div className="relative overflow-hidden rounded-none border border-slate-200 bg-white">
-            {showFallback ? (
-              <div className="absolute inset-0 flex items-center justify-center bg-white/90 p-6">
+            {htmlLoading ? (
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/90 p-6">
+                <div className="text-sm text-slate-600">Loading article…</div>
+              </div>
+            ) : null}
+            {htmlFetchError ? (
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-white/95 p-6 text-center">
+                <div className="text-sm text-slate-700">
+                  Could not load the article in the reader.
+                </div>
                 <a
                   href={wikiUrl}
                   target="_blank"
@@ -479,13 +570,15 @@ export default function WikiIframe() {
               </div>
             ) : null}
 
-            <iframe
-              key={wikiUrl}
-              title={displayTitle ?? 'Wikipedia article'}
-              src={wikiUrl}
-              onLoad={handleIframeLoad}
-              className="h-[85vh] w-full border-0 bg-white"
-            />
+            {iframeHtml ? (
+              <iframe
+                key={canonicalWikiSlug}
+                title={displayTitle ?? 'Wikipedia article'}
+                srcDoc={iframeHtml}
+                onLoad={handleIframeDocumentLoad}
+                className="h-[85vh] w-full border-0 bg-white"
+              />
+            ) : null}
           </div>
         </div>
 
@@ -500,10 +593,12 @@ export default function WikiIframe() {
                   type="button"
                   disabled={deleteNoteMutation.isPending || upsertNoteMutation.isPending}
                   onClick={() => {
-                    if (!wikiSlug) return
+                    if (!canonicalWikiSlug) return
                     setNoteError(null)
                     setNotes('')
-                    void deleteNoteMutation.mutateAsync({ wikiSlug }).catch((err) => {
+                    void deleteNoteMutation
+                      .mutateAsync({ wikiSlug: canonicalWikiSlug })
+                      .catch((err) => {
                       setNoteError(err instanceof Error ? err.message : 'Could not delete note')
                     })
                   }}
