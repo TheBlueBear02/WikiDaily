@@ -6,7 +6,7 @@ import {
   computeVisibleWindow,
   fillPercentFromZero,
   starLeftPctOnTrack,
-} from '../lib/readingMilestones'
+} from '../../lib/readingMilestones'
 
 function usePrefersReducedMotion() {
   const [reduced, setReduced] = useState(false)

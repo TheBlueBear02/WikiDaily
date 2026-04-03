@@ -7,7 +7,7 @@ import {
   computeVisibleWindow,
   fillPercentFromZero,
   starLeftPctOnTrack,
-} from '../lib/readingMilestones'
+} from '../../lib/readingMilestones'
 
 export { READING_MILESTONES }
 

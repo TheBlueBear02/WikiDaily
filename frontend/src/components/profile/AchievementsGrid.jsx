@@ -1,5 +1,5 @@
 import AchievementCard from './AchievementCard'
-import { computeAchievementTypeProgress } from '../lib/achievementProgress'
+import { computeAchievementTypeProgress } from '../../lib/achievementProgress'
 
 const TYPE_META = {
   total_read: { title: 'Reading', statKey: 'total_read', unit: 'articles' },

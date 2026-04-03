@@ -1,4 +1,4 @@
-import { CARD_SURFACE_STATIC } from '../lib/cardSurface'
+import { CARD_SURFACE_STATIC } from '../../lib/cardSurface'
 
 const WIZARD_IMAGE_SRC = '/images/wizard%201.jpg'
 

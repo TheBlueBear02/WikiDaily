@@ -1,22 +1,12 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-import { CARD_SURFACE_STATIC, cardInteractiveSurfaceClasses } from '../lib/cardSurface'
+import { CARD_SURFACE_STATIC, cardInteractiveSurfaceClasses } from '../../lib/cardSurface'
 
-function parseYmdAsUtcDate(ymd) {
-  if (typeof ymd !== 'string') return null
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(ymd.trim())
-  if (!match) return null
-  const y = Number(match[1])
-  const m = Number(match[2])
-  const d = Number(match[3])
-  if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) return null
-  return new Date(Date.UTC(y, m - 1, d))
-}
-
-function formatReadDate(ymd) {
-  const d = parseYmdAsUtcDate(ymd)
-  if (!d) return null
+function formatUpdatedAt(isoString) {
+  if (typeof isoString !== 'string') return null
+  const d = new Date(isoString)
+  if (!Number.isFinite(d.getTime())) return null
   return new Intl.DateTimeFormat(undefined, {
     month: 'short',
     day: 'numeric',
@@ -25,21 +15,19 @@ function formatReadDate(ymd) {
   }).format(d)
 }
 
-function sourceLabel(source) {
-  return source === 'daily' ? 'Daily' : 'Random'
+function buildSnippet(content) {
+  const raw = typeof content === 'string' ? content : ''
+  const collapsed = raw.replace(/\s+/g, ' ').trim()
+  return collapsed
 }
 
-function sourceBadgeClass(source) {
-  return source === 'daily'
-    ? 'bg-amber-100 text-amber-950 border-amber-200'
-    : 'bg-emerald-100 text-emerald-950 border-emerald-200'
-}
-
-export default function ArticleHistoryCard({ entry }) {
+export default function NoteCard({ entry }) {
   const navigate = useNavigate()
 
   const wikiSlug =
-    typeof entry?.wiki_slug === 'string' && entry.wiki_slug.trim() ? entry.wiki_slug.trim() : null
+    typeof entry?.wiki_slug === 'string' && entry.wiki_slug.trim()
+      ? entry.wiki_slug.trim()
+      : null
 
   const title =
     typeof entry?.articles?.display_title === 'string' && entry.articles.display_title.trim()
@@ -53,11 +41,13 @@ export default function ArticleHistoryCard({ entry }) {
       ? entry.articles.image_url.trim()
       : null
 
-  const readDateText = useMemo(() => formatReadDate(entry?.read_date ?? null), [entry?.read_date])
-  const source = entry?.source === 'daily' ? 'daily' : 'random'
+  const snippet = useMemo(() => buildSnippet(entry?.content ?? ''), [entry?.content])
+  const updatedAtText = useMemo(
+    () => formatUpdatedAt(entry?.updated_at ?? null),
+    [entry?.updated_at],
+  )
 
   const clickable = Boolean(wikiSlug)
-
   const onOpen = () => {
     if (!wikiSlug) return
     navigate(`/wiki/${encodeURIComponent(wikiSlug)}`)
@@ -100,23 +90,17 @@ export default function ArticleHistoryCard({ entry }) {
             </div>
           )}
         </div>
-
-        <div
-          className={[
-            'absolute right-2 top-2 rounded-none border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
-            sourceBadgeClass(source),
-          ].join(' ')}
-        >
-          {sourceLabel(source)}
-        </div>
       </div>
 
       <div className="space-y-2 p-3">
         <div className="line-clamp-2 font-serif text-sm font-semibold leading-snug text-primary">
           {title}
         </div>
+        <div className="line-clamp-3 text-sm leading-snug text-slate-700">
+          {snippet || <span className="text-slate-500">Empty note</span>}
+        </div>
         <div className="text-[11px] font-medium text-slate-500">
-          {readDateText ?? entry?.read_date ?? '—'}
+          {updatedAtText ? `Updated ${updatedAtText}` : 'Updated —'}
         </div>
       </div>
     </article>

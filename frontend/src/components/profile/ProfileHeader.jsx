@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 
-import { getCurrentLevel, getNextLevel } from '../lib/levels'
-import { initialsFromUsername } from '../lib/profileAvatar'
+import { getCurrentLevel, getNextLevel } from '../../lib/levels'
+import { initialsFromUsername } from '../../lib/profileAvatar'
 
 function formatHandle(username, fallback) {
   const v = String(username ?? '').trim().replace(/^@+/, '')

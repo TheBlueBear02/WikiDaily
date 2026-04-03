@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 
-import FavoriteArticleCard from './FavoriteArticleCard'
+import FavoriteArticleCard from '../shared/FavoriteArticleCard'
 
 function SkeletonCard() {
   return (

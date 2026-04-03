@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 
-import { getSupabase } from '../lib/supabaseClient'
+import { getSupabase } from '../../lib/supabaseClient'
 
 export default function AuthSync() {
   const queryClient = useQueryClient()

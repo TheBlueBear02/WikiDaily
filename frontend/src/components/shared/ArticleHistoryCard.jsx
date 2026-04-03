@@ -1,12 +1,22 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-import { CARD_SURFACE_STATIC, cardInteractiveSurfaceClasses } from '../lib/cardSurface'
+import { CARD_SURFACE_STATIC, cardInteractiveSurfaceClasses } from '../../lib/cardSurface'
 
-function formatSavedAt(isoString) {
-  if (typeof isoString !== 'string') return null
-  const d = new Date(isoString)
-  if (!Number.isFinite(d.getTime())) return null
+function parseYmdAsUtcDate(ymd) {
+  if (typeof ymd !== 'string') return null
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(ymd.trim())
+  if (!match) return null
+  const y = Number(match[1])
+  const m = Number(match[2])
+  const d = Number(match[3])
+  if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) return null
+  return new Date(Date.UTC(y, m - 1, d))
+}
+
+function formatReadDate(ymd) {
+  const d = parseYmdAsUtcDate(ymd)
+  if (!d) return null
   return new Intl.DateTimeFormat(undefined, {
     month: 'short',
     day: 'numeric',
@@ -15,13 +25,21 @@ function formatSavedAt(isoString) {
   }).format(d)
 }
 
-export default function FavoriteArticleCard({ entry }) {
+function sourceLabel(source) {
+  return source === 'daily' ? 'Daily' : 'Random'
+}
+
+function sourceBadgeClass(source) {
+  return source === 'daily'
+    ? 'bg-amber-100 text-amber-950 border-amber-200'
+    : 'bg-emerald-100 text-emerald-950 border-emerald-200'
+}
+
+export default function ArticleHistoryCard({ entry }) {
   const navigate = useNavigate()
 
   const wikiSlug =
-    typeof entry?.wiki_slug === 'string' && entry.wiki_slug.trim()
-      ? entry.wiki_slug.trim()
-      : null
+    typeof entry?.wiki_slug === 'string' && entry.wiki_slug.trim() ? entry.wiki_slug.trim() : null
 
   const title =
     typeof entry?.articles?.display_title === 'string' && entry.articles.display_title.trim()
@@ -35,12 +53,11 @@ export default function FavoriteArticleCard({ entry }) {
       ? entry.articles.image_url.trim()
       : null
 
-  const savedAtText = useMemo(
-    () => formatSavedAt(entry?.created_at ?? null),
-    [entry?.created_at],
-  )
+  const readDateText = useMemo(() => formatReadDate(entry?.read_date ?? null), [entry?.read_date])
+  const source = entry?.source === 'daily' ? 'daily' : 'random'
 
   const clickable = Boolean(wikiSlug)
+
   const onOpen = () => {
     if (!wikiSlug) return
     navigate(`/wiki/${encodeURIComponent(wikiSlug)}`)
@@ -83,6 +100,15 @@ export default function FavoriteArticleCard({ entry }) {
             </div>
           )}
         </div>
+
+        <div
+          className={[
+            'absolute right-2 top-2 rounded-none border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
+            sourceBadgeClass(source),
+          ].join(' ')}
+        >
+          {sourceLabel(source)}
+        </div>
       </div>
 
       <div className="space-y-2 p-3">
@@ -90,7 +116,7 @@ export default function FavoriteArticleCard({ entry }) {
           {title}
         </div>
         <div className="text-[11px] font-medium text-slate-500">
-          {savedAtText ? `Marked ${savedAtText}` : 'Marked —'}
+          {readDateText ?? entry?.read_date ?? '—'}
         </div>
       </div>
     </article>

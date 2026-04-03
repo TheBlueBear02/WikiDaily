@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef } from 'react'
 
-import { useUserProgress } from '../hooks/useUserProgress'
-import { useAchievements } from '../hooks/useAchievements'
-import { getNewlyUnlocked } from '../lib/achievementChecker'
+import { useUserProgress } from '../../hooks/useUserProgress'
+import { useAchievements } from '../../hooks/useAchievements'
+import { getNewlyUnlocked } from '../../lib/achievementChecker'
 
 export default function AchievementUnlockRunner() {
   const { userId, profile } = useUserProgress()

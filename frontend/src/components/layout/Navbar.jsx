@@ -3,11 +3,11 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 
 import StreakBadge from './StreakBadge'
 import WikiSearchBar from './WikiSearchBar'
-import { useUserProgress } from '../hooks/useUserProgress'
-import { getCurrentLevel } from '../lib/levels'
-import { initialsFromUsername } from '../lib/profileAvatar'
-import { getSupabase } from '../lib/supabaseClient'
-import { buildAuthUrl } from '../lib/returnTo'
+import { useUserProgress } from '../../hooks/useUserProgress'
+import { getCurrentLevel } from '../../lib/levels'
+import { initialsFromUsername } from '../../lib/profileAvatar'
+import { getSupabase } from '../../lib/supabaseClient'
+import { buildAuthUrl } from '../../lib/returnTo'
 
 const linkBase =
   'rounded-none px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-primary'

@@ -1,8 +1,8 @@
 import { NavLink, useLocation } from 'react-router-dom'
 
-import { useAchievements } from '../hooks/useAchievements'
-import { computeAchievementTypeProgress } from '../lib/achievementProgress'
-import { buildAuthUrl } from '../lib/returnTo'
+import { useAchievements } from '../../hooks/useAchievements'
+import { computeAchievementTypeProgress } from '../../lib/achievementProgress'
+import { buildAuthUrl } from '../../lib/returnTo'
 import AchievementProgressTrack from './AchievementProgressTrack'
 
 const TYPE_META = {

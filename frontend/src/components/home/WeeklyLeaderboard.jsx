@@ -1,4 +1,4 @@
-import { useLeaderboardCountdown } from '../hooks/useLeaderboardCountdown'
+import { useLeaderboardCountdown } from '../../hooks/useLeaderboardCountdown'
 
 /**
  * Weekly leaderboard for the hero aside. Data wiring can replace `entries` via a hook

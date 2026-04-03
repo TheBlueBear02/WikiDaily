@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom'
 
-import ArticleHistoryCard from './ArticleHistoryCard'
+import FavoriteArticleCard from '../shared/FavoriteArticleCard'
 
-export default function LatestReadsSection({ entries, title = 'Your recent reads' }) {
+export default function InterestingArticlesSection({ entries, title = 'Interesting articles' }) {
   const items = Array.isArray(entries) ? entries.slice(0, 5) : []
   if (items.length === 0) return null
 
@@ -18,35 +18,32 @@ export default function LatestReadsSection({ entries, title = 'Your recent reads
         </Link>
       </div>
 
-      {/* Desktop: show all 5 without scrolling. */}
-      <div className="hidden w-full grid-cols-5 gap-3 lg:grid" aria-label="Your recently read articles">
+      <div className="hidden w-full grid-cols-5 gap-3 lg:grid" aria-label="Your interesting articles">
         {items.map((entry) => (
-          <ArticleHistoryCard
-            key={`${entry?.read_date ?? 'date'}-${entry?.wiki_slug ?? 'null'}-${entry?.source ?? 'source'}`}
+          <FavoriteArticleCard
+            key={`${entry?.created_at ?? 'date'}-${entry?.wiki_slug ?? 'null'}`}
             entry={entry}
           />
         ))}
       </div>
 
-      {/* Mobile/tablet: horizontal scroll row. */}
       <div
         className={[
           'flex w-full gap-3 overflow-x-auto pb-2 lg:hidden',
           'snap-x snap-mandatory',
           '[scrollbar-gutter:stable]',
         ].join(' ')}
-        aria-label="Your recently read articles"
+        aria-label="Your interesting articles"
       >
         {items.map((entry) => (
           <div
-            key={`${entry?.read_date ?? 'date'}-${entry?.wiki_slug ?? 'null'}-${entry?.source ?? 'source'}`}
+            key={`${entry?.created_at ?? 'date'}-${entry?.wiki_slug ?? 'null'}`}
             className="w-[260px] shrink-0 snap-start sm:w-[300px]"
           >
-            <ArticleHistoryCard entry={entry} />
+            <FavoriteArticleCard entry={entry} />
           </div>
         ))}
       </div>
     </section>
   )
 }
-

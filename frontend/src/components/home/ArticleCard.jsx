@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { useDailyResetCountdown } from '../hooks/useDailyResetCountdown'
+import { useDailyResetCountdown } from '../../hooks/useDailyResetCountdown'
 
-import { cardInteractiveSurfaceClasses } from '../lib/cardSurface'
+import { cardInteractiveSurfaceClasses } from '../../lib/cardSurface'
 
 /** First two sentences; appends "..." when the text was truncated. */
 function descriptionPreview(text) {

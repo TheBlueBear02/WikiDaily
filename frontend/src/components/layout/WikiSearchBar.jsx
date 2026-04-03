@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { fetchWikipediaOpenSearch } from '../lib/wikipedia'
+import { fetchWikipediaOpenSearch } from '../../lib/wikipedia'
 
 function titleToWikiSlug(title) {
   return String(title ?? '')

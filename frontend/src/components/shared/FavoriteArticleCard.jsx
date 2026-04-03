@@ -1,9 +1,9 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-import { CARD_SURFACE_STATIC, cardInteractiveSurfaceClasses } from '../lib/cardSurface'
+import { CARD_SURFACE_STATIC, cardInteractiveSurfaceClasses } from '../../lib/cardSurface'
 
-function formatUpdatedAt(isoString) {
+function formatSavedAt(isoString) {
   if (typeof isoString !== 'string') return null
   const d = new Date(isoString)
   if (!Number.isFinite(d.getTime())) return null
@@ -15,13 +15,7 @@ function formatUpdatedAt(isoString) {
   }).format(d)
 }
 
-function buildSnippet(content) {
-  const raw = typeof content === 'string' ? content : ''
-  const collapsed = raw.replace(/\s+/g, ' ').trim()
-  return collapsed
-}
-
-export default function NoteCard({ entry }) {
+export default function FavoriteArticleCard({ entry }) {
   const navigate = useNavigate()
 
   const wikiSlug =
@@ -41,10 +35,9 @@ export default function NoteCard({ entry }) {
       ? entry.articles.image_url.trim()
       : null
 
-  const snippet = useMemo(() => buildSnippet(entry?.content ?? ''), [entry?.content])
-  const updatedAtText = useMemo(
-    () => formatUpdatedAt(entry?.updated_at ?? null),
-    [entry?.updated_at],
+  const savedAtText = useMemo(
+    () => formatSavedAt(entry?.created_at ?? null),
+    [entry?.created_at],
   )
 
   const clickable = Boolean(wikiSlug)
@@ -96,11 +89,8 @@ export default function NoteCard({ entry }) {
         <div className="line-clamp-2 font-serif text-sm font-semibold leading-snug text-primary">
           {title}
         </div>
-        <div className="line-clamp-3 text-sm leading-snug text-slate-700">
-          {snippet || <span className="text-slate-500">Empty note</span>}
-        </div>
         <div className="text-[11px] font-medium text-slate-500">
-          {updatedAtText ? `Updated ${updatedAtText}` : 'Updated —'}
+          {savedAtText ? `Marked ${savedAtText}` : 'Marked —'}
         </div>
       </div>
     </article>

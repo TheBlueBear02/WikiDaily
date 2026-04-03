@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
-import ArticleHistoryCard from './ArticleHistoryCard'
+import ArticleHistoryCard from '../shared/ArticleHistoryCard'
 
 const PAGE_SIZE = 6
 

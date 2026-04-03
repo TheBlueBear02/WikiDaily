@@ -350,21 +350,21 @@ Profile.jsx  (page)
 | Action | File |
 |---|---|
 | Add | `frontend/src/pages/Profile.jsx` |
-| Add | `frontend/src/components/ProfileHeader.jsx` |
-| Add | `frontend/src/components/StatsRow.jsx` |
-| Add | `frontend/src/components/StatCard.jsx` |
-| Add | `frontend/src/components/ActivityHeatmap.jsx` |
-| Add | `frontend/src/components/NotesGrid.jsx` |
-| Add | `frontend/src/components/NoteCard.jsx` |
-| Add | `frontend/src/components/FavoritesGrid.jsx` |
-| Add | `frontend/src/components/FavoriteArticleCard.jsx` |
-| Add | `frontend/src/components/ReadingHistoryGrid.jsx` |
-| Add | `frontend/src/components/ArticleHistoryCard.jsx` |
+| Add | `frontend/src/components/profile/ProfileHeader.jsx` |
+| Add | `frontend/src/components/profile/StatsRow.jsx` |
+| Add | `frontend/src/components/profile/StatCard.jsx` |
+| Add | `frontend/src/components/profile/ActivityHeatmap.jsx` |
+| Add | `frontend/src/components/profile/NotesGrid.jsx` |
+| Add | `frontend/src/components/profile/NoteCard.jsx` |
+| Add | `frontend/src/components/profile/FavoritesGrid.jsx` |
+| Add | `frontend/src/components/shared/FavoriteArticleCard.jsx` |
+| Add | `frontend/src/components/profile/ReadingHistoryGrid.jsx` |
+| Add | `frontend/src/components/shared/ArticleHistoryCard.jsx` |
 | Add | `frontend/src/hooks/useReadingHistory.js` |
 | Add | `frontend/src/hooks/useFavorites.js` |
 | Add | `frontend/src/hooks/useRecentNotes.js` |
 | Update | `frontend/src/App.jsx` — add `/profile` route |
-| Update | `frontend/src/components/Navbar.jsx` — add profile link/avatar |
+| Update | `frontend/src/components/layout/Navbar.jsx` — add profile link/avatar |
 
 ---
 

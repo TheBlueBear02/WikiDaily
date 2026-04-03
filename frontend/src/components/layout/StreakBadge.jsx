@@ -1,4 +1,4 @@
-import { useUserProgress } from '../hooks/useUserProgress'
+import { useUserProgress } from '../../hooks/useUserProgress'
 
 export default function StreakBadge() {
   const { userId, profile, authUserQuery, profileQuery } = useUserProgress()

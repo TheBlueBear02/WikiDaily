@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
-import { useStreakLeaderboard } from '../hooks/useStreakLeaderboard'
-import { useLeaderboardCountdown } from '../hooks/useLeaderboardCountdown'
-import { getCurrentLevel, getNextLevel } from '../lib/levels'
-import { initialsFromUsername } from '../lib/profileAvatar'
+import { useStreakLeaderboard } from '../../hooks/useStreakLeaderboard'
+import { useLeaderboardCountdown } from '../../hooks/useLeaderboardCountdown'
+import { getCurrentLevel, getNextLevel } from '../../lib/levels'
+import { initialsFromUsername } from '../../lib/profileAvatar'
 
 const DEFAULT_ROWS = 8
 

@@ -2,7 +2,7 @@ import { Route, Routes } from 'react-router-dom'
 import Home from './pages/Home.jsx'
 import History from './pages/History.jsx'
 import Auth from './pages/Auth.jsx'
-import Navbar from './components/Navbar.jsx'
+import Navbar from './components/layout/Navbar.jsx'
 import WikiIframe from './pages/WikiIframe.jsx'
 import Profile from './pages/Profile.jsx'
 

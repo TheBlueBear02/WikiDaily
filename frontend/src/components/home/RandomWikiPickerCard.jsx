@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getSupabase } from '../lib/supabaseClient'
-import { fetchWikipediaRandomPage, fetchWikipediaSummary } from '../lib/wikipedia'
-import { cardInteractiveSurfaceClasses } from '../lib/cardSurface'
+import { getSupabase } from '../../lib/supabaseClient'
+import { fetchWikipediaRandomPage, fetchWikipediaSummary } from '../../lib/wikipedia'
+import { cardInteractiveSurfaceClasses } from '../../lib/cardSurface'
 
 function titleToWikiSlug(title) {
   return String(title ?? '')

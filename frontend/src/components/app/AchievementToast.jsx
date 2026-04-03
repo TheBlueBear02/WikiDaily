@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 
-import { useUserProgress } from '../hooks/useUserProgress'
-import { useAchievements } from '../hooks/useAchievements'
+import { useUserProgress } from '../../hooks/useUserProgress'
+import { useAchievements } from '../../hooks/useAchievements'
 
 function prefersReducedMotion() {
   if (typeof window === 'undefined') return true

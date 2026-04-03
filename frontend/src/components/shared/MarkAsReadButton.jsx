@@ -1,7 +1,7 @@
-import { useUserProgress } from '../hooks/useUserProgress'
+import { useUserProgress } from '../../hooks/useUserProgress'
 import { useLocation, useNavigate } from 'react-router-dom'
 
-import { buildAuthUrl } from '../lib/returnTo'
+import { buildAuthUrl } from '../../lib/returnTo'
 
 function formatMutationError(err) {
   if (!err) return null
