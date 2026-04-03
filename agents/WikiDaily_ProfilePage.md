@@ -69,6 +69,8 @@ Returns: array of reading log entries with nested article metadata.
 ### Hook: `useFavorites`
 Fetches the user's favorites (separate from reading history) with article metadata in a single joined query.
 
+Supports an optional `limit` param for capped lists (e.g. Home “Interesting articles” uses `limit: 5`), while Profile fetches the full list by omitting `limit` (same pattern as `useReadingHistory`).
+
 ```js
 supabase
   .from('favorites')
@@ -181,7 +183,7 @@ Each card:
 
 ### 3.5. Achievements
 
-**Placement:** after **Activity Heatmap**, before **Favorites Grid**.
+**Placement:** after **Activity Heatmap**, before **Interesting articles** (`FavoritesGrid`).
 
 **Layout:**
 - Section label: `Achievements`
@@ -207,23 +209,23 @@ Each card:
 **Toast notifications (global):**
 - Achievements are unlocked by the app-root runner after reads and inserted into `user_achievements` with `notified=false`.
 - A single global toast queue shows pending unlocks one at a time and flips `notified=true` after display.
-### 4. Favorites Grid
+### 4. Interesting articles (Favorites Grid)
 
 **Layout:** CSS grid, 3 columns on desktop, 2 on tablet, 1 on mobile. Gap 12px. Full width.
 
-**Section label above:** `"Favorites"` with a count in muted text: `"12 saved"`.
+**Section label above:** `"Interesting articles"` with a count in muted text: `"12 marked"`.
 
 **Each card contains:**
 - Thumbnail image — full width of card, fixed height 100px, `object-fit: cover`. If `image_url` is null, show a warm parchment placeholder with the first letter of the title centered.
 - Article title — `display_title` from articles join. Serif font, 14px, font-weight 500, 2-line clamp with ellipsis overflow.
-- Saved date — `created_at` formatted as `"Saved Mar 29, 2026"`. Sans-serif, 11px, muted color.
+- Marked date — `created_at` formatted as `"Marked Mar 29, 2026"`. Sans-serif, 11px, muted color.
 - Clicking any card navigates to `/wiki/${wiki_slug}` — opens the article in the in-app iframe viewer.
 
 **Empty state:**
 If `favorites` is empty, show a centered message:
 ```
-"No favorites yet."
-"Open an article and tap “Add to favorites” to save it here."
+"No interesting articles yet."
+"Open an article and tap “Mark interesting” to save it here."
 ```
 With a button linking to `/`.
 
@@ -283,7 +285,7 @@ Profile.jsx  (page)
 │     └── FavoriteArticleCard.jsx × N
 │           ├── Thumbnail (or placeholder)
 │           ├── Title (2-line clamp)
-│           └── Saved date
+│           └── Marked date
 │
 └── ReadingHistoryGrid.jsx
       └── ArticleHistoryCard.jsx × N
@@ -330,12 +332,12 @@ Ensure the Profile NavLink uses the same active styling logic as the History Nav
 **Loading:**
 - Stats row: show 3 skeleton placeholder cards (pulsing gray rectangles)
 - Heatmap: show a gray placeholder rectangle same dimensions as the heatmap
-- Favorites grid: show 6 skeleton cards in the grid
+- Interesting articles grid: show 6 skeleton cards in the grid
 - History grid: show 6 skeleton cards in the grid
 
 **Error:**
 - If the `profiles` query in `useUserProgress` fails: show `"Could not load profile. Please try again."` with a retry button
-- If `useFavorites` fails: show the favorites section error card with retry
+- If `useFavorites` fails: show the Interesting articles section error card with retry
 - If `useReadingHistory` fails: show the profile header and stats (if loaded) and an error message only in the history section
 
 **No data (new user):**

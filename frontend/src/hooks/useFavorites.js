@@ -22,15 +22,18 @@ async function ensureProfileExists({ supabase, userId, user } = {}) {
   if (error) throw error
 }
 
-export function useFavorites({ userId, user } = {}) {
+export function useFavorites({ userId, user, limit } = {}) {
   const queryClient = useQueryClient()
 
+  const normalizedLimit =
+    typeof limit === 'number' && Number.isFinite(limit) && limit > 0 ? Math.floor(limit) : null
+
   const favoritesQuery = useQuery({
-    queryKey: ['favorites', userId],
+    queryKey: ['favorites', userId, normalizedLimit ?? 'all'],
     enabled: Boolean(userId),
     queryFn: async () => {
       const supabase = getSupabase()
-      const { data, error } = await supabase
+      let query = supabase
         .from('favorites')
         .select(
           `
@@ -48,6 +51,12 @@ export function useFavorites({ userId, user } = {}) {
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
 
+      if (normalizedLimit) {
+        query = query.limit(normalizedLimit)
+      }
+
+      const { data, error } = await query
+
       if (error) throw error
       return data ?? []
     },
@@ -55,7 +64,7 @@ export function useFavorites({ userId, user } = {}) {
 
   const addFavoriteMutation = useMutation({
     mutationFn: async ({ wikiSlug } = {}) => {
-      if (!userId) throw new Error('You must be signed in to favorite an article.')
+      if (!userId) throw new Error('You must be signed in to mark an article as interesting.')
       if (!wikiSlug) throw new Error('Missing wikiSlug.')
       const supabase = getSupabase()
 
@@ -96,7 +105,7 @@ export function useFavorites({ userId, user } = {}) {
 
   const removeFavoriteMutation = useMutation({
     mutationFn: async ({ wikiSlug } = {}) => {
-      if (!userId) throw new Error('You must be signed in to unfavorite an article.')
+      if (!userId) throw new Error('You must be signed in to unmark an article.')
       if (!wikiSlug) throw new Error('Missing wikiSlug.')
       const supabase = getSupabase()
 

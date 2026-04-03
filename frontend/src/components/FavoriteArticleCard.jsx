@@ -90,7 +90,7 @@ export default function FavoriteArticleCard({ entry }) {
           {title}
         </div>
         <div className="text-[11px] font-medium text-slate-500">
-          {savedAtText ? `Saved ${savedAtText}` : 'Saved —'}
+          {savedAtText ? `Marked ${savedAtText}` : 'Marked —'}
         </div>
       </div>
     </article>

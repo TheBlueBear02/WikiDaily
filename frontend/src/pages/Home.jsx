@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom'
 import { useDailyArticle } from '../hooks/useDailyArticle'
 import { useUserProgress } from '../hooks/useUserProgress'
 import { useReadingHistory } from '../hooks/useReadingHistory'
+import { useFavorites } from '../hooks/useFavorites'
 import ArticleCard from '../components/ArticleCard'
 import HeroAside from '../components/HeroAside'
 import StreakLeaderboard from '../components/StreakLeaderboard'
@@ -11,6 +12,7 @@ import RandomWikiSection from '../components/RandomWikiSection'
 import CollectiveReadingProgressBar from '../components/CollectiveReadingProgressBar'
 import ReadingProgressBar from '../components/ReadingProgressBar'
 import LatestReadsSection from '../components/LatestReadsSection'
+import InterestingArticlesSection from '../components/InterestingArticlesSection'
 import { useCollectiveReadingTotal } from '../hooks/useCollectiveReadingTotal'
 
 function HomeHeroRow({ userId, profile, dailySlot, collectiveReading }) {
@@ -48,9 +50,10 @@ function HomeHeroRow({ userId, profile, dailySlot, collectiveReading }) {
 
 export default function Home() {
   const { dailyArticle, isLoading, isError, error, refetch } = useDailyArticle()
-  const { userId, profile, profileQuery } = useUserProgress()
+  const { userId, user, profile, profileQuery } = useUserProgress()
   const collectiveReadingQuery = useCollectiveReadingTotal()
   const latestReadsQuery = useReadingHistory({ userId, limit: 5 })
+  const interestingQuery = useFavorites({ userId, user, limit: 5 })
 
   let heroRightColumn = null
 
@@ -175,6 +178,12 @@ export default function Home() {
             isLoading={profileQuery.isLoading}
           />
         )
+      ) : null}
+      {userId &&
+      !interestingQuery.favoritesQuery.isLoading &&
+      !interestingQuery.favoritesQuery.isError &&
+      (interestingQuery.favorites?.length ?? 0) > 0 ? (
+        <InterestingArticlesSection entries={interestingQuery.favorites ?? []} />
       ) : null}
     </div>
   )

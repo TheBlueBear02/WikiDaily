@@ -20,8 +20,8 @@ export default function FavoritesGrid({ entries, isLoading, isError, error, onRe
   return (
     <section className="space-y-3">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <div className="text-lg font-semibold tracking-tight text-primary">Favorites</div>
-        <div className="text-sm text-slate-500">{count} saved</div>
+        <div className="text-lg font-semibold tracking-tight text-primary">Interesting articles</div>
+        <div className="text-sm text-slate-500">{count} marked</div>
       </div>
 
       {isLoading ? (
@@ -33,7 +33,7 @@ export default function FavoritesGrid({ entries, isLoading, isError, error, onRe
       ) : isError ? (
         <div className="rounded-xl border border-rose-200 bg-rose-50 p-5">
           <div className="text-sm font-medium text-rose-900">
-            Could not load favorites.
+            Could not load your interesting articles.
           </div>
           <div className="mt-1 text-sm text-rose-800">{error?.message ?? 'Unknown error'}</div>
           <div className="mt-4">
@@ -48,9 +48,9 @@ export default function FavoritesGrid({ entries, isLoading, isError, error, onRe
         </div>
       ) : count === 0 ? (
         <div className="rounded-xl border border-slate-200 bg-slate-50 p-5 text-center">
-          <div className="text-sm font-medium text-primary">No favorites yet.</div>
+          <div className="text-sm font-medium text-primary">No interesting articles yet.</div>
           <div className="mt-1 text-sm text-slate-600">
-            Open an article and tap “Add to favorites” to save it here.
+            Open an article and tap “Mark interesting” to save it here.
           </div>
           <div className="mt-4">
             <Link

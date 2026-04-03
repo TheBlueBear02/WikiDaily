@@ -308,13 +308,13 @@ export default function WikiIframe() {
 
     if (isFavorite) {
       void removeFavorite({ wikiSlug }).catch((err) => {
-        setFavoriteError(err instanceof Error ? err.message : 'Could not remove favorite')
+        setFavoriteError(err instanceof Error ? err.message : 'Could not unmark')
       })
       return
     }
 
     void addFavorite({ wikiSlug }).catch((err) => {
-      setFavoriteError(err instanceof Error ? err.message : 'Could not add favorite')
+      setFavoriteError(err instanceof Error ? err.message : 'Could not mark as interesting')
     })
   }
 
@@ -442,7 +442,7 @@ export default function WikiIframe() {
               disabled={favoritesQuery.isLoading || isFavoriteMutating}
               className="rounded-none border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 hover:bg-slate-100"
             >
-              {isFavorite ? '★ Favorited' : '☆ Add to favorites'}
+              {isFavorite ? '★ Interesting' : '☆ Mark interesting'}
             </button>
             <button
               type="button"
