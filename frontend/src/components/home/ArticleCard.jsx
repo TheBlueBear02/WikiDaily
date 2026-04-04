@@ -96,10 +96,8 @@ export default function ArticleCard({
         'relative h-full w-full overflow-hidden',
         bodyScrollable ? 'flex min-h-0 flex-col' : null,
         isCardClickable
-          ? cardInteractiveSurfaceClasses({ collected: isCollected })
-          : isCollected
-            ? 'rounded-none border border-emerald-200 bg-emerald-50/80'
-            : 'rounded-none border border-slate-200 bg-white',
+          ? 'rounded-none bg-primary shadow-sm cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-2'
+          : 'rounded-none bg-primary',
         className,
       ]
         .filter(Boolean)
@@ -122,12 +120,12 @@ export default function ArticleCard({
         </div>
       ) : null}
 
-      <div className="relative h-[30vh] w-full shrink-0 bg-slate-100">
+      <div className="relative h-[40vh] w-full shrink-0">
         {imageUrl ? (
           <img
             src={imageUrl}
             alt=""
-            className="h-full w-full object-cover object-center"
+            className="h-full w-full object-cover object-top"
             loading="lazy"
             referrerPolicy="no-referrer"
           />
@@ -160,61 +158,73 @@ export default function ArticleCard({
         )}
 
         <div
-          className="pointer-events-none absolute bottom-4 start-0 bg-primary px-4 py-2.5 text-sm font-bold text-white"
+          className="pointer-events-none absolute bottom-4 start-0 flex items-center gap-2 bg-primary px-4 py-2.5 text-sm font-bold text-white"
           aria-hidden
         >
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-60 [animation-duration:1.5s]" />
+            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-white" />
+          </span>
           {"Today's article"}
         </div>
       </div>
 
       <div
         className={[
-          'flex flex-col gap-3 p-5',
+          'flex flex-col gap-6 p-5 py-7',
           bodyScrollable ? 'min-h-0 flex-1 overflow-y-auto' : null,
         ]
           .filter(Boolean)
           .join(' ')}
       >
-        <div className="flex-1 space-y-2">
-          <h2 className="text-2xl font-semibold leading-tight tracking-tight text-primary">
-            {displayTitle}
-          </h2>
-          {date ? <div className="text-xs text-slate-500">{date}</div> : null}
-          {description ? (
-            <p className="text-sm leading-relaxed text-slate-600">
-              {descriptionPreview(description)}
-            </p>
-          ) : (
-            <p className="text-sm text-slate-600">No description available.</p>
-          )}
-        </div>
-
-        <div className="mt-auto flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
-          <div className="flex min-w-0 flex-wrap items-center gap-3">
-            {actionsLeft}
+        <div className="flex-1 space-y-4">
+          <div className="flex items-start justify-between gap-3">
+            <h2 className="text-4xl font-extrabold leading-tight tracking-tight text-white">
             {isReadNowInternal ? (
               <Link
                 to={readNowHref}
                 state={navigationState ?? undefined}
-                className="inline-flex items-center justify-center rounded-none bg-primary px-3 py-2 text-sm font-medium text-white hover:bg-primary-hover"
+                onClick={(e) => e.stopPropagation()}
+                className="hover:underline"
               >
-                Read now
+                {displayTitle}
               </Link>
             ) : (
               <a
                 href={readNowHref}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center justify-center rounded-none bg-primary px-3 py-2 text-sm font-medium text-white hover:bg-primary-hover"
+                onClick={(e) => e.stopPropagation()}
+                className="hover:underline"
               >
-                Read now
+                {displayTitle}
               </a>
             )}
-            {actions}
+            </h2>
+            {date ? (
+              <div className="shrink-0 text-sm font-bold text-white">
+                {date}
+              </div>
+            ) : null}
+          </div>
+          <div className="h-1 w-1/4 bg-white" />
+          {description ? (
+            <p className="text-base leading-relaxed text-white/85">
+              {descriptionPreview(description)}
+            </p>
+          ) : (
+            <p className="text-base text-white/85">No description available.</p>
+          )}
+        </div>
+
+        <div className="mt-auto flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
+          <div className="flex min-w-0 flex-wrap items-center gap-3">
+            {actionsLeft}
+{actions}
           </div>
           {countdownLabel ? (
             <div
-              className="shrink-0 self-end text-xs font-medium leading-none text-slate-500 sm:text-right"
+              className="shrink-0 self-end text-sm font-medium leading-none text-white/70 sm:text-right"
               title={`Next daily article at ${dailyCountdown.target.toISOString()}`}
               aria-live="polite"
               aria-atomic="true"

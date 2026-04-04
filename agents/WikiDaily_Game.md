@@ -43,8 +43,12 @@ Exact section assignment (which box is daily vs free play vs leaderboards) will 
 |------|--------|
 | Route + navbar link | Done (`App.jsx`, `Navbar.jsx`) |
 | Page shell + hero placeholders | Done (`frontend/src/pages/Game.jsx`) |
-| Daily puzzle source (start/target per UTC day) | Not implemented |
-| Leaderboards (clicks + time) | Not implemented |
+| DB: `game_challenges` table + RLS | Done (service role writes only; public read) |
+| DB: `game_sessions` table + RLS | Done (authenticated insert/update own rows; public read completed) |
+| DB: `game_leaderboard_clicks` RPC | Done (`SECURITY DEFINER`; anon + authenticated execute) |
+| DB: `game_leaderboard_time` RPC | Done (`SECURITY DEFINER`; anon + authenticated execute) |
+| Daily puzzle source (start/target per UTC day) | Not implemented (picker script needed) |
+| Leaderboards UI (clicks + time) | Not implemented |
 | Free play random pair + personal bests | Not implemented |
 | In-app play / link traversal (likely `WikiIframe` or dedicated flow) | Not implemented |
 

@@ -53,7 +53,7 @@ export default function Home() {
   const { dailyArticle, isLoading, isError, error, refetch } = useDailyArticle()
   const { userId, user, profile, profileQuery } = useUserProgress()
   const collectiveReadingQuery = useCollectiveReadingTotal()
-  const latestReadsQuery = useReadingHistory({ userId, limit: 5 })
+  const latestReadsQuery = useReadingHistory({ userId, limit: 4 })
   const interestingQuery = useFavorites({ userId, user, limit: 5 })
 
   let heroRightColumn = null
@@ -126,14 +126,12 @@ export default function Home() {
             to="/history"
             className={({ isActive }) =>
               [
-                'inline-flex items-center justify-center rounded-none border px-3 py-2 text-sm font-medium hover:bg-slate-50',
-                isActive
-                  ? 'border-slate-400 bg-slate-50 text-primary'
-                  : 'border-slate-300 bg-white text-slate-700',
+                'text-sm font-medium underline-offset-2 hover:underline',
+                isActive ? 'text-white' : 'text-white/75',
               ].join(' ')
             }
           >
-            Previous articles
+            Previous articles &gt;
           </NavLink>
         }
       />

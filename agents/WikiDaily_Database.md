@@ -2,12 +2,14 @@
 
 ## Overview
 
-The database has 9 tables:
+The database has 11 tables:
 
 - `profiles`, `reading_log`, `favorites`, `article_notes`, `user_achievements`, and `fact_votes` are user-specific and protected by Row Level Security (RLS).
 - `wiki_facts` is public read for non-deleted rows; authenticated submitters can also read their own rows (including soft-deleted); inserts and soft-deletes are scoped to the submitter (see `wiki_facts` RLS in this doc and `scripts/sql/fix_wiki_facts_soft_delete_rls.sql`).
 - `articles` is public read-only and stores cached article metadata for BOTH daily and random articles.
 - `achievements` is public read-only and stores achievement definitions (admin-managed; service role writes only).
+- `game_challenges` is public read; written only by service role / picker script.
+- `game_sessions` is authenticated write (own rows); public read for completed sessions (leaderboard).
 
 ```
 auth.users (Supabase built-in)
@@ -25,9 +27,12 @@ auth.users (Supabase built-in)
             ├── wiki_facts (submitted facts; snapshot columns for submitter display)
             │
             └── fact_votes (up/down vote per user per fact; references wiki_facts)
+            │
+            └── game_sessions (one row per game attempt; references game_challenges)
 
 articles (one row per unique wiki page; daily rows are flagged; treated as append-only)
 achievements (achievement definitions; admin-managed; public read)
+game_challenges (daily and free-play challenge pairs; references articles; service role writes)
 ```
 
 ---
@@ -759,6 +764,19 @@ profiles.user_id
 articles.wiki_slug
   │
   └── wiki_facts.wiki_slug (1-to-many, CASCADE when article row deleted)
+
+articles.wiki_slug
+  │
+  ├── game_challenges.start_slug  (FK ON DELETE RESTRICT)
+  └── game_challenges.target_slug (FK ON DELETE RESTRICT)
+
+game_challenges.id
+  │
+  └── game_sessions.challenge_id (1-to-many, ON DELETE RESTRICT)
+
+profiles.user_id
+  │
+  └── game_sessions.user_id (1-to-many, ON DELETE SET NULL)
 ```
 
 > `reading_log.wiki_slug` is a foreign key to `articles(wiki_slug)` with `ON DELETE SET NULL`. This means if an article row is ever deleted, the reading log entry is preserved but `wiki_slug` becomes null rather than the row being deleted. This enables Supabase nested joins between the two tables.
@@ -820,3 +838,97 @@ The notified column ensures the toast shows exactly once per achievement, even a
 `reading_log` is the source of truth for "how many articles the user has read" (the `source` column distinguishes `daily`, `random`, header `search`, and in-reader `link` navigation).
 
 To prevent drift (e.g. if a `reading_log` insert succeeds but a subsequent `profiles` update fails), the app periodically reconciles `profiles.total_read` to match `COUNT(*)` of that user's `reading_log` rows.
+
+---
+
+## Table: `game_challenges`
+
+Stores daily and free-play challenge pairs (start → target article). Written only by service role / picker script; never by client code.
+
+| Column        | Type        | Nullable | Default | Description |
+|---------------|-------------|----------|---------|-------------|
+| `id`          | bigserial   | NO       | auto    | Primary key. |
+| `type`        | text        | NO       | —       | `CHECK (type IN ('daily', 'free'))`. |
+| `date`        | date        | YES      | null    | UTC calendar day for daily challenges. `NULL` for free-play. `UNIQUE` so only one daily challenge exists per day. |
+| `start_slug`  | text        | NO       | —       | FK → `articles(wiki_slug)` ON DELETE RESTRICT. The article where the player starts. |
+| `target_slug` | text        | NO       | —       | FK → `articles(wiki_slug)` ON DELETE RESTRICT. The article the player must reach. |
+| `created_at`  | timestamptz | NO       | NOW()   | When the challenge was created. |
+
+**Constraints:**
+
+- `CONSTRAINT different_start_and_target CHECK (start_slug <> target_slug)` — start and target must be different articles.
+- `CONSTRAINT daily_date_required CHECK ((type = 'daily' AND date IS NOT NULL) OR (type = 'free' AND date IS NULL))` — daily challenges must have a date; free-play challenges must not.
+
+**Index:**
+
+- `idx_game_challenges_daily_date ON (date) WHERE type = 'daily'` — fast lookup for today's daily challenge.
+
+**RLS Policies:**
+
+- `SELECT` — anyone can read (public leaderboard / challenge display).
+- No `INSERT`, `UPDATE`, or `DELETE` policies for clients — only service role can write.
+
+---
+
+## Table: `game_sessions`
+
+Records every game attempt by a user (daily or free-play).
+
+| Column         | Type        | Nullable | Default        | Description |
+|----------------|-------------|----------|----------------|-------------|
+| `id`           | bigserial   | NO       | auto           | Primary key. |
+| `challenge_id` | bigint      | NO       | —              | FK → `game_challenges(id)` ON DELETE RESTRICT. |
+| `user_id`      | uuid        | YES      | null           | FK → `profiles(user_id)` ON DELETE SET NULL. Null for anonymous sessions. |
+| `clicks`       | integer     | NO       | 0              | Number of links clicked. `CHECK (clicks >= 0)`. |
+| `time_seconds` | integer     | YES      | null           | Total elapsed seconds; null until the session is completed. `CHECK (time_seconds >= 0)`. |
+| `path`         | jsonb       | NO       | `'[]'`         | Ordered array of `wiki_slug` values visited during the session. |
+| `completed`    | boolean     | NO       | false          | Whether the player reached the target. |
+| `started_at`   | timestamptz | NO       | NOW()          | When the session started. |
+| `completed_at` | timestamptz | YES      | null           | When the player reached the target; null until completed. |
+
+**Constraints:**
+
+- `CONSTRAINT completed_at_required CHECK ((completed = FALSE) OR (completed = TRUE AND completed_at IS NOT NULL))` — `completed_at` must be set when `completed = true`.
+- `CONSTRAINT time_required_when_completed CHECK ((completed = FALSE) OR (completed = TRUE AND time_seconds IS NOT NULL))` — `time_seconds` must be set when `completed = true`.
+
+**Indexes:**
+
+- `idx_game_sessions_leaderboard ON (challenge_id, clicks ASC, time_seconds ASC) WHERE completed = TRUE` — fast leaderboard query.
+- `idx_game_sessions_user ON (user_id, started_at DESC)` — fast user history query.
+
+**RLS Policies:**
+
+- `SELECT` (public) — anyone can read completed sessions (needed for leaderboard).
+- `SELECT` (authenticated) — users can also read their own incomplete sessions.
+- `INSERT` (authenticated) — users can insert their own sessions (`auth.uid() = user_id`).
+- `UPDATE` (authenticated) — users can update their own sessions (to record clicks, path, completion).
+
+---
+
+## RPC: `public.game_leaderboard_clicks(challenge_id_param, limit_count)`
+
+Returns the top scores for a given challenge, ranked by fewest clicks (tie-broken by `time_seconds` ASC, then `completed_at` ASC). Limit is clamped to 1–50 (default 10).
+
+**Returns:** `(rank, user_id, username, clicks, time_seconds, completed_at)`
+
+`SECURITY DEFINER` — bypasses RLS on `profiles` to join usernames safely.
+
+```sql
+REVOKE ALL ON FUNCTION public.game_leaderboard_clicks(BIGINT, INT) FROM public;
+GRANT EXECUTE ON FUNCTION public.game_leaderboard_clicks(BIGINT, INT) TO anon, authenticated;
+```
+
+---
+
+## RPC: `public.game_leaderboard_time(challenge_id_param, limit_count)`
+
+Returns the top scores for a given challenge, ranked by fastest time (tie-broken by `clicks` ASC, then `completed_at` ASC). Limit is clamped to 1–50 (default 10).
+
+**Returns:** `(rank, user_id, username, time_seconds, clicks, completed_at)`
+
+`SECURITY DEFINER` — bypasses RLS on `profiles` to join usernames safely.
+
+```sql
+REVOKE ALL ON FUNCTION public.game_leaderboard_time(BIGINT, INT) FROM public;
+GRANT EXECUTE ON FUNCTION public.game_leaderboard_time(BIGINT, INT) TO anon, authenticated;
+```

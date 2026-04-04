@@ -1,6 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  safelist: ['bg-secondary', 'bg-secondary-hover', 'text-secondary'],
   theme: {
     extend: {
       colors: {
@@ -8,6 +9,10 @@ export default {
         primary: {
           DEFAULT: '#1E2952',
           hover: '#151d3c',
+        },
+        secondary: {
+          DEFAULT: '#dc143c',
+          hover: '#b01030',
         },
       },
       keyframes: {

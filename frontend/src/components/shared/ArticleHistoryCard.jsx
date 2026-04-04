@@ -1,8 +1,6 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-import { CARD_SURFACE_STATIC, cardInteractiveSurfaceClasses } from '../../lib/cardSurface'
-
 function parseYmdAsUtcDate(ymd) {
   if (typeof ymd !== 'string') return null
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(ymd.trim())
@@ -33,19 +31,13 @@ function sourceLabel(source) {
 }
 
 function sourceBadgeClass(source) {
-  if (source === 'daily') {
-    return 'bg-amber-100 text-amber-950 border-amber-200'
-  }
-  if (source === 'link') {
-    return 'bg-sky-100 text-sky-950 border-sky-200'
-  }
-  if (source === 'search') {
-    return 'bg-violet-100 text-violet-950 border-violet-200'
-  }
-  return 'bg-emerald-100 text-emerald-950 border-emerald-200'
+  if (source === 'daily') return 'bg-amber-400 text-amber-950'
+  if (source === 'link') return 'bg-sky-400 text-sky-950'
+  if (source === 'search') return 'bg-violet-400 text-violet-950'
+  return 'bg-emerald-400 text-emerald-950'
 }
 
-export default function ArticleHistoryCard({ entry }) {
+export default function ArticleHistoryCard({ entry, variant = 'dark' }) {
   const navigate = useNavigate()
 
   const wikiSlug =
@@ -88,8 +80,11 @@ export default function ArticleHistoryCard({ entry }) {
   return (
     <article
       className={[
-        'relative overflow-hidden',
-        clickable ? cardInteractiveSurfaceClasses() : [CARD_SURFACE_STATIC, 'opacity-90'].join(' '),
+        'flex gap-3',
+        variant === 'light' ? 'border border-slate-200 p-3' : '',
+        clickable
+          ? 'cursor-pointer opacity-90 hover:opacity-100 transition-opacity duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30'
+          : 'opacity-60',
       ].join(' ')}
       onClick={clickable ? onOpen : undefined}
       onKeyDown={
@@ -106,42 +101,40 @@ export default function ArticleHistoryCard({ entry }) {
       tabIndex={clickable ? 0 : undefined}
       aria-label={clickable ? `Open ${title}` : `${title} (unavailable)`}
     >
-      <div className="relative">
-        <div className="h-[100px] w-full bg-slate-100">
-          {imageUrl ? (
-            <img
-              src={imageUrl}
-              alt=""
-              className="h-full w-full object-cover"
-              loading="lazy"
-              referrerPolicy="no-referrer"
-            />
-          ) : (
-            <div className="grid h-full w-full place-items-center bg-amber-50 text-2xl font-semibold text-amber-900">
-              {String(title).trim().slice(0, 1).toUpperCase()}
-            </div>
-          )}
-        </div>
+      {/* Image */}
+      <div className="h-[100px] w-[100px] shrink-0 bg-white/10">
+        {imageUrl ? (
+          <img
+            src={imageUrl}
+            alt=""
+            className="h-full w-full object-cover"
+            loading="lazy"
+            referrerPolicy="no-referrer"
+          />
+        ) : (
+          <div className="grid h-full w-full place-items-center text-xl font-semibold text-white/40">
+            {String(title).trim().slice(0, 1).toUpperCase()}
+          </div>
+        )}
+      </div>
 
+      {/* Text */}
+      <div className="flex min-w-0 flex-1 flex-col gap-1 py-0.5">
         <div
           className={[
-            'absolute right-2 top-2 rounded-none border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
+            'self-start px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider',
             sourceBadgeClass(source),
           ].join(' ')}
         >
           {sourceLabel(source)}
         </div>
-      </div>
-
-      <div className="space-y-2 p-3">
-        <div className="line-clamp-2 text-base font-semibold leading-tight tracking-tight text-primary">
+        <div className={['line-clamp-2 text-lg font-semibold leading-tight', variant === 'light' ? 'text-primary' : 'text-white'].join(' ')}>
           {title}
         </div>
-        <div className="text-xs text-slate-500">
+        <div className={['text-xs', variant === 'light' ? 'text-primary' : 'text-white'].join(' ')}>
           {readDateText ?? entry?.read_date ?? '—'}
         </div>
       </div>
     </article>
   )
 }
-

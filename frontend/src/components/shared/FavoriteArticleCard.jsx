@@ -1,8 +1,6 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-import { CARD_SURFACE_STATIC, cardInteractiveSurfaceClasses } from '../../lib/cardSurface'
-
 function formatSavedAt(isoString) {
   if (typeof isoString !== 'string') return null
   const d = new Date(isoString)
@@ -49,8 +47,10 @@ export default function FavoriteArticleCard({ entry }) {
   return (
     <article
       className={[
-        'relative overflow-hidden',
-        clickable ? cardInteractiveSurfaceClasses() : [CARD_SURFACE_STATIC, 'opacity-90'].join(' '),
+        'flex gap-3 border border-slate-200 p-3',
+        clickable
+          ? 'cursor-pointer opacity-90 hover:opacity-100 transition-opacity duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30'
+          : 'opacity-60',
       ].join(' ')}
       onClick={clickable ? onOpen : undefined}
       onKeyDown={
@@ -67,33 +67,35 @@ export default function FavoriteArticleCard({ entry }) {
       tabIndex={clickable ? 0 : undefined}
       aria-label={clickable ? `Open ${title}` : `${title} (unavailable)`}
     >
-      <div className="relative">
-        <div className="h-[100px] w-full bg-slate-100">
-          {imageUrl ? (
-            <img
-              src={imageUrl}
-              alt=""
-              className="h-full w-full object-cover"
-              loading="lazy"
-              referrerPolicy="no-referrer"
-            />
-          ) : (
-            <div className="grid h-full w-full place-items-center bg-amber-50 text-2xl font-semibold text-amber-900">
-              {String(title).trim().slice(0, 1).toUpperCase()}
-            </div>
-          )}
-        </div>
+      {/* Image */}
+      <div className="h-[100px] w-[100px] shrink-0 bg-slate-100">
+        {imageUrl ? (
+          <img
+            src={imageUrl}
+            alt=""
+            className="h-full w-full object-cover"
+            loading="lazy"
+            referrerPolicy="no-referrer"
+          />
+        ) : (
+          <div className="grid h-full w-full place-items-center text-xl font-semibold text-primary/30">
+            {String(title).trim().slice(0, 1).toUpperCase()}
+          </div>
+        )}
       </div>
 
-      <div className="space-y-2 p-3">
-        <div className="line-clamp-2 text-base font-semibold leading-tight tracking-tight text-primary">
+      {/* Text */}
+      <div className="flex min-w-0 flex-1 flex-col gap-1 py-0.5">
+        <div className="self-start bg-primary px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">
+          Interesting
+        </div>
+        <div className="line-clamp-2 text-lg font-semibold leading-tight text-primary">
           {title}
         </div>
-        <div className="text-xs text-slate-500">
+        <div className="text-xs text-primary">
           {savedAtText ? `Marked ${savedAtText}` : 'Marked —'}
         </div>
       </div>
     </article>
   )
 }
-

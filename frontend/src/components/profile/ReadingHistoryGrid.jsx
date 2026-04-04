@@ -80,6 +80,7 @@ export default function ReadingHistoryGrid({
               <ArticleHistoryCard
                 key={`${entry?.read_date ?? 'date'}-${entry?.wiki_slug ?? 'null'}-${entry?.source ?? 'source'}`}
                 entry={entry}
+                variant="light"
               />
             ))}
           </div>

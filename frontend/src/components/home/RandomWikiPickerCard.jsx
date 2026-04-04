@@ -41,7 +41,7 @@ export default function RandomWikiPickerCard() {
         alt="Random article dice"
           className="mb-3 h-20 w-20 flex-shrink-0"
       />
-      <div className="text-base font-semibold text-primary">Random Article</div>
+      <div className="text-base font-semibold text-primary">RANDOM ARTICLE</div>
       <div className="mt-2 text-sm text-slate-600">
         {isLoading ? 'Picking a random article...' : null}
         {!isLoading && !errorMessage

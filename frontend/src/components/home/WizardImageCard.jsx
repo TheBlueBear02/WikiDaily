@@ -13,7 +13,7 @@ export default function WizardImageCard() {
       <div className="flex min-w-0 flex-1 flex-col justify-start">
         <div className="mb-2">
           <span className="inline-flex w-fit items-center bg-primary px-4 py-2 text-sm font-semibold tracking-wide text-white">
-            Quote of the day
+            QUOTE OF THE DAY
           </span>
         </div>
         <div className="flex flex-1 flex-col justify-center -mt-2">

@@ -245,7 +245,7 @@ export default function CraziestFactsSection() {
             </svg>
           </span>
           <h2 className="text-lg font-semibold leading-tight tracking-tight text-white">
-            Shared Facts
+            SHARED FACTS
           </h2>
           <div className="group relative ml-1 flex shrink-0 items-center">
             <button
