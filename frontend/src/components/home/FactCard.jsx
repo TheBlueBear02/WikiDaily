@@ -2,77 +2,12 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { NavLink, useNavigate } from 'react-router-dom'
 
-import { getCurrentLevel, getNextLevel } from '../../lib/levels'
+import { getCurrentLevel } from '../../lib/levels'
 import { initialsFromUsername } from '../../lib/profileAvatar'
 import { buildAuthUrl } from '../../lib/returnTo'
+import ProfileTooltip from '../shared/ProfileTooltip'
 
 const FACT_SUBMITTER_TIP_HIDE_MS = 180
-const FACT_SUBMITTER_TIP_HALF_W = 150
-
-function formatArticlesReadCount(n) {
-  const x = Number(n) || 0
-  return x === 1 ? '1 article read' : `${x} articles read`
-}
-
-/** Matches `StreakLeaderboard` user card styling (no streak row). */
-function FactSubmitterTooltip({
-  displayName,
-  totalRead,
-  avatarInitials,
-  rect,
-  tooltipId,
-}) {
-  const level = getCurrentLevel(totalRead)
-  const next = getNextLevel(totalRead)
-
-  const centerX = rect.left + rect.width / 2
-  const clampedLeft = Math.min(
-    window.innerWidth - FACT_SUBMITTER_TIP_HALF_W - 12,
-    Math.max(FACT_SUBMITTER_TIP_HALF_W + 12, centerX),
-  )
-  const placeAbove = rect.top > 150
-  const top = placeAbove ? rect.top : rect.bottom + 6
-  const transform = placeAbove ? 'translate(-50%, -100%)' : 'translate(-50%, 0)'
-
-  return (
-    <div
-      id={tooltipId}
-      role="tooltip"
-      className="pointer-events-none fixed z-[100] w-[min(18rem,calc(100vw-1.5rem))] rounded-none border border-slate-200 bg-white p-3.5 shadow-lg ring-1 ring-slate-900/5"
-      style={{ left: clampedLeft, top, transform }}
-    >
-      <div className="flex gap-3">
-        <div
-          className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-amber-100 text-sm font-semibold text-amber-950 ring-1 ring-amber-200/80"
-          aria-hidden
-        >
-          {avatarInitials}
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-primary">{displayName}</p>
-          <p className="mt-0.5 text-xs text-slate-600">{`Level ${level.level} · ${level.name}`}</p>
-        </div>
-      </div>
-
-      <dl className="mt-3 space-y-2 border-t border-slate-100 pt-3 text-xs">
-        <div className="flex items-baseline justify-between gap-3">
-          <dt className="font-medium text-slate-500">Total reads</dt>
-          <dd className="tabular-nums font-semibold text-slate-800">{totalRead}</dd>
-        </div>
-      </dl>
-
-      {next ? (
-        <p className="mt-2.5 border-t border-slate-100 pt-2.5 text-[11px] leading-snug text-slate-500">
-          {`${formatArticlesReadCount(totalRead)} · Next: Level ${next.level} (${next.name}) at ${next.threshold.toLocaleString()} reads`}
-        </p>
-      ) : (
-        <p className="mt-2.5 border-t border-slate-100 pt-2.5 text-[11px] leading-snug text-slate-500">
-          {`${formatArticlesReadCount(totalRead)} · Max reader level`}
-        </p>
-      )}
-    </div>
-  )
-}
 
 function useFactSubmitterTooltip() {
   const [tooltip, setTooltip] = useState(null)
@@ -153,6 +88,7 @@ export default function FactCard({
   userId,
   user,
   profile,
+  existingVote,
 }) {
   const navigate = useNavigate()
 
@@ -176,6 +112,17 @@ export default function FactCard({
         ? profile.total_read
         : 0
   const level = getCurrentLevel(totalReadForLevel)
+
+  const submitterStreak =
+    fact?.submitter_current_streak != null
+      ? fact.submitter_current_streak
+      : isOwnFact && profile?.current_streak != null
+        ? profile.current_streak
+        : null
+  const submitterFactsCount =
+    fact?.submitter_facts_count != null
+      ? fact.submitter_facts_count
+      : null
 
   let displayHandle = 'Anonymous'
   if (fact?.user_id) {
@@ -210,36 +157,35 @@ export default function FactCard({
     highlightFactText: fact.fact_text,
   }
 
-  function openFactArticle() {
-    navigate(`/wiki/${encodeURIComponent(fact.wiki_slug)}`, {
-      state: wikiArticleState,
-    })
-  }
-
   return (
     <>
     <div className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-stretch gap-x-3">
-      <div className="flex min-h-[240px] min-w-0 flex-col border border-slate-200 bg-white p-4 shadow-sm transition-[box-shadow,transform,background-color,border-color] duration-200 motion-safe:hover:-translate-y-px hover:border-slate-300 hover:bg-slate-50/90 hover:shadow-md">
-        <div
-          role="button"
-          tabIndex={0}
-          className="flex min-h-0 flex-1 cursor-pointer flex-col rounded-none outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-          onClick={openFactArticle}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault()
-              openFactArticle()
-            }
-          }}
-          aria-label={`Read article: ${fact.display_title ?? fact.wiki_slug}`}
-        >
-          <blockquote className="min-h-0 flex-1 overflow-y-auto text-base leading-relaxed text-black">
-            {fact.fact_text}
-          </blockquote>
+      <div className="flex min-h-[240px] min-w-0 flex-col border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="flex min-h-0 flex-1 flex-col">
+          <div className="flex min-h-0 flex-1 gap-3">
+            <blockquote className="min-h-0 flex-1 overflow-y-auto text-base leading-relaxed text-black">
+              {fact.fact_text}{' '}
+              <NavLink
+                to={`/wiki/${encodeURIComponent(fact.wiki_slug)}`}
+                state={wikiArticleState}
+                className="whitespace-nowrap font-medium text-primary hover:underline"
+              >
+                source &raquo;
+              </NavLink>
+            </blockquote>
+            {fact.image_url ? (
+              <img
+                src={fact.image_url}
+                alt=""
+                aria-hidden
+                className="w-32 shrink-0 self-stretch rounded-sm object-contain"
+              />
+            ) : null}
+          </div>
           <div className="mt-2 flex shrink-0 flex-col gap-2">
             <div className="flex items-end justify-between gap-3 text-[11px] font-medium text-slate-500">
               <span>Submitted by:</span>
-              <span className="text-right">Based on:</span>
+              <span className="text-right">Source article:</span>
             </div>
             <div className="h-px bg-slate-200" />
             <div className="flex items-start gap-3">
@@ -295,7 +241,11 @@ export default function FactCard({
           type="button"
           disabled={buttonsLocked}
           onClick={() => requireAuth(() => onVote('up'))}
-          className="flex min-h-0 flex-1 flex-row items-center justify-center gap-2 rounded-none border border-slate-300 bg-white px-2 py-2 text-left text-xs font-medium leading-tight text-slate-800 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+          className={`flex min-h-0 flex-1 flex-row items-center justify-center gap-2 rounded-none border px-2 py-2 text-left text-xs font-medium leading-tight text-slate-800 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 ${
+            existingVote === 'up'
+              ? 'border-orange-400 bg-orange-50'
+              : 'border-slate-300 bg-white'
+          }`}
         >
           <RedditStyleUpArrow className="h-7 w-6 shrink-0" />
           <span className="min-w-0">Wow really?</span>
@@ -312,7 +262,11 @@ export default function FactCard({
           type="button"
           disabled={buttonsLocked}
           onClick={() => requireAuth(() => onVote('down'))}
-          className="flex min-h-0 flex-1 flex-row items-center justify-center gap-2 rounded-none border border-slate-300 bg-white px-2 py-2 text-left text-xs font-medium leading-tight text-slate-800 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+          className={`flex min-h-0 flex-1 flex-row items-center justify-center gap-2 rounded-none border px-2 py-2 text-left text-xs font-medium leading-tight text-slate-800 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 ${
+            existingVote === 'down'
+              ? 'border-indigo-400 bg-indigo-50'
+              : 'border-slate-300 bg-white'
+          }`}
         >
           <RedditStyleDownArrow className="h-7 w-6 shrink-0" />
           <span className="min-w-0">Knew already</span>
@@ -328,10 +282,12 @@ export default function FactCard({
       fact?.user_id &&
       tooltip &&
       createPortal(
-        <FactSubmitterTooltip
+        <ProfileTooltip
           displayName={displayHandle}
           totalRead={totalReadForLevel}
           avatarInitials={initials}
+          currentStreak={submitterStreak}
+          factsCount={submitterFactsCount}
           rect={tooltip.rect}
           tooltipId={submitterTooltipId}
         />,

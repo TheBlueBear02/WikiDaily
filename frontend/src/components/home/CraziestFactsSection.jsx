@@ -15,12 +15,14 @@ export default function CraziestFactsSection() {
   const voteMutation = useVoteFact({ userId, user })
 
   const votesRef = useRef([])
-  votesRef.current = factVotesQuery.data ?? []
+  votesRef.current = factVotesQuery.data?.ids ?? []
+  const voteMap = factVotesQuery.data?.voteMap ?? new Map()
 
   const queueRef = useRef([])
   const hadQueueRef = useRef(false)
 
   const [sort, setSort] = useState('popular')
+  const [showSeen, setShowSeen] = useState(false)
   const [queue, setQueue] = useState([])
   const [sessionSeen, setSessionSeen] = useState(() => new Set())
   const scanRef = useRef(0)
@@ -51,22 +53,31 @@ export default function CraziestFactsSection() {
     })
   }, [])
 
+  const resetQueue = useCallback(() => {
+    setVoteError(null)
+    setSessionSeen(new Set())
+    scanRef.current = 0
+    setQueue([])
+    setExhausted(false)
+    hadQueueRef.current = false
+    setLoadError(null)
+    setTableIsEmpty(false)
+    setLoadingInitial(true)
+  }, [])
+
   const changeSort = useCallback(
     (next) => {
       if (next === sort) return
       setSort(next)
-      setVoteError(null)
-      setSessionSeen(new Set())
-      scanRef.current = 0
-      setQueue([])
-      setExhausted(false)
-      hadQueueRef.current = false
-      setLoadError(null)
-      setTableIsEmpty(false)
-      setLoadingInitial(true)
+      resetQueue()
     },
-    [sort],
+    [sort, resetQueue],
   )
+
+  const toggleShowSeen = useCallback(() => {
+    setShowSeen((prev) => !prev)
+    resetQueue()
+  }, [resetQueue])
 
   useEffect(() => {
     if (userId && factVotesQuery.isLoading) return
@@ -75,7 +86,7 @@ export default function CraziestFactsSection() {
 
     void (async () => {
       try {
-        const exclude = new Set(votesRef.current)
+        const exclude = showSeen ? new Set() : new Set(votesRef.current)
         const { facts, nextScanFrom, exhausted: ex, tableEmpty } =
           await fetchWikiFactsNextBatch({
             sort,
@@ -103,7 +114,7 @@ export default function CraziestFactsSection() {
     return () => {
       cancelled = true
     }
-  }, [sort, userId, factVotesQuery.isLoading])
+  }, [sort, showSeen, userId, factVotesQuery.isLoading])
 
   const prefetch = useCallback(async () => {
     if (loadingMore || loadingInitial) return
@@ -111,7 +122,7 @@ export default function CraziestFactsSection() {
 
     setLoadingMore(true)
     try {
-      const exclude = new Set(votesRef.current)
+      const exclude = showSeen ? new Set() : new Set(votesRef.current)
       sessionSeen.forEach((id) => exclude.add(id))
       queueRef.current.forEach((f) => exclude.add(f.id))
 
@@ -132,7 +143,7 @@ export default function CraziestFactsSection() {
     } finally {
       setLoadingMore(false)
     }
-  }, [exhausted, loadingInitial, loadingMore, sessionSeen, sort])
+  }, [exhausted, loadingInitial, loadingMore, sessionSeen, showSeen, sort])
 
   // Only top up when there are cards left but the buffer is low (never when queue is empty).
   useEffect(() => {
@@ -234,10 +245,44 @@ export default function CraziestFactsSection() {
             </svg>
           </span>
           <h2 className="text-lg font-semibold leading-tight tracking-tight text-white">
-            Craziest Facts
+            Shared Facts
           </h2>
+          <div className="group relative ml-1 flex shrink-0 items-center">
+            <button
+              type="button"
+              aria-label="About Shared Facts"
+              className="flex h-[1.2rem] w-[1.2rem] shrink-0 items-center justify-center rounded-full border border-white/50 text-[11px] font-bold leading-none text-white/70 hover:border-white hover:text-white"
+            >
+              ?
+            </button>
+            <div className="pointer-events-none absolute left-1/2 top-full z-50 mt-2 w-64 -translate-x-1/2 rounded-none border border-slate-200 bg-white p-3 text-xs leading-relaxed text-slate-600 opacity-0 shadow-lg ring-1 ring-slate-900/5 transition-opacity group-hover:opacity-100">
+              <p className="font-semibold text-slate-800">What are Shared Facts?</p>
+              <p className="mt-1">Facts submitted by the WikiDaily community from Wikipedia articles. Vote on each one to help surface the most interesting ones.</p>
+              <p className="mt-2 font-semibold text-slate-800">How to share a fact</p>
+              <p className="mt-1">Open any Wikipedia article on WikiDaily, highlight the text you want to share, then click <span className="font-medium text-primary">Share Fact</span>.</p>
+            </div>
+          </div>
         </div>
-        <div className="flex shrink-0 rounded-none border border-white/35 p-0.5 text-xs">
+        <div className="flex shrink-0 items-center gap-2">
+          <label className="flex cursor-pointer items-center gap-2">
+            <span className="text-xs font-medium text-white/85">Show seen</span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={showSeen}
+              onClick={toggleShowSeen}
+              className={`relative h-5 w-9 shrink-0 rounded-full transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white ${
+                showSeen ? 'bg-green-400' : 'bg-white/30'
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 h-4 w-4 bg-white shadow transition-transform duration-200 ${
+                  showSeen ? 'translate-x-0' : 'translate-x-[-14.5px]'
+                }`}
+              />
+            </button>
+          </label>
+          <div className="flex shrink-0 rounded-none border border-white/35 p-0.5 text-xs">
           <button
             type="button"
             onClick={() => changeSort('popular')}
@@ -260,6 +305,7 @@ export default function CraziestFactsSection() {
           >
             Newest
           </button>
+        </div>
         </div>
       </header>
 
@@ -341,6 +387,7 @@ export default function CraziestFactsSection() {
           userId={userId}
           user={user}
           profile={profile}
+          existingVote={voteMap.get(current?.id) ?? null}
         />
       ) : null}
 

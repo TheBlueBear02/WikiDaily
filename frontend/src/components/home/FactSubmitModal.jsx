@@ -38,7 +38,7 @@ export default function FactSubmitModal({
             className="mt-4 text-sm text-emerald-900"
             role="status"
           >
-            Your fact was saved. It will show up in Craziest Facts on the home
+            Your fact was saved. It will show up in Shared Facts on the home
             page for others to discover.
           </p>
           <div className="mt-6 flex justify-end">
@@ -61,13 +61,14 @@ export default function FactSubmitModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="fact-submit-title"
+      onClick={onClose}
     >
-      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto border border-slate-200 bg-white p-5 shadow-lg">
+      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto border border-slate-200 bg-white p-5 shadow-lg" onClick={e => e.stopPropagation()}>
         <h2
           id="fact-submit-title"
           className="text-lg font-semibold leading-tight tracking-tight text-primary"
         >
-          Submit a Crazy Fact
+          Share a Fact
         </h2>
         {displayTitle ? (
           <p className="mt-2 text-sm text-slate-600">
@@ -106,7 +107,7 @@ export default function FactSubmitModal({
             disabled={!canSubmit}
             className="rounded-none bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isPending ? 'Submitting…' : 'Submit Fact'}
+            {isPending ? 'Sharing…' : 'Share Fact'}
           </button>
         </div>
       </div>

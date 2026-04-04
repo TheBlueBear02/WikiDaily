@@ -61,7 +61,7 @@ export default function MyFactsGrid({
   return (
     <section className="space-y-3">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <div className="text-lg font-semibold tracking-tight text-primary">Your crazy facts</div>
+        <div className="text-lg font-semibold tracking-tight text-primary">Your shared facts</div>
         <div className="text-sm text-slate-500">{count} fact{count === 1 ? '' : 's'}</div>
       </div>
 

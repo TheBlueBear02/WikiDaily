@@ -699,7 +699,7 @@ export default function WikiIframe() {
             }
           }}
         >
-          Submit as Crazy Fact
+          Share fact
         </button>
       ) : null}
 

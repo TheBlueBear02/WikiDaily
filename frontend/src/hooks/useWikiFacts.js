@@ -26,7 +26,15 @@ function normalizeFactRow(row) {
     submitter_username: row.submitter_username ?? null,
     submitter_total_read:
       row.submitter_total_read != null ? Number(row.submitter_total_read) : null,
+    submitter_current_streak:
+      row.submitter_current_streak != null ? Number(row.submitter_current_streak) : null,
+    submitter_facts_count:
+      row.submitter_facts_count != null ? Number(row.submitter_facts_count) : null,
     display_title: String(slug).replaceAll('_', ' ').trim() || slug,
+    image_url:
+      typeof row.articles?.image_url === 'string' && row.articles.image_url.trim()
+        ? row.articles.image_url.trim()
+        : null,
   }
 }
 
@@ -68,6 +76,10 @@ async function enrichFactsWithPublicSubmitters(supabase, facts) {
       submitter_username: p.username ?? f.submitter_username,
       submitter_total_read:
         f.submitter_total_read != null ? f.submitter_total_read : p.total_read,
+      submitter_current_streak:
+        f.submitter_current_streak != null ? f.submitter_current_streak : (p.current_streak != null ? Number(p.current_streak) : null),
+      submitter_facts_count:
+        f.submitter_facts_count != null ? f.submitter_facts_count : (p.facts_count != null ? Number(p.facts_count) : null),
     }
   })
 }
@@ -83,7 +95,7 @@ async function fetchWikiFactsRange({
 }) {
   let q = supabase
     .from('wiki_facts')
-    .select('*')
+    .select('*, articles(image_url)')
     .order(orderColumn, { ascending: false })
     .range(offset, offset + CHUNK - 1)
 

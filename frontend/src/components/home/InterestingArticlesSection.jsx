@@ -17,6 +17,7 @@ export default function InterestingArticlesSection({ entries, title = 'Interesti
           View all
         </Link>
       </div>
+      <div className="mt-2 h-px w-full shrink-0 bg-slate-200" aria-hidden />
 
       <div className="hidden w-full grid-cols-5 gap-3 lg:grid" aria-label="Your interesting articles">
         {items.map((entry) => (

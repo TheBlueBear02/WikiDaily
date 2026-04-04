@@ -37,6 +37,7 @@ export function useStreakLeaderboard({ limit = DEFAULT_LIMIT } = {}) {
         username: row.username ?? 'Anonymous',
         currentStreak: row.current_streak ?? 0,
         totalRead: row.total_read ?? 0,
+        factsCount: row.facts_count != null ? Number(row.facts_count) : null,
       }))
     },
   })
