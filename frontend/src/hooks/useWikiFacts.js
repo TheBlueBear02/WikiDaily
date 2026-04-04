@@ -30,6 +30,7 @@ function normalizeFactRow(row) {
       row.submitter_current_streak != null ? Number(row.submitter_current_streak) : null,
     submitter_facts_count:
       row.submitter_facts_count != null ? Number(row.submitter_facts_count) : null,
+    submitter_avatar_url: row.submitter_avatar_url ?? null,
     display_title: String(slug).replaceAll('_', ' ').trim() || slug,
     image_url:
       typeof row.articles?.image_url === 'string' && row.articles.image_url.trim()
@@ -80,6 +81,8 @@ async function enrichFactsWithPublicSubmitters(supabase, facts) {
         f.submitter_current_streak != null ? f.submitter_current_streak : (p.current_streak != null ? Number(p.current_streak) : null),
       submitter_facts_count:
         f.submitter_facts_count != null ? f.submitter_facts_count : (p.facts_count != null ? Number(p.facts_count) : null),
+      submitter_avatar_url:
+        f.submitter_avatar_url != null ? f.submitter_avatar_url : (p.avatar_url ?? null),
     }
   })
 }

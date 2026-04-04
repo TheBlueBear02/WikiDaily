@@ -167,8 +167,8 @@ export default function CollectiveReadingProgressBar({
         <h2
           id="collective-reading-goals-heading"
           className={[
-            'font-semibold uppercase tracking-wide text-slate-500',
-            compact ? 'text-[10px] leading-tight' : 'text-xs',
+            'inline-block bg-secondary font-semibold uppercase tracking-wide text-white',
+            compact ? 'px-3 py-1 text-[10px] leading-tight' : 'px-4 py-1.5 text-xs',
           ].join(' ')}
         >
           Community reading goals

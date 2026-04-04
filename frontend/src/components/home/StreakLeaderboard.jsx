@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
-import { useStreakLeaderboard } from '../../hooks/useStreakLeaderboard'
+import { useWeeklyReadsLeaderboard } from '../../hooks/useWeeklyReadsLeaderboard'
 import { useLeaderboardCountdown } from '../../hooks/useLeaderboardCountdown'
 import { getCurrentLevel } from '../../lib/levels'
 import { initialsFromUsername } from '../../lib/profileAvatar'
@@ -111,7 +111,7 @@ function useLeaderboardTooltip() {
 export default function StreakLeaderboard({ rows = DEFAULT_ROWS } = {}) {
   const safeRows = clampRows(rows)
   const { days, hours, minutes, target } = useLeaderboardCountdown()
-  const { data, isLoading } = useStreakLeaderboard({ limit: safeRows })
+  const { data, isLoading } = useWeeklyReadsLeaderboard({ limit: safeRows })
   const entries = data ?? []
   const { tooltip, showForEntry, scheduleHide } = useLeaderboardTooltip()
   const tooltipDomId =
@@ -169,7 +169,7 @@ export default function StreakLeaderboard({ rows = DEFAULT_ROWS } = {}) {
 
             const isEmpty = !entry
             const username = entry?.username ?? '—'
-            const streak = entry?.currentStreak ?? null
+            const weeklyReads = entry?.weeklyReads ?? null
             const level = getCurrentLevel(entry?.totalRead ?? 0)
             const isStriped = rank % 2 === 0
 
@@ -206,6 +206,24 @@ export default function StreakLeaderboard({ rows = DEFAULT_ROWS } = {}) {
                   {rank}
                 </span>
 
+                {!isEmpty && (
+                  entry?.avatarUrl ? (
+                    <img
+                      src={entry.avatarUrl}
+                      alt=""
+                      aria-hidden
+                      className="h-7 w-7 shrink-0 rounded-full object-cover"
+                    />
+                  ) : (
+                    <span
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-100 text-[10px] font-semibold text-amber-950"
+                      aria-hidden
+                    >
+                      {initialsFromUsername(entry.username)}
+                    </span>
+                  )
+                )}
+
                 <div className="min-w-0 flex-1">
                   <div
                     className={[
@@ -229,10 +247,10 @@ export default function StreakLeaderboard({ rows = DEFAULT_ROWS } = {}) {
                       isEmpty ? 'text-slate-400' : 'text-primary',
                     ].join(' ')}
                   >
-                    {streak === null ? '—' : streak}
+                    {weeklyReads === null ? '—' : weeklyReads}
                   </div>
                   <div className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
-                    streak
+                    this week
                   </div>
                 </div>
               </li>
@@ -248,7 +266,8 @@ export default function StreakLeaderboard({ rows = DEFAULT_ROWS } = {}) {
             displayName={tooltip.entry.username}
             totalRead={tooltip.entry.totalRead ?? 0}
             avatarInitials={initialsFromUsername(tooltip.entry.username)}
-            currentStreak={tooltip.entry.currentStreak}
+            avatarUrl={tooltip.entry.avatarUrl ?? null}
+            weeklyReads={tooltip.entry.weeklyReads}
             factsCount={tooltip.entry.factsCount ?? null}
             rect={tooltip.rect}
             tooltipId={tooltipDomId}

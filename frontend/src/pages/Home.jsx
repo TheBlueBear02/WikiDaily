@@ -131,7 +131,7 @@ export default function Home() {
               ].join(' ')
             }
           >
-            Previous articles &gt;
+            Previous daily articles &gt;
           </NavLink>
         }
       />

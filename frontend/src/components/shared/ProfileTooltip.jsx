@@ -10,9 +10,9 @@ function formatArticlesRead(n) {
 
 /**
  * Shared profile hover tooltip used in FactCard and leaderboard rows.
- * Pass `currentStreak` / `factsCount` to show those rows; omit (or pass null/undefined) to hide them.
+ * Pass `currentStreak` / `weeklyReads` / `factsCount` to show those rows; omit (or pass null/undefined) to hide them.
  */
-export default function ProfileTooltip({ displayName, totalRead, avatarInitials, currentStreak, factsCount, rect, tooltipId }) {
+export default function ProfileTooltip({ displayName, totalRead, avatarInitials, avatarUrl, currentStreak, weeklyReads, factsCount, rect, tooltipId }) {
   const level = getCurrentLevel(totalRead)
   const next = getNextLevel(totalRead)
 
@@ -35,12 +35,21 @@ export default function ProfileTooltip({ displayName, totalRead, avatarInitials,
       style={{ left: clampedLeft, top, transform }}
     >
       <div className="flex gap-3">
-        <div
-          className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-amber-100 text-sm font-semibold text-amber-950 ring-1 ring-amber-200/80"
-          aria-hidden
-        >
-          {initials}
-        </div>
+        {avatarUrl ? (
+          <img
+            src={avatarUrl}
+            alt={displayName}
+            className="h-11 w-11 shrink-0 rounded-full object-cover ring-1 ring-amber-200/80"
+            aria-hidden
+          />
+        ) : (
+          <div
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-amber-100 text-sm font-semibold text-amber-950 ring-1 ring-amber-200/80"
+            aria-hidden
+          >
+            {initials}
+          </div>
+        )}
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold text-primary">{displayName}</p>
           <p className="mt-0.5 text-xs text-slate-600">{`Level ${level.level} · ${level.name}`}</p>
@@ -48,6 +57,12 @@ export default function ProfileTooltip({ displayName, totalRead, avatarInitials,
       </div>
 
       <dl className="mt-3 space-y-2 border-t border-slate-100 pt-3 text-xs">
+        {weeklyReads != null && (
+          <div className="flex items-baseline justify-between gap-3">
+            <dt className="font-medium text-slate-500">This week</dt>
+            <dd className="tabular-nums font-semibold text-slate-800">{weeklyReads}</dd>
+          </div>
+        )}
         {currentStreak != null && (
           <div className="flex items-baseline justify-between gap-3">
             <dt className="font-medium text-slate-500">Current streak</dt>

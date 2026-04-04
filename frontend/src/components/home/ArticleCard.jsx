@@ -207,7 +207,7 @@ export default function ArticleCard({
               </div>
             ) : null}
           </div>
-          <div className="h-1 w-1/4 bg-white" />
+          <div className="h-1 w-1/4 bg-secondary" />
           {description ? (
             <p className="text-base leading-relaxed text-white/85">
               {descriptionPreview(description)}

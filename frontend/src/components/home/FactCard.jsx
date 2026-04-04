@@ -123,6 +123,12 @@ export default function FactCard({
     fact?.submitter_facts_count != null
       ? fact.submitter_facts_count
       : null
+  const submitterAvatarUrl =
+    fact?.submitter_avatar_url != null
+      ? fact.submitter_avatar_url
+      : isOwnFact
+        ? (user?.user_metadata?.avatar_url ?? user?.user_metadata?.picture ?? null)
+        : null
 
   let displayHandle = 'Anonymous'
   if (fact?.user_id) {
@@ -205,12 +211,21 @@ export default function FactCard({
                   fact?.user_id && tooltip ? submitterTooltipId : undefined
                 }
               >
-                <div
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-200 text-xs font-semibold text-amber-950"
-                  aria-hidden
-                >
-                  {initials}
-                </div>
+                {submitterAvatarUrl ? (
+                  <img
+                    src={submitterAvatarUrl}
+                    alt=""
+                    aria-hidden
+                    className="h-10 w-10 shrink-0 rounded-full object-cover"
+                  />
+                ) : (
+                  <div
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-200 text-xs font-semibold text-amber-950"
+                    aria-hidden
+                  >
+                    {initials}
+                  </div>
+                )}
                 <div className="min-w-0 flex-1">
                   <div className="text-sm font-medium text-slate-900">
                     {displayHandle}
@@ -286,6 +301,7 @@ export default function FactCard({
           displayName={displayHandle}
           totalRead={totalReadForLevel}
           avatarInitials={initials}
+          avatarUrl={submitterAvatarUrl}
           currentStreak={submitterStreak}
           factsCount={submitterFactsCount}
           rect={tooltip.rect}

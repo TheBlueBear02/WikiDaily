@@ -36,6 +36,8 @@ export default function Navbar() {
     return initialsFromUsername(profile?.username ?? fallback)
   }, [profile?.username, user?.email, user?.user_metadata?.username])
 
+  const avatarUrl = user?.user_metadata?.avatar_url ?? user?.user_metadata?.picture ?? null
+
   const level = getCurrentLevel(profile?.total_read ?? 0)
   // Wait for profile row, not `isPending` (disabled queries stay pending without fetching).
   const levelLineLoading = Boolean(userId) && !profile && !profileQuery.isError
@@ -143,12 +145,21 @@ export default function Navbar() {
                 aria-busy={levelLineLoading}
                 className="flex items-center gap-2 bg-white py-1 pl-1 pr-3 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-300"
               >
-                <span
-                  className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-amber-100 text-xs font-semibold text-amber-950"
-                  aria-hidden="true"
-                >
-                  {initials}
-                </span>
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt=""
+                    aria-hidden="true"
+                    className="h-8 w-8 shrink-0 rounded-full object-cover"
+                  />
+                ) : (
+                  <span
+                    className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-amber-100 text-xs font-semibold text-amber-950"
+                    aria-hidden="true"
+                  >
+                    {initials}
+                  </span>
+                )}
                 <span className="min-w-0 max-w-[14rem] text-left">
                   <span className="block truncate text-sm font-medium">{displayName}</span>
                   <span className="block min-h-[1rem] truncate text-[11px] font-normal leading-tight text-slate-500">

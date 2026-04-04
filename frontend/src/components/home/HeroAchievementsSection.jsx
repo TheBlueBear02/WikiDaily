@@ -66,6 +66,7 @@ export default function HeroAchievementsSection({ userId, profile } = {}) {
 
   return (
     <div className="flex flex-col">
+      <div className="h-1.5 w-full bg-secondary" />
       {userId ? (
         <div className="divide-y divide-slate-200">
           {Object.keys(TYPE_META)

@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -A 50 \"^## Table: \\\\`reading_log\\\\`\" /d/Projects/WikiDaily/agents/WikiDaily_Database.md)"
+    ]
+  }
+}

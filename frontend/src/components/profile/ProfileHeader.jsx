@@ -24,6 +24,8 @@ export default function ProfileHeader({ profile, user, memberSince }) {
     return initialsFromUsername(profile?.username ?? fallback)
   }, [profile?.username, user?.email, user?.user_metadata?.username])
 
+  const avatarUrl = user?.user_metadata?.avatar_url ?? user?.user_metadata?.picture ?? null
+
   const totalRead = profile?.total_read ?? 0
   const level = getCurrentLevel(totalRead)
   const nextLevel = getNextLevel(totalRead)
@@ -40,9 +42,17 @@ export default function ProfileHeader({ profile, user, memberSince }) {
   return (
     <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-center gap-4">
-        <div className="grid h-16 w-16 flex-shrink-0 place-items-center rounded-full bg-amber-100 text-2xl font-semibold text-amber-950">
-          {initials}
-        </div>
+        {avatarUrl ? (
+          <img
+            src={avatarUrl}
+            alt=""
+            className="h-16 w-16 flex-shrink-0 rounded-full object-cover ring-1 ring-amber-200/80"
+          />
+        ) : (
+          <div className="grid h-16 w-16 flex-shrink-0 place-items-center rounded-full bg-amber-100 text-2xl font-semibold text-amber-950">
+            {initials}
+          </div>
+        )}
 
         <div className="min-w-0 flex-1 space-y-1">
           <div className="text-2xl font-medium leading-tight tracking-tight text-slate-700 sm:text-3xl">
