@@ -6,6 +6,8 @@ import Navbar from './components/layout/Navbar.jsx'
 import WikiIframe from './pages/WikiIframe.jsx'
 import Profile from './pages/Profile.jsx'
 import Game from './pages/Game.jsx'
+import GamePlay from './pages/GamePlay.jsx'
+import GameResult from './pages/GameResult.jsx'
 
 export default function App() {
   return (
@@ -17,6 +19,8 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/history" element={<History />} />
           <Route path="/game" element={<Game />} />
+          <Route path="/game/play" element={<GamePlay />} />
+          <Route path="/game/result" element={<GameResult />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/wiki/:wikiSlug" element={<WikiIframe />} />

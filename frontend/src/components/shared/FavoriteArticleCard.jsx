@@ -86,7 +86,7 @@ export default function FavoriteArticleCard({ entry }) {
 
       {/* Text */}
       <div className="flex min-w-0 flex-1 flex-col gap-1 py-0.5">
-        <div className="self-start bg-primary px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">
+        <div className="self-start bg-secondary px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">
           Interesting
         </div>
         <div className="line-clamp-2 text-lg font-semibold leading-tight text-primary">

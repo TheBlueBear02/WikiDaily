@@ -112,6 +112,7 @@ export default function Navbar() {
             </NavLink>
             <NavLink
               to="/game"
+              end={false}
               className={({ isActive }) =>
                 `${linkBase} ${isActive ? linkActive : ''}`
               }

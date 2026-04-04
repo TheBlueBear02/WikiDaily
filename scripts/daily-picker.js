@@ -105,6 +105,82 @@ function rowFromSummary(json, fallbackSlug) {
   };
 }
 
+/**
+ * Picks two slugs from vital-articles.csv (excluding the daily article slug) and
+ * inserts a game_challenges row for today. Idempotent — safe to call on re-runs.
+ */
+async function pickGameChallenge(supabase, todayStr, dailySlug, allSlugs) {
+  // Idempotency check
+  const { data: existing, error: existErr } = await supabase
+    .from('game_challenges')
+    .select('id')
+    .eq('type', 'daily')
+    .eq('date', todayStr)
+    .maybeSingle();
+
+  if (existErr) {
+    console.warn('daily-picker: game challenge check failed:', existErr.message);
+    return;
+  }
+  if (existing) {
+    console.log(`daily-picker: game challenge already exists for ${todayStr}, skipping`);
+    return;
+  }
+
+  // Pick 2 candidates that differ from the daily article
+  const candidates = shuffle([...new Set(allSlugs)].filter((s) => s !== dailySlug));
+  const picked = [];
+
+  for (const slug of candidates) {
+    if (picked.length >= 2) break;
+    try {
+      const json = await fetchWikipediaSummary(slug);
+      const partial = rowFromSummary(json, slug);
+      // Upsert into articles without overwriting existing daily metadata
+      const { error: upsertErr } = await supabase.from('articles').upsert(
+        {
+          wiki_slug: partial.wiki_slug,
+          display_title: partial.display_title,
+          image_url: partial.image_url,
+          description: partial.description,
+        },
+        { onConflict: 'wiki_slug', ignoreDuplicates: true },
+      );
+      if (upsertErr) {
+        console.warn(`daily-picker: game article upsert failed for "${slug}":`, upsertErr.message);
+        continue;
+      }
+      picked.push(partial.wiki_slug);
+    } catch (e) {
+      console.warn(`daily-picker: game candidate "${slug}" failed:`, e.message ?? e);
+    }
+  }
+
+  if (picked.length < 2) {
+    console.error('daily-picker: could not pick 2 game challenge slugs');
+    return;
+  }
+
+  const [start_slug, target_slug] = picked;
+  const { error: insertErr } = await supabase.from('game_challenges').insert({
+    type: 'daily',
+    date: todayStr,
+    start_slug,
+    target_slug,
+  });
+
+  if (insertErr) {
+    if (insertErr.code === '23505') {
+      console.log('daily-picker: game challenge concurrent insert conflict, ok');
+      return;
+    }
+    console.error('daily-picker: game challenge insert failed:', insertErr.message);
+    return;
+  }
+
+  console.log(`daily-picker: game challenge ${todayStr}: ${start_slug} → ${target_slug}`);
+}
+
 async function main() {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     console.error(
@@ -144,8 +220,12 @@ async function main() {
     process.exitCode = 1;
     return;
   }
+  // Parse CSV early so allSlugs is available in all branches (including early returns).
+  const allSlugs = parseSlugsFromCsv(CSV_PATH);
+
   if (existing) {
     console.log(`daily-picker: daily article already exists for ${todayStr}, skipping`);
+    await pickGameChallenge(supabase, todayStr, existing.wiki_slug, allSlugs);
     return;
   }
 
@@ -161,7 +241,6 @@ async function main() {
   }
 
   const used = new Set((usedRows ?? []).map((r) => r.wiki_slug));
-  const allSlugs = parseSlugsFromCsv(CSV_PATH);
   const unused = shuffle([...new Set(allSlugs)].filter((s) => !used.has(s)));
 
   if (unused.length === 0) {
@@ -209,6 +288,7 @@ async function main() {
       }
 
       console.log(`daily-picker: upserted daily ${todayStr} → ${row.wiki_slug}`);
+      await pickGameChallenge(supabase, todayStr, row.wiki_slug, allSlugs);
       return;
     } catch (e) {
       lastError = e;
