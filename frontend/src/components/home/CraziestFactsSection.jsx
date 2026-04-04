@@ -4,30 +4,15 @@ import { useNavigate } from 'react-router-dom'
 import { fetchWikiFactsNextBatch } from '../../hooks/useWikiFacts'
 import { useFactVotes } from '../../hooks/useFactVotes'
 import { useVoteFact } from '../../hooks/useVoteFact'
-import { useSoftDeleteMyFact } from '../../hooks/useSoftDeleteMyFact'
 import { useUserProgress } from '../../hooks/useUserProgress'
 import { navigateToRandomWikiArticle } from '../../lib/navigateToRandomWikiArticle'
 import FactCard from './FactCard'
 
-function usePrefersReducedMotion() {
-  const [reduced, setReduced] = useState(false)
-  useEffect(() => {
-    const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
-    setReduced(mq.matches)
-    const fn = () => setReduced(mq.matches)
-    mq.addEventListener('change', fn)
-    return () => mq.removeEventListener('change', fn)
-  }, [])
-  return reduced
-}
-
 export default function CraziestFactsSection() {
   const navigate = useNavigate()
-  const prefersReducedMotion = usePrefersReducedMotion()
   const { userId, user, profile } = useUserProgress()
   const factVotesQuery = useFactVotes({ userId })
   const voteMutation = useVoteFact({ userId, user })
-  const softDeleteMutation = useSoftDeleteMyFact({ userId })
 
   const votesRef = useRef([])
   votesRef.current = factVotesQuery.data ?? []
@@ -45,19 +30,9 @@ export default function CraziestFactsSection() {
   const [loadError, setLoadError] = useState(null)
   const [tableIsEmpty, setTableIsEmpty] = useState(false)
 
-  const [phase, setPhase] = useState('idle')
-  const [showScore, setShowScore] = useState(false)
   const [voteError, setVoteError] = useState(null)
   const [randomArticleLoading, setRandomArticleLoading] = useState(false)
   const [randomArticleError, setRandomArticleError] = useState(null)
-
-  const timersRef = useRef([])
-  const clearTimers = useCallback(() => {
-    timersRef.current.forEach(clearTimeout)
-    timersRef.current = []
-  }, [])
-
-  useEffect(() => () => clearTimers(), [clearTimers])
 
   useEffect(() => {
     if (queue.length > 0) hadQueueRef.current = true
@@ -65,12 +40,7 @@ export default function CraziestFactsSection() {
 
   queueRef.current = queue
 
-  const flipMs = prefersReducedMotion ? 300 : 600
-
   const advanceCard = useCallback(() => {
-    clearTimers()
-    setPhase('idle')
-    setShowScore(false)
     setVoteError(null)
     setQueue((q) => {
       const head = q[0]
@@ -79,15 +49,12 @@ export default function CraziestFactsSection() {
       }
       return q.slice(1)
     })
-  }, [clearTimers])
+  }, [])
 
   const changeSort = useCallback(
     (next) => {
       if (next === sort) return
-      clearTimers()
       setSort(next)
-      setPhase('idle')
-      setShowScore(false)
       setVoteError(null)
       setSessionSeen(new Set())
       scanRef.current = 0
@@ -98,14 +65,13 @@ export default function CraziestFactsSection() {
       setTableIsEmpty(false)
       setLoadingInitial(true)
     },
-    [clearTimers, sort],
+    [sort],
   )
 
   useEffect(() => {
     if (userId && factVotesQuery.isLoading) return
 
     let cancelled = false
-    clearTimers()
 
     void (async () => {
       try {
@@ -137,7 +103,7 @@ export default function CraziestFactsSection() {
     return () => {
       cancelled = true
     }
-  }, [sort, userId, factVotesQuery.isLoading, clearTimers])
+  }, [sort, userId, factVotesQuery.isLoading])
 
   const prefetch = useCallback(async () => {
     if (loadingMore || loadingInitial) return
@@ -184,9 +150,7 @@ export default function CraziestFactsSection() {
       if (!current) return
 
       if (type === 'skip') {
-        setPhase('flipping')
-        const t = window.setTimeout(() => advanceCard(), flipMs)
-        timersRef.current.push(t)
+        advanceCard()
         return
       }
 
@@ -196,40 +160,18 @@ export default function CraziestFactsSection() {
           factId: current.id,
           vote: type === 'up' ? 'up' : 'down',
         })
-        setShowScore(true)
-        setPhase('score')
-        const t1 = window.setTimeout(() => {
-          setPhase('flipping')
-          const t2 = window.setTimeout(() => advanceCard(), flipMs)
-          timersRef.current.push(t2)
-        }, 1500)
-        timersRef.current.push(t1)
+        advanceCard()
       } catch (err) {
         setVoteError(
           err instanceof Error ? err.message : 'Could not save vote',
         )
       }
     },
-    [advanceCard, flipMs, voteMutation],
+    [advanceCard, voteMutation],
   )
 
   const current = queue[0]
-  const buttonsLocked =
-    voteMutation.isPending ||
-    phase === 'score' ||
-    phase === 'flipping' ||
-    softDeleteMutation.isPending
-
-  async function handleSoftDelete() {
-    if (!current || !userId) return
-    if (current.user_id !== userId) return
-    try {
-      await softDeleteMutation.mutateAsync({ factId: current.id })
-      advanceCard()
-    } catch {
-      // optional toast
-    }
-  }
+  const buttonsLocked = voteMutation.isPending
 
   async function handleReadRandomArticle() {
     if (randomArticleLoading) return
@@ -263,19 +205,46 @@ export default function CraziestFactsSection() {
     !loadingMore
 
   return (
-    <section className="w-full border border-slate-200 bg-white px-4 py-5 md:px-6">
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="font-serif text-lg font-semibold text-primary">
-          Craziest Facts
-        </h2>
-        <div className="flex rounded-none border border-slate-300 p-0.5 text-xs">
+    <section className="w-full bg-white">
+      <header className="flex flex-col gap-3 bg-primary px-4 py-3 sm:flex-row sm:items-center sm:justify-between md:px-6">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span className="shrink-0 text-white" aria-hidden>
+            <svg
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              className="block"
+            >
+              <path
+                d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M9 18h6M10 22h4"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </span>
+          <h2 className="text-lg font-semibold leading-tight tracking-tight text-white">
+            Craziest Facts
+          </h2>
+        </div>
+        <div className="flex shrink-0 rounded-none border border-white/35 p-0.5 text-xs">
           <button
             type="button"
             onClick={() => changeSort('popular')}
             className={
               sort === 'popular'
-                ? 'bg-primary px-3 py-1.5 font-medium text-white'
-                : 'px-3 py-1.5 font-medium text-slate-700 hover:bg-slate-50'
+                ? 'bg-white px-3 py-1.5 font-medium text-primary'
+                : 'px-3 py-1.5 font-medium text-white/95 hover:bg-white/10'
             }
           >
             Most Popular
@@ -285,15 +254,16 @@ export default function CraziestFactsSection() {
             onClick={() => changeSort('newest')}
             className={
               sort === 'newest'
-                ? 'bg-primary px-3 py-1.5 font-medium text-white'
-                : 'px-3 py-1.5 font-medium text-slate-700 hover:bg-slate-50'
+                ? 'bg-white px-3 py-1.5 font-medium text-primary'
+                : 'px-3 py-1.5 font-medium text-white/95 hover:bg-white/10'
             }
           >
             Newest
           </button>
         </div>
-      </div>
+      </header>
 
+      <div className="space-y-3 px-4 py-4 md:px-6">
       {loadError ? (
         <div className="rounded-none border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900">
           {loadError}
@@ -301,19 +271,30 @@ export default function CraziestFactsSection() {
       ) : null}
 
       {loadingInitial ? (
-        <div className="mx-auto min-h-[320px] max-w-xl animate-pulse border border-slate-200 bg-slate-50 p-5">
-          <div className="h-6 w-2/3 rounded bg-slate-200" />
-          <div className="mt-4 h-px bg-slate-200" />
-          <div className="mt-4 space-y-2">
-            <div className="h-4 w-full rounded bg-slate-200" />
-            <div className="h-4 w-full rounded bg-slate-200" />
-            <div className="h-4 w-4/5 rounded bg-slate-200" />
+        <div className="flex min-h-[240px] w-full min-w-0 flex-col animate-pulse border border-slate-200 bg-slate-50 p-4">
+          <div className="min-h-0 flex-1 space-y-2">
+            <div className="h-5 w-full rounded bg-slate-200" />
+            <div className="h-5 w-full rounded bg-slate-200" />
+            <div className="h-5 w-4/5 rounded bg-slate-200" />
+          </div>
+          <div className="mt-2 h-px shrink-0 bg-slate-200" />
+          <div className="mt-2 flex shrink-0 items-start gap-3">
+            <div className="flex min-w-0 flex-1 items-start gap-3">
+              <div className="h-10 w-10 shrink-0 rounded-full bg-slate-200" />
+              <div className="space-y-2 pt-1">
+                <div className="h-3 w-24 rounded bg-slate-200" />
+                <div className="h-3 w-32 rounded bg-slate-200" />
+              </div>
+            </div>
+            <div className="min-w-0 flex-1 space-y-2 pt-1">
+              <div className="ml-auto h-4 w-28 rounded bg-slate-200" />
+            </div>
           </div>
         </div>
       ) : null}
 
       {showEmptyDb ? (
-        <div className="mx-auto max-w-xl space-y-3 py-6 text-center">
+        <div className="mx-auto max-w-xl space-y-3 py-4 text-center">
           <p className="text-sm text-slate-700">
             No facts yet - be the first to share something amazing.
           </p>
@@ -332,7 +313,7 @@ export default function CraziestFactsSection() {
       ) : null}
 
       {showSeenAll ? (
-        <div className="mx-auto max-w-xl space-y-3 py-6 text-center">
+        <div className="mx-auto max-w-xl space-y-3 py-4 text-center">
           <p className="text-sm text-slate-700">
             You&apos;ve seen all the facts! Read more articles and submit your
             own discoveries.
@@ -354,17 +335,12 @@ export default function CraziestFactsSection() {
       {!loadingInitial && !loadError && current ? (
         <FactCard
           fact={current}
-          showScore={showScore}
           onVote={handleVote}
           buttonsLocked={buttonsLocked}
-          isFlipping={phase === 'flipping'}
-          prefersReducedMotion={prefersReducedMotion}
           voteError={voteError}
           userId={userId}
           user={user}
           profile={profile}
-          onSoftDelete={handleSoftDelete}
-          isRemoving={softDeleteMutation.isPending}
         />
       ) : null}
 
@@ -373,10 +349,11 @@ export default function CraziestFactsSection() {
       !current &&
       loadingMore &&
       hadQueueRef.current ? (
-        <div className="mx-auto min-h-[120px] max-w-xl animate-pulse border border-slate-200 bg-slate-50 p-5 text-center text-sm text-slate-500">
+        <div className="min-h-[120px] w-full min-w-0 animate-pulse border border-slate-200 bg-slate-50 p-5 text-center text-sm text-slate-500">
           Loading more facts…
         </div>
       ) : null}
+      </div>
     </section>
   )
 }

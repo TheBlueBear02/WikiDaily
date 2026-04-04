@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import {
   fetchWikipediaRandomPage,
@@ -8,6 +8,10 @@ import {
   parseWikiSlugFromHref,
   sanitizeWikiHtmlForIframeSrc,
 } from '../lib/wikipedia'
+import {
+  highlightFactTextInWikiDocument,
+  stripWikiFactHighlights,
+} from '../lib/wikiFactHighlight'
 import { todayUtcYmd } from '../lib/date'
 import { useUserProgress } from '../hooks/useUserProgress'
 import { getSupabase } from '../lib/supabaseClient'
@@ -111,6 +115,7 @@ export default function WikiIframe() {
   const submitFactMutation = useSubmitFact({ userId, user, profile })
 
   const selectionDebounceRef = useRef(null)
+  const highlightFactTextRef = useRef('')
   const [factSelectUi, setFactSelectUi] = useState(null)
   const [factModalOpen, setFactModalOpen] = useState(false)
   const [factModalDraft, setFactModalDraft] = useState('')
@@ -428,6 +433,37 @@ export default function WikiIframe() {
   ])
 
   useEffect(() => {
+    highlightFactTextRef.current =
+      typeof location.state?.highlightFactText === 'string'
+        ? location.state.highlightFactText.trim()
+        : ''
+  }, [location.state?.highlightFactText])
+
+  const tryApplyFactHighlight = useCallback((doc) => {
+    const text = highlightFactTextRef.current
+    if (!text || !doc?.body) return
+    stripWikiFactHighlights(doc)
+    highlightFactTextInWikiDocument(doc, text)
+  }, [])
+
+  // Same wiki slug + new location state does not reload the iframe; re-apply highlight.
+  useEffect(() => {
+    if (!highlightFactTextRef.current) return
+    if (htmlLoading || !iframeHtml) return
+    const doc = wikiIframeElRef.current?.contentDocument
+    if (!doc || doc.readyState !== 'complete' || !doc.body) return
+    const id = requestAnimationFrame(() => tryApplyFactHighlight(doc))
+    return () => cancelAnimationFrame(id)
+  }, [
+    tryApplyFactHighlight,
+    location.key,
+    location.state?.highlightFactText,
+    iframeHtml,
+    htmlLoading,
+    canonicalWikiSlug,
+  ])
+
+  useEffect(() => {
     if (!canonicalWikiSlug) return
 
     let cancelled = false
@@ -583,6 +619,8 @@ export default function WikiIframe() {
       doc.removeEventListener('touchend', onSelectionMaybe)
       clearFactSelectionUi()
     }
+
+    requestAnimationFrame(() => tryApplyFactHighlight(doc))
   }
 
   if (!wikiUrl) {

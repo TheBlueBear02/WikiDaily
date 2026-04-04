@@ -35,6 +35,44 @@ function filterNotDeleted(rows) {
 }
 
 /**
+ * Fill missing submitter_username / submitter_total_read from a security-definer RPC so
+ * signed-out readers see the same handles as signed-in viewers (FactCard only falls back to
+ * auth/profile when the viewer owns the fact).
+ */
+async function enrichFactsWithPublicSubmitters(supabase, facts) {
+  const ids = [
+    ...new Set(
+      facts
+        .filter(
+          (f) =>
+            f.user_id &&
+            !(String(f.submitter_username ?? '').trim()),
+        )
+        .map((f) => f.user_id),
+    ),
+  ]
+  if (ids.length === 0) return facts
+
+  const { data, error } = await supabase.rpc('wiki_fact_submitter_lookup', {
+    p_user_ids: ids,
+  })
+  if (error || !data?.length) return facts
+
+  const map = new Map(data.map((r) => [r.user_id, r]))
+  return facts.map((f) => {
+    if (!f.user_id || String(f.submitter_username ?? '').trim()) return f
+    const p = map.get(f.user_id)
+    if (!p) return f
+    return {
+      ...f,
+      submitter_username: p.username ?? f.submitter_username,
+      submitter_total_read:
+        f.submitter_total_read != null ? f.submitter_total_read : p.total_read,
+    }
+  })
+}
+
+/**
  * One range query. `select('*')` avoids 400 when optional columns (e.g. submitter_*) are not migrated yet.
  */
 async function fetchWikiFactsRange({
@@ -121,8 +159,9 @@ export async function fetchWikiFactsNextBatch({
       hitEndOfTable = true
       const tableEmpty =
         scanFrom === 0 && offset === scanFrom && collected.length === 0
+      const facts = await enrichFactsWithPublicSubmitters(supabase, collected)
       return {
-        facts: collected,
+        facts,
         nextScanFrom: offset,
         exhausted: true,
         tableEmpty,
@@ -143,8 +182,10 @@ export async function fetchWikiFactsNextBatch({
     }
   }
 
+  const facts = await enrichFactsWithPublicSubmitters(supabase, collected)
+
   return {
-    facts: collected,
+    facts,
     nextScanFrom: offset,
     exhausted: hitEndOfTable || offset >= MAX_SCAN,
     tableEmpty: false,

@@ -5,7 +5,7 @@
 The database has 9 tables:
 
 - `profiles`, `reading_log`, `favorites`, `article_notes`, `user_achievements`, and `fact_votes` are user-specific and protected by Row Level Security (RLS).
-- `wiki_facts` is public read for non-deleted rows; inserts and soft-deletes are scoped to the submitter.
+- `wiki_facts` is public read for non-deleted rows; authenticated submitters can also read their own rows (including soft-deleted); inserts and soft-deletes are scoped to the submitter (see `wiki_facts` RLS in this doc and `scripts/sql/fix_wiki_facts_soft_delete_rls.sql`).
 - `articles` is public read-only and stores cached article metadata for BOTH daily and random articles.
 - `achievements` is public read-only and stores achievement definitions (admin-managed; service role writes only).
 
@@ -172,6 +172,14 @@ grant execute on function public.collective_reads_count() to anon, authenticated
 > - **SECURITY DEFINER** bypasses RLS only to count rows; nothing sensitive is returned.
 > - Uses `reading_log` as the source of truth (aligned with per-user reconciliation in the app).
 > - If this RPC is missing, the Home collective bar shows an error state with **Retry** until the function is deployed.
+
+### RPC: `public.wiki_fact_submitter_lookup(p_user_ids uuid[])`
+
+**Purpose:** Craziest Facts cards show `submitter_username` / `submitter_total_read` from denormalized columns on `wiki_facts`. When those snapshots are blank (e.g. profile had no username at insert), signed-in **submitters** still see their handle via client fallbacks, but **anonymous** viewers cannot read `profiles` under RLS. This read-only RPC returns display-safe fields for a set of `user_id` values so the Home feed can fill gaps.
+
+**Returns:** rows `(user_id, username, total_read)` for matching `profiles` rows (`username` is `NULL` when blank; `total_read` coerced to `0`).
+
+**Deploy:** [scripts/sql/wiki_fact_submitter_lookup.sql](../scripts/sql/wiki_fact_submitter_lookup.sql) — `grant execute` to `anon` and `authenticated`. If the RPC is missing, `fetchWikiFactsNextBatch` skips enrichment and cards behave as before.
 
 ## Table: `reading_log`
 
@@ -594,16 +602,28 @@ create policy "wiki_facts_select_public"
   on public.wiki_facts for select
   using (is_deleted = false);
 
+-- Authenticated owners can read their own rows even when soft-deleted (needed for reliable UPDATE RLS).
+create policy "wiki_facts_select_own"
+  on public.wiki_facts for select
+  to authenticated
+  using ((select auth.uid()) = user_id);
+
 create policy "wiki_facts_insert_own"
   on public.wiki_facts for insert
   to authenticated
-  with check (auth.uid() = user_id);
+  with check ((select auth.uid()) = user_id);
 
 create policy "wiki_facts_soft_delete_own"
   on public.wiki_facts for update
   to authenticated
-  using (auth.uid() = user_id)
-  with check (auth.uid() = user_id and is_deleted = true);
+  using (
+    (select auth.uid()) = user_id
+    and coalesce(is_deleted, false) = false
+  )
+  with check (
+    (select auth.uid()) = user_id
+    and is_deleted is true
+  );
 
 -- FACT_VOTES
 create table public.fact_votes (

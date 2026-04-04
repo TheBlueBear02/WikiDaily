@@ -17,6 +17,7 @@ export default function LatestReadsSection({ entries, title = 'Your recent reads
           View all
         </Link>
       </div>
+      <div className="mt-2 h-px w-full shrink-0 bg-slate-200" aria-hidden />
 
       {/* Desktop: show all 5 without scrolling. */}
       <div className="hidden w-full grid-cols-5 gap-3 lg:grid" aria-label="Your recently read articles">

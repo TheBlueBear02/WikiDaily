@@ -40,6 +40,7 @@ export default function AuthSync() {
       if (event === 'SIGNED_OUT') {
         queryClient.removeQueries({ queryKey: ['profile'] })
         queryClient.removeQueries({ queryKey: ['readingLog'] })
+        queryClient.removeQueries({ queryKey: ['myWikiFacts'] })
         return
       }
 
@@ -49,6 +50,7 @@ export default function AuthSync() {
       if (userId && (event === 'INITIAL_SESSION' || event === 'SIGNED_IN')) {
         queryClient.invalidateQueries({ queryKey: ['profile', userId] })
         queryClient.invalidateQueries({ queryKey: ['readingLog', userId] })
+        queryClient.invalidateQueries({ queryKey: ['myWikiFacts', userId] })
       }
     })
 

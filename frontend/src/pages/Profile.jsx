@@ -7,11 +7,13 @@ import { useReadingHistory } from '../hooks/useReadingHistory'
 import { useFavorites } from '../hooks/useFavorites'
 import { useAchievements } from '../hooks/useAchievements'
 import { useRecentNotes } from '../hooks/useRecentNotes'
+import { useMyWikiFacts } from '../hooks/useMyWikiFacts'
 import ProfileHeader from '../components/profile/ProfileHeader'
 import StatsRow from '../components/profile/StatsRow'
 import ActivityHeatmap from '../components/profile/ActivityHeatmap'
 import FavoritesGrid from '../components/profile/FavoritesGrid'
 import ReadingHistoryGrid from '../components/profile/ReadingHistoryGrid'
+import MyFactsGrid from '../components/profile/MyFactsGrid'
 import AchievementsGrid from '../components/profile/AchievementsGrid'
 import NotesGrid from '../components/profile/NotesGrid'
 
@@ -31,6 +33,7 @@ export default function Profile() {
   const favoritesQuery = useFavorites({ userId, user })
   const achievementsQuery = useAchievements({ userId })
   const notesQuery = useRecentNotes({ userId })
+  const myFactsQuery = useMyWikiFacts({ userId })
 
   const memberSince = useMemo(() => formatMemberSince(user?.created_at ?? null), [user?.created_at])
 
@@ -129,6 +132,15 @@ export default function Profile() {
         isError={notesQuery.isError}
         error={notesQuery.error}
         onRetry={() => notesQuery.refetch()}
+      />
+
+      <MyFactsGrid
+        userId={userId}
+        entries={myFactsQuery.data ?? []}
+        isLoading={myFactsQuery.isLoading}
+        isError={myFactsQuery.isError}
+        error={myFactsQuery.error}
+        onRetry={() => myFactsQuery.refetch()}
       />
 
       <FavoritesGrid

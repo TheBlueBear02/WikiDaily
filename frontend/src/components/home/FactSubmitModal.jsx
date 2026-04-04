@@ -24,7 +24,7 @@ export default function FactSubmitModal({
         <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto border border-emerald-200 bg-white p-5 shadow-lg">
           <h2
             id="fact-submit-success-title"
-            className="font-serif text-lg font-semibold text-primary"
+            className="text-lg font-semibold leading-tight tracking-tight text-primary"
           >
             Fact submitted
           </h2>
@@ -65,7 +65,7 @@ export default function FactSubmitModal({
       <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto border border-slate-200 bg-white p-5 shadow-lg">
         <h2
           id="fact-submit-title"
-          className="font-serif text-lg font-semibold text-primary"
+          className="text-lg font-semibold leading-tight tracking-tight text-primary"
         >
           Submit a Crazy Fact
         </h2>

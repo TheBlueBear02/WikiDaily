@@ -1,4 +1,4 @@
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 
 import { getSupabase } from '../lib/supabaseClient'
 
@@ -10,7 +10,11 @@ async function ensureProfileExists({ supabase, userId, user, profile } = {}) {
   // and leave `wiki_facts` submitter snapshots empty for other readers.
   const fromProfile = String(profile?.username ?? '').trim()
   const fromMeta = String(user?.user_metadata?.username ?? '').trim()
-  const username = fromProfile || fromMeta || null
+  const fromEmail =
+    user?.email != null
+      ? String(user.email).split('@')[0]?.trim() || ''
+      : ''
+  const username = fromProfile || fromMeta || fromEmail || null
 
   const row = { user_id: userId }
   if (username) row.username = username
@@ -23,6 +27,8 @@ async function ensureProfileExists({ supabase, userId, user, profile } = {}) {
 }
 
 export function useSubmitFact({ userId, user, profile } = {}) {
+  const queryClient = useQueryClient()
+
   return useMutation({
     mutationFn: async ({ wikiSlug, factText } = {}) => {
       if (!userId) throw new Error('You must be signed in to submit a fact.')
@@ -43,6 +49,11 @@ export function useSubmitFact({ userId, user, profile } = {}) {
 
       if (error) throw error
       return { status: 'ok' }
+    },
+    onSuccess: async () => {
+      if (userId) {
+        await queryClient.invalidateQueries({ queryKey: ['myWikiFacts', userId] })
+      }
     },
   })
 }
