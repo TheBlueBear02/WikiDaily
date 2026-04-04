@@ -2,9 +2,8 @@ import { Link } from 'react-router-dom'
 
 import FavoriteArticleCard from '../shared/FavoriteArticleCard'
 
-export default function InterestingArticlesSection({ entries, title = 'INTERESTING ARTICLES' }) {
+export default function InterestingArticlesSection({ entries, userId, title = 'INTERESTING ARTICLES' }) {
   const items = Array.isArray(entries) ? entries.slice(0, 4) : []
-  if (items.length === 0) return null
 
   return (
     <section className="w-full space-y-3">
@@ -17,33 +16,54 @@ export default function InterestingArticlesSection({ entries, title = 'INTERESTI
           </span>
           <div className="text-lg font-semibold tracking-tight text-white">{title}</div>
         </div>
-        <Link
-          to="/profile"
-          className="text-sm font-medium text-white/80 underline decoration-white/50 underline-offset-2 hover:text-white"
-        >
-          View all
-        </Link>
+        {userId && (
+          <Link
+            to="/profile"
+            className="text-sm font-medium text-white/80 underline decoration-white/50 underline-offset-2 hover:text-white"
+          >
+            View all
+          </Link>
+        )}
       </div>
 
-      <div className="bg-white px-4 py-5 [&_article]:border-0">
-        <div
-          className="grid grid-cols-1 divide-y divide-primary/20 lg:grid-cols-4 lg:divide-x lg:divide-y-0"
-          aria-label="Your interesting articles"
-        >
-          {items.map((entry, i) => (
-            <div
-              key={`${entry?.created_at ?? 'date'}-${entry?.wiki_slug ?? 'null'}`}
-              className={[
-                'lg:px-4',
-                i === 0 ? 'pb-4 lg:pb-0 lg:pl-0' : 'py-4 lg:py-0',
-                i === items.length - 1 ? 'pt-4 lg:pt-0 lg:pr-0' : '',
-              ].join(' ')}
-            >
-              <FavoriteArticleCard entry={entry} />
-            </div>
-          ))}
+      {items.length === 0 ? (
+        <div className="border border-slate-200 bg-slate-50 px-4 py-6 text-center">
+          {userId ? (
+            <>
+              <p className="text-sm font-medium text-slate-700">No favorites yet</p>
+              <p className="mt-1 text-sm text-slate-500">Star articles while reading to save them here.</p>
+            </>
+          ) : (
+            <>
+              <p className="text-sm font-medium text-slate-700">Save articles you love</p>
+              <p className="mt-1 text-sm text-slate-500">
+                <Link to="/auth" className="text-primary underline underline-offset-2 hover:text-primary/80">Sign in</Link>
+                {' '}to favorite articles and find them again easily.
+              </p>
+            </>
+          )}
         </div>
-      </div>
+      ) : (
+        <div className="bg-white px-4 py-5 [&_article]:border-0">
+          <div
+            className="grid grid-cols-1 divide-y divide-primary/20 lg:grid-cols-4 lg:divide-x lg:divide-y-0"
+            aria-label="Your interesting articles"
+          >
+            {items.map((entry, i) => (
+              <div
+                key={`${entry?.created_at ?? 'date'}-${entry?.wiki_slug ?? 'null'}`}
+                className={[
+                  'lg:px-4',
+                  i === 0 ? 'pb-4 lg:pb-0 lg:pl-0' : 'py-4 lg:py-0',
+                  i === items.length - 1 ? 'pt-4 lg:pt-0 lg:pr-0' : '',
+                ].join(' ')}
+              >
+                <FavoriteArticleCard entry={entry} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </section>
   )
 }

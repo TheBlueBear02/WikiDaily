@@ -153,11 +153,8 @@ export default function Home() {
       />
       <RandomWikiSection />
       <CraziestFactsSection />
-      {userId &&
-      !latestReadsQuery.isLoading &&
-      !latestReadsQuery.isError &&
-      (latestReadsQuery.data?.length ?? 0) > 0 ? (
-        <LatestReadsSection entries={latestReadsQuery.data ?? []} />
+      {!latestReadsQuery.isLoading && !latestReadsQuery.isError ? (
+        <LatestReadsSection entries={latestReadsQuery.data ?? []} userId={userId} />
       ) : null}
       {userId ? (
         profileQuery.isError ? (
@@ -178,12 +175,11 @@ export default function Home() {
             isLoading={profileQuery.isLoading}
           />
         )
-      ) : null}
-      {userId &&
-      !interestingQuery.favoritesQuery.isLoading &&
-      !interestingQuery.favoritesQuery.isError &&
-      (interestingQuery.favorites?.length ?? 0) > 0 ? (
-        <InterestingArticlesSection entries={interestingQuery.favorites ?? []} />
+      ) : (
+        <ReadingProgressBar totalRead={0} isLoading={false} />
+      )}
+      {!interestingQuery.favoritesQuery.isLoading && !interestingQuery.favoritesQuery.isError ? (
+        <InterestingArticlesSection entries={interestingQuery.favorites ?? []} userId={userId} />
       ) : null}
     </div>
   )

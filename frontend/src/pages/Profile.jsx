@@ -1,7 +1,8 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import { useUserProgress } from '../hooks/useUserProgress'
+import { useDeleteAccount } from '../hooks/useDeleteAccount'
 import { buildAuthUrl } from '../lib/returnTo'
 import { useReadingHistory } from '../hooks/useReadingHistory'
 import { useFavorites } from '../hooks/useFavorites'
@@ -158,7 +159,100 @@ export default function Profile() {
         error={readingHistoryQuery.error}
         onRetry={() => readingHistoryQuery.refetch()}
       />
+
+      <DeleteAccountSection />
     </section>
+  )
+}
+
+function DeleteAccountSection() {
+  const [confirming, setConfirming] = useState(false)
+  const [typedValue, setTypedValue] = useState('')
+  const inputRef = useRef(null)
+  const deleteAccount = useDeleteAccount()
+  const navigate = useNavigate()
+
+  const CONFIRM_PHRASE = 'delete my account'
+  const confirmed = typedValue.trim().toLowerCase() === CONFIRM_PHRASE
+
+  useEffect(() => {
+    if (confirming) inputRef.current?.focus()
+  }, [confirming])
+
+  async function handleDelete() {
+    if (!confirmed) return
+    try {
+      await deleteAccount.mutateAsync()
+      navigate('/', { replace: true })
+    } catch {
+      // error shown inline
+    }
+  }
+
+  return (
+    <div className="border-t border-slate-200 pt-6">
+      <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+        Danger zone
+      </div>
+
+      {!confirming ? (
+        <div className="mt-3 flex items-center justify-between rounded-none border border-rose-200 bg-rose-50 px-4 py-3">
+          <div>
+            <div className="text-sm font-medium text-rose-900">Delete account</div>
+            <div className="mt-0.5 text-sm text-rose-700">
+              Permanently removes all your data. This cannot be undone.
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setConfirming(true)}
+            className="ml-4 shrink-0 border border-rose-300 bg-white px-3 py-1.5 text-sm font-medium text-rose-700 hover:bg-rose-100"
+          >
+            Delete account
+          </button>
+        </div>
+      ) : (
+        <div className="mt-3 rounded-none border border-rose-300 bg-rose-50 px-4 py-4 space-y-3">
+          <div className="text-sm font-medium text-rose-900">
+            Are you sure? This will permanently delete your account and all data.
+          </div>
+          <div className="text-sm text-rose-700">
+            Type <span className="font-mono font-semibold">{CONFIRM_PHRASE}</span> to confirm.
+          </div>
+          <input
+            ref={inputRef}
+            type="text"
+            value={typedValue}
+            onChange={(e) => setTypedValue(e.target.value)}
+            placeholder={CONFIRM_PHRASE}
+            className="w-full border border-rose-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-rose-400"
+          />
+          {deleteAccount.isError && (
+            <div className="text-sm text-rose-900">
+              {deleteAccount.error?.message ?? 'Something went wrong. Please try again.'}
+            </div>
+          )}
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={!confirmed || deleteAccount.isPending}
+              className="bg-rose-600 px-3 py-2 text-sm font-medium text-white hover:bg-rose-700 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {deleteAccount.isPending ? 'Deleting…' : 'Delete my account'}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setConfirming(false); setTypedValue('') }}
+              disabled={deleteAccount.isPending}
+              className="border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-40"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 
