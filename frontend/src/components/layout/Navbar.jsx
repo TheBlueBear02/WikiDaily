@@ -98,39 +98,39 @@ export default function Navbar() {
           </div>
         </NavLink>
 
-        <WikiSearchBar className="ml-5 min-w-[8rem] flex-1 basis-[10rem] max-w-xs sm:ml-10" />
+        <nav className="ml-5 flex items-center gap-2 sm:ml-10">
+          {userId ? (
+            <NavLink
+              to="/profile"
+              className={({ isActive }) =>
+                `${linkBase} ${isActive ? linkActive : ''}`
+              }
+            >
+              Profile
+            </NavLink>
+          ) : null}
+          <NavLink
+            to="/game"
+            end={false}
+            className={({ isActive }) =>
+              `${linkBase} ${isActive ? linkActive : ''}`
+            }
+          >
+            Game
+          </NavLink>
+          <NavLink
+            to="/history"
+            className={({ isActive }) =>
+              `${linkBase} ${isActive ? linkActive : ''}`
+            }
+          >
+            History
+          </NavLink>
+        </nav>
+
+        <WikiSearchBar className="min-w-[8rem] flex-1 basis-[10rem] max-w-xs" />
 
         <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-3">
-          <nav className="flex items-center gap-2">
-            <NavLink
-              to="/history"
-              className={({ isActive }) =>
-                `${linkBase} ${isActive ? linkActive : ''}`
-              }
-            >
-              History
-            </NavLink>
-            <NavLink
-              to="/game"
-              end={false}
-              className={({ isActive }) =>
-                `${linkBase} ${isActive ? linkActive : ''}`
-              }
-            >
-              Game
-            </NavLink>
-            {userId ? (
-              <NavLink
-                to="/profile"
-                className={({ isActive }) =>
-                  `${linkBase} ${isActive ? linkActive : ''}`
-                }
-              >
-                Profile
-              </NavLink>
-            ) : null}
-          </nav>
-
           <StreakBadge />
 
           {userId ? (
