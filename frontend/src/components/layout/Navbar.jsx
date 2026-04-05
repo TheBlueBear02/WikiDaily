@@ -154,6 +154,7 @@ export default function Navbar() {
                     src={avatarUrl}
                     alt=""
                     aria-hidden="true"
+                    referrerPolicy="no-referrer"
                     className="h-8 w-8 shrink-0 rounded-full object-cover ring-1 ring-slate-200"
                   />
                 ) : (

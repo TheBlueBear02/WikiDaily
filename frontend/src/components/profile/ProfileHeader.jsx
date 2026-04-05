@@ -46,13 +46,17 @@ export default function ProfileHeader({ profile, user, memberSince }) {
           <img
             src={avatarUrl}
             alt=""
+            referrerPolicy="no-referrer"
+            onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'grid' }}
             className="h-16 w-16 flex-shrink-0 rounded-full object-cover ring-2 ring-slate-200"
           />
-        ) : (
-          <div className="grid h-16 w-16 flex-shrink-0 place-items-center rounded-full bg-amber-100 text-2xl font-semibold text-amber-950">
-            {initials}
-          </div>
-        )}
+        ) : null}
+        <div
+          style={{ display: avatarUrl ? 'none' : 'grid' }}
+          className="grid h-16 w-16 flex-shrink-0 place-items-center rounded-full bg-amber-100 text-2xl font-semibold text-amber-950"
+        >
+          {initials}
+        </div>
 
         <div className="min-w-0 flex-1 space-y-1">
           <div className="text-2xl font-medium leading-tight tracking-tight text-slate-700 sm:text-3xl">

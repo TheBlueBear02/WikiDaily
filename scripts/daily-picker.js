@@ -100,7 +100,7 @@ function rowFromSummary(json, fallbackSlug) {
   return {
     wiki_slug,
     display_title,
-    image_url: json.originalimage?.source ?? null,
+    image_url: json.thumbnail?.source ?? json.originalimage?.source ?? null,
     description: json.extract ?? null,
   };
 }
@@ -135,11 +135,11 @@ async function pickGameChallenge(supabase, todayStr, dailySlug, allSlugs) {
     if (picked.length >= 2) break;
     try {
       const json = await fetchWikipediaSummary(slug);
-      if (!json.originalimage?.source && !json.thumbnail?.source) {
+      if (!json.thumbnail?.source && !json.originalimage?.source) {
         console.log(`Skipping ${slug} — no image available`);
         continue;
       }
-      const imageUrl = json.originalimage?.source ?? json.thumbnail?.source;
+      const imageUrl = json.thumbnail?.source ?? json.originalimage?.source;
       const partial = rowFromSummary(json, slug);
       // Upsert into articles without overwriting existing daily metadata
       const { error: upsertErr } = await supabase.from('articles').upsert(
@@ -260,11 +260,11 @@ async function main() {
   for (const slug of unused) {
     try {
       const json = await fetchWikipediaSummary(slug);
-      if (!json.originalimage?.source && !json.thumbnail?.source) {
+      if (!json.thumbnail?.source && !json.originalimage?.source) {
         console.log(`Skipping ${slug} — no image available`);
         continue;
       }
-      const imageUrl = json.originalimage?.source ?? json.thumbnail?.source;
+      const imageUrl = json.thumbnail?.source ?? json.originalimage?.source;
       const partial = rowFromSummary(json, slug);
       const row = {
         wiki_slug: partial.wiki_slug,
