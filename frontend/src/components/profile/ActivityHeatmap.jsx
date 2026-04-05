@@ -78,15 +78,25 @@ export default function ActivityHeatmap({ entries }) {
     const start = addDaysUtc(endMonday, -7 * 51) // 52 full weeks
 
     const labels = []
+    const seenMonths = new Set()
+    let monthCount = 0
     for (let col = 0; col < 52; col += 1) {
-      const colStart = addDaysUtc(start, col * 7)
-      if (colStart.getUTCDate() === 1) {
-        labels.push({
-          col,
-          text: new Intl.DateTimeFormat(undefined, { month: 'short', timeZone: 'UTC' }).format(
-            colStart,
-          ),
-        })
+      for (let row = 0; row < 7; row += 1) {
+        const d = addDaysUtc(start, col * 7 + row)
+        if (d.getUTCDate() === 1) {
+          const key = `${d.getUTCFullYear()}-${d.getUTCMonth()}`
+          if (!seenMonths.has(key)) {
+            seenMonths.add(key)
+            if (monthCount % 2 === 0) {
+              labels.push({
+                col,
+                text: new Intl.DateTimeFormat(undefined, { month: 'short', timeZone: 'UTC' }).format(d),
+              })
+            }
+            monthCount += 1
+          }
+          break
+        }
       }
     }
 
@@ -123,7 +133,7 @@ export default function ActivityHeatmap({ entries }) {
         <div className="flex w-6 flex-col gap-[3px] pt-[1px] text-[11px] font-semibold uppercase tracking-wide text-slate-500">
           {dayLabels.map((d) => (
             <div key={d} className="h-3 leading-3">
-              {d === 'Mon' || d === 'Wed' || d === 'Fri' ? d : null}
+              {d === 'Tue' || d === 'Thu' || d === 'Sat' ? d : null}
             </div>
           ))}
         </div>
@@ -147,12 +157,7 @@ export default function ActivityHeatmap({ entries }) {
             return (
               <div
                 key={`${cell.col}-${cell.rowMon0}`}
-                className={[
-                  className,
-                  isToday ? 'ring-1 ring-slate-600 ring-offset-1 ring-offset-white' : null,
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
+                className={className}
                 title={title}
                 aria-label={title}
               />

@@ -220,7 +220,7 @@ export default function FactCard({
                     src={submitterAvatarUrl}
                     alt=""
                     aria-hidden
-                    className="h-10 w-10 shrink-0 rounded-full object-cover"
+                    className="h-10 w-10 shrink-0 rounded-full object-cover ring-1 ring-slate-200"
                   />
                 ) : (
                   <div

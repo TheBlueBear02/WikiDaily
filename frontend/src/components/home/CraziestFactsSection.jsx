@@ -35,6 +35,7 @@ export default function CraziestFactsSection() {
   const [voteError, setVoteError] = useState(null)
   const [randomArticleLoading, setRandomArticleLoading] = useState(false)
   const [randomArticleError, setRandomArticleError] = useState(null)
+  const [cardVisible, setCardVisible] = useState(true)
 
   useEffect(() => {
     if (queue.length > 0) hadQueueRef.current = true
@@ -44,13 +45,17 @@ export default function CraziestFactsSection() {
 
   const advanceCard = useCallback(() => {
     setVoteError(null)
-    setQueue((q) => {
-      const head = q[0]
-      if (head) {
-        setSessionSeen((prev) => new Set(prev).add(head.id))
-      }
-      return q.slice(1)
-    })
+    setCardVisible(false)
+    setTimeout(() => {
+      setQueue((q) => {
+        const head = q[0]
+        if (head) {
+          setSessionSeen((prev) => new Set(prev).add(head.id))
+        }
+        return q.slice(1)
+      })
+      setCardVisible(true)
+    }, 150)
   }, [])
 
   const resetQueue = useCallback(() => {
@@ -379,16 +384,21 @@ export default function CraziestFactsSection() {
       ) : null}
 
       {!loadingInitial && !loadError && current ? (
-        <FactCard
-          fact={current}
-          onVote={handleVote}
-          buttonsLocked={buttonsLocked}
-          voteError={voteError}
-          userId={userId}
-          user={user}
-          profile={profile}
-          existingVote={voteMap.get(current?.id) ?? null}
-        />
+        <div
+          className="transition-opacity duration-150"
+          style={{ opacity: cardVisible ? 1 : 0 }}
+        >
+          <FactCard
+            fact={current}
+            onVote={handleVote}
+            buttonsLocked={buttonsLocked}
+            voteError={voteError}
+            userId={userId}
+            user={user}
+            profile={profile}
+            existingVote={voteMap.get(current?.id) ?? null}
+          />
+        </div>
       ) : null}
 
       {!loadingInitial &&

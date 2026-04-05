@@ -33,13 +33,7 @@ export default function StatsRow({ profile, isLoading }) {
         label="Current Streak"
         value={streakValue}
         valueSuffix={streakSuffix}
-        helper={
-          currentStreak >= 7 ? (
-            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-950">
-              On fire
-            </span>
-          ) : null
-        }
+        helper={null}
       />
       <StatCard label="Longest Streak" value={maxStreak} valueSuffix="days" />
       <StatCard label="Total Articles Read" value={totalRead} />

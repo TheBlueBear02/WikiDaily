@@ -212,7 +212,7 @@ export default function StreakLeaderboard({ rows = DEFAULT_ROWS } = {}) {
                       src={entry.avatarUrl}
                       alt=""
                       aria-hidden
-                      className="h-7 w-7 shrink-0 rounded-full object-cover"
+                      className="h-7 w-7 shrink-0 rounded-full object-cover ring-1 ring-slate-200"
                     />
                   ) : (
                     <span

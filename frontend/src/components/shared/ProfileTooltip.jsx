@@ -39,7 +39,7 @@ export default function ProfileTooltip({ displayName, totalRead, avatarInitials,
           <img
             src={avatarUrl}
             alt={displayName}
-            className="h-11 w-11 shrink-0 rounded-full object-cover ring-1 ring-amber-200/80"
+            className="h-11 w-11 shrink-0 rounded-full object-cover ring-1 ring-slate-200"
             aria-hidden
           />
         ) : (

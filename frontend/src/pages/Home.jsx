@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom'
 
+import { useScrollReveal } from '../hooks/useScrollReveal'
 import { useDailyArticle } from '../hooks/useDailyArticle'
 import { useUserProgress } from '../hooks/useUserProgress'
 import { useReadingHistory } from '../hooks/useReadingHistory'
@@ -141,6 +142,21 @@ export default function Home() {
     )
   }
 
+  const [factsRef, factsVisible] = useScrollReveal()
+  const [gameRef, gameVisible] = useScrollReveal()
+  const [interestingRef, interestingVisible] = useScrollReveal()
+  const [progressRef, progressVisible] = useScrollReveal()
+  const [latestRef, latestVisible] = useScrollReveal()
+  const [bottomRef, bottomVisible] = useScrollReveal()
+
+  const reveal = (isVisible, delay = 0) => ({
+    style: {
+      transition: `opacity 0.55s ease ${delay}ms, transform 0.55s ease ${delay}ms`,
+      opacity: isVisible ? 1 : 0,
+      transform: isVisible ? 'translateY(0)' : 'translateY(28px)',
+    },
+  })
+
   return (
     <div className="space-y-6">
       <HomeHeroRow
@@ -154,45 +170,51 @@ export default function Home() {
           onRetry: () => collectiveReadingQuery.refetch(),
         }}
       />
-      <div className="flex items-stretch gap-2">
+      <div ref={factsRef} {...reveal(factsVisible)} className="flex items-stretch gap-2">
         <CraziestFactsSection />
         <div className="shrink-0 w-[30%] flex flex-col">
           <RandomWikiSection />
         </div>
       </div>
-      <div className="flex items-stretch gap-4">
+      <div ref={gameRef} {...reveal(gameVisible)} className="flex items-stretch gap-4">
         <AdPlaceholder size="rectangle" className="h-auto self-stretch" />
         <DailyGameSection />
       </div>
-      {!interestingQuery.favoritesQuery.isLoading && !interestingQuery.favoritesQuery.isError ? (
-        <InterestingArticlesSection entries={interestingQuery.favorites ?? []} userId={userId} />
-      ) : null}
-      {userId ? (
-        profileQuery.isError ? (
-          <div className="rounded-none border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900">
-            <span className="font-medium">Could not load reading progress.</span>{' '}
-            <button
-              type="button"
-              onClick={() => profileQuery.refetch()}
-              className="text-rose-950 underline decoration-rose-400 underline-offset-2 hover:text-rose-900"
-            >
-              Retry
-            </button>
-          </div>
+      <div ref={interestingRef} {...reveal(interestingVisible)}>
+        {!interestingQuery.favoritesQuery.isLoading && !interestingQuery.favoritesQuery.isError ? (
+          <InterestingArticlesSection entries={interestingQuery.favorites ?? []} userId={userId} />
+        ) : null}
+      </div>
+      <div ref={progressRef} {...reveal(progressVisible)}>
+        {userId ? (
+          profileQuery.isError ? (
+            <div className="rounded-none border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900">
+              <span className="font-medium">Could not load reading progress.</span>{' '}
+              <button
+                type="button"
+                onClick={() => profileQuery.refetch()}
+                className="text-rose-950 underline decoration-rose-400 underline-offset-2 hover:text-rose-900"
+              >
+                Retry
+              </button>
+            </div>
+          ) : (
+            <ReadingProgressBar
+              userId={userId}
+              totalRead={profile?.total_read ?? 0}
+              isLoading={profileQuery.isLoading}
+            />
+          )
         ) : (
-          <ReadingProgressBar
-            userId={userId}
-            totalRead={profile?.total_read ?? 0}
-            isLoading={profileQuery.isLoading}
-          />
-        )
-      ) : (
-        <ReadingProgressBar totalRead={0} isLoading={false} />
-      )}
-      {!latestReadsQuery.isLoading && !latestReadsQuery.isError ? (
-        <LatestReadsSection entries={latestReadsQuery.data ?? []} userId={userId} />
-      ) : null}
-      <div className="flex items-stretch gap-4">
+          <ReadingProgressBar totalRead={0} isLoading={false} />
+        )}
+      </div>
+      <div ref={latestRef} {...reveal(latestVisible)}>
+        {!latestReadsQuery.isLoading && !latestReadsQuery.isError ? (
+          <LatestReadsSection entries={latestReadsQuery.data ?? []} userId={userId} />
+        ) : null}
+      </div>
+      <div ref={bottomRef} {...reveal(bottomVisible)} className="flex items-stretch gap-4">
         <WizardImageCard />
         <AdPlaceholder size="rectangle" />
       </div>

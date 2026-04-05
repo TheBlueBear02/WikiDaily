@@ -104,6 +104,24 @@ export default function Navbar() {
         </NavLink>
 
         <nav className="ml-5 flex items-center gap-2 sm:ml-10">
+          <NavLink
+            to="/"
+            end
+            className={({ isActive }) =>
+              `${linkBase} ${isActive ? linkActive : ''}`
+            }
+          >
+            Home
+          </NavLink>
+          <NavLink
+            to="/game"
+            end={false}
+            className={({ isActive }) =>
+              `${linkBase} ${isActive ? linkActive : ''}`
+            }
+          >
+            Game
+          </NavLink>
           {userId ? (
             <NavLink
               to="/profile"
@@ -114,23 +132,6 @@ export default function Navbar() {
               Profile
             </NavLink>
           ) : null}
-          <NavLink
-            to="/game"
-            end={false}
-            className={({ isActive }) =>
-              `${linkBase} ${isActive ? linkActive : ''}`
-            }
-          >
-            Game
-          </NavLink>
-          <NavLink
-            to="/history"
-            className={({ isActive }) =>
-              `${linkBase} ${isActive ? linkActive : ''}`
-            }
-          >
-            History
-          </NavLink>
         </nav>
 
         <WikiSearchBar className="min-w-[8rem] flex-1 basis-[10rem] max-w-xs" />
@@ -153,7 +154,7 @@ export default function Navbar() {
                     src={avatarUrl}
                     alt=""
                     aria-hidden="true"
-                    className="h-8 w-8 shrink-0 rounded-full object-cover"
+                    className="h-8 w-8 shrink-0 rounded-full object-cover ring-1 ring-slate-200"
                   />
                 ) : (
                   <span

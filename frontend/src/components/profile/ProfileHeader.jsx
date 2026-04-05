@@ -46,7 +46,7 @@ export default function ProfileHeader({ profile, user, memberSince }) {
           <img
             src={avatarUrl}
             alt=""
-            className="h-16 w-16 flex-shrink-0 rounded-full object-cover ring-1 ring-amber-200/80"
+            className="h-16 w-16 flex-shrink-0 rounded-full object-cover ring-2 ring-slate-200"
           />
         ) : (
           <div className="grid h-16 w-16 flex-shrink-0 place-items-center rounded-full bg-amber-100 text-2xl font-semibold text-amber-950">

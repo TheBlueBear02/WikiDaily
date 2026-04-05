@@ -12,7 +12,14 @@ export function getSupabase() {
       'Missing Vite env vars: set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in frontend/.env.local',
     )
   }
-  _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: {
+      flowType: 'pkce',
+      detectSessionInUrl: true,
+      persistSession: true,
+      autoRefreshToken: true,
+    }
+  })
   return _supabase
 }
 
