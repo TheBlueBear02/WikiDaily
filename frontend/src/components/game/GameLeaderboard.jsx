@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useGameLeaderboard } from '../../hooks/useGameLeaderboard'
+import { initialsFromUsername } from '../../lib/profileAvatar'
 
 const ROWS = 8
 
@@ -72,6 +73,7 @@ export default function GameLeaderboard({ challengeId }) {
                 >
                   {rank}
                 </span>
+                <div className="h-7 w-7 shrink-0 animate-pulse rounded-full bg-slate-200" />
                 <div className="min-w-0 flex-1 space-y-1 py-0.5">
                   <div
                     className="h-4 max-w-full animate-pulse rounded bg-slate-200"
@@ -99,6 +101,24 @@ export default function GameLeaderboard({ challengeId }) {
               >
                 {rank}
               </span>
+
+              {!isEmpty && (
+                entry.avatarUrl ? (
+                  <img
+                    src={entry.avatarUrl}
+                    alt=""
+                    aria-hidden
+                    className="h-7 w-7 shrink-0 rounded-full object-cover"
+                  />
+                ) : (
+                  <span
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-100 text-[10px] font-semibold text-amber-950"
+                    aria-hidden
+                  >
+                    {initialsFromUsername(entry.username)}
+                  </span>
+                )
+              )}
 
               <div className="min-w-0 flex-1">
                 <div className={`truncate text-sm font-medium ${isEmpty ? 'text-slate-400' : 'text-primary'}`}>

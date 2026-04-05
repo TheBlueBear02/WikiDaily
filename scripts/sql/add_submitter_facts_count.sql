@@ -5,8 +5,8 @@
 alter table public.wiki_facts
   add column if not exists submitter_facts_count int;
 
--- Update the submitter lookup RPC to also return facts_count,
--- computed live from the wiki_facts table.
+-- Update the submitter lookup RPC to also return facts_count, current_streak, and avatar_url.
+-- avatar_url is read from auth.users.raw_user_meta_data (where Google/OAuth providers store it).
 
 drop function if exists public.wiki_fact_submitter_lookup(uuid[]);
 
@@ -16,7 +16,8 @@ returns table (
   username text,
   total_read int,
   current_streak int,
-  facts_count int
+  facts_count int,
+  avatar_url text
 )
 language sql
 stable
@@ -33,8 +34,13 @@ as $$
       from public.wiki_facts wf
       where wf.user_id = p.user_id
         and (wf.is_deleted is null or wf.is_deleted = false)
-    ) as facts_count
+    ) as facts_count,
+    coalesce(
+      nullif(btrim((au.raw_user_meta_data->>'avatar_url')::text), ''),
+      nullif(btrim((au.raw_user_meta_data->>'picture')::text), '')
+    ) as avatar_url
   from public.profiles p
+  join auth.users au on au.id = p.user_id
   where p.user_id = any(p_user_ids);
 $$;
 

@@ -16,6 +16,9 @@ import Profile from './pages/Profile.jsx'
 import Game from './pages/Game.jsx'
 import GamePlay from './pages/GamePlay.jsx'
 import GameResult from './pages/GameResult.jsx'
+import FreeGameHub from './pages/FreeGameHub.jsx'
+import FreeGamePlay from './pages/FreeGamePlay.jsx'
+import FreeGameResult from './pages/FreeGameResult.jsx'
 import UsernameSetup from './pages/UsernameSetup.jsx'
 
 export default function App() {
@@ -31,6 +34,9 @@ export default function App() {
           <Route path="/game" element={<Game />} />
           <Route path="/game/play" element={<GamePlay />} />
           <Route path="/game/result" element={<GameResult />} />
+          <Route path="/game/free" element={<FreeGameHub />} />
+          <Route path="/game/free/play" element={<FreeGamePlay />} />
+          <Route path="/game/free/result" element={<FreeGameResult />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/setup-username" element={<UsernameSetup />} />
           <Route path="/profile" element={<Profile />} />

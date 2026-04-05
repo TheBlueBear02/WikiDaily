@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useGameChallenge } from '../hooks/useGameChallenge'
+import { usePersonalBest } from '../hooks/usePersonalBest'
 import { useUserProgress } from '../hooks/useUserProgress'
 import { getSupabase } from '../lib/supabaseClient'
 import { todayUtcYmd } from '../lib/date'
+import { formatTime } from '../lib/formatTime'
 import HeroAside from '../components/home/HeroAside'
 import GameLeaderboard from '../components/game/GameLeaderboard'
 
@@ -13,6 +15,65 @@ function GameAchievementsSection() {
       <div className="text-sm font-medium text-slate-700">Achievements</div>
       <div className="mt-0.5 text-xs leading-relaxed text-slate-500">
         Complete challenges to unlock game achievements.
+      </div>
+    </div>
+  )
+}
+
+function FreePlayCard({ userId, navigate }) {
+  const { data: personalBest, isLoading: pbLoading } = usePersonalBest({ userId })
+  const bestClicks = personalBest?.bestClicks ?? null
+  const bestTime = personalBest?.bestTime ?? null
+
+  return (
+    <div className="flex flex-col border border-slate-200 bg-white">
+      <div className="flex items-center justify-between border-b border-slate-200 bg-slate-800 px-5 py-3">
+        <div className="flex items-center gap-2.5">
+          <span className="text-sm font-bold uppercase tracking-wide text-white">Free Play</span>
+        </div>
+        <span className="text-xs text-white/60">Unlimited rounds</span>
+      </div>
+      <div className="flex flex-col gap-4 p-5">
+        <p className="text-sm text-slate-600">
+          Navigate from a random article to a famous one in as few clicks as possible. Play as many times as you want and beat your personal best.
+        </p>
+        {userId && (
+          <div className="flex gap-3">
+            {pbLoading ? (
+              <>
+                <div className="flex-1 animate-pulse rounded border border-slate-100 bg-slate-50 p-3">
+                  <div className="h-3 w-16 rounded bg-slate-200 mb-1" />
+                  <div className="h-5 w-10 rounded bg-slate-200" />
+                </div>
+                <div className="flex-1 animate-pulse rounded border border-slate-100 bg-slate-50 p-3">
+                  <div className="h-3 w-16 rounded bg-slate-200 mb-1" />
+                  <div className="h-5 w-10 rounded bg-slate-200" />
+                </div>
+              </>
+            ) : bestClicks || bestTime ? (
+              <>
+                <div className="flex-1 rounded border border-slate-100 bg-slate-50 p-3">
+                  <div className="text-xs text-slate-400">Fewest clicks</div>
+                  <div className="text-lg font-bold text-primary tabular-nums">
+                    {bestClicks ? bestClicks.clicks : '—'}
+                  </div>
+                </div>
+                <div className="flex-1 rounded border border-slate-100 bg-slate-50 p-3">
+                  <div className="text-xs text-slate-400">Fastest time</div>
+                  <div className="text-lg font-bold text-primary tabular-nums">
+                    {bestTime ? formatTime(bestTime.time_seconds) : '—'}
+                  </div>
+                </div>
+              </>
+            ) : null}
+          </div>
+        )}
+        <button
+          onClick={() => navigate('/game/free')}
+          className="self-start border border-slate-700 bg-slate-800 px-6 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 transition-colors"
+        >
+          Start Free Game →
+        </button>
       </div>
     </div>
   )
@@ -187,11 +248,12 @@ export default function GameHub() {
             </div>
           </HeroAside>
 
-          {/* Right column (70%) — daily game card, mirrors home hero article slot */}
+          {/* Right column (70%) — daily game card + free play card */}
           <div className="flex min-h-0 w-full shrink-0 flex-col gap-3 md:w-[70%]">
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
               {dailyGameSlot}
             </div>
+            <FreePlayCard userId={userId} navigate={navigate} />
           </div>
         </div>
       </section>

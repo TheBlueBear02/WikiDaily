@@ -15,6 +15,7 @@ export function useGameLeaderboard({ challengeId, limit = 10 } = {}) {
       return data ?? []
     },
     staleTime: 30 * 1000,
+    select: (rows) => rows.map((r) => ({ ...r, avatarUrl: r.avatar_url ?? null })),
   })
 
   const timeQuery = useQuery({
@@ -30,6 +31,7 @@ export function useGameLeaderboard({ challengeId, limit = 10 } = {}) {
       return data ?? []
     },
     staleTime: 30 * 1000,
+    select: (rows) => rows.map((r) => ({ ...r, avatarUrl: r.avatar_url ?? null })),
   })
 
   return {

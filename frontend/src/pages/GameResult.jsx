@@ -6,11 +6,7 @@ import { useGameLeaderboard } from '../hooks/useGameLeaderboard'
 import { useUserProgress } from '../hooks/useUserProgress'
 import { CARD_SURFACE_STATIC } from '../lib/cardSurface'
 import { todayUtcYmd } from '../lib/date'
-
-function formatTime(seconds) {
-  if (seconds == null) return '—'
-  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
-}
+import { formatTime } from '../lib/formatTime'
 
 export default function GameResult() {
   const location = useLocation()

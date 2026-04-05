@@ -1,7 +1,8 @@
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { getSupabase } from '../lib/supabaseClient'
 
-export function useGameSession() {
+export function useGameSession({ userId } = {}) {
+  const queryClient = useQueryClient()
   const startSessionMutation = useMutation({
     mutationFn: async ({ challengeId, userId, startSlug }) => {
       const supabase = getSupabase()
@@ -47,6 +48,11 @@ export function useGameSession() {
         })
         .eq('id', sessionId)
       if (error) throw error
+    },
+    onSuccess: () => {
+      if (userId) {
+        queryClient.invalidateQueries({ queryKey: ['personalBest', userId] })
+      }
     },
   })
 
