@@ -10,7 +10,6 @@ import { useGameChallenge } from '../hooks/useGameChallenge'
 import { useGameSession } from '../hooks/useGameSession'
 import { useUserProgress } from '../hooks/useUserProgress'
 import { getSupabase } from '../lib/supabaseClient'
-import { buildAuthUrl } from '../lib/returnTo'
 import { todayUtcYmd } from '../lib/date'
 import GameHUD from '../components/game/GameHUD'
 import PathTrail from '../components/game/PathTrail'
@@ -43,12 +42,6 @@ export default function GamePlay() {
   const [htmlError, setHtmlError] = useState(null)
   const [gameStarted, setGameStarted] = useState(false)
 
-  // Auth guard
-  useEffect(() => {
-    if (!challengeLoading && !userId) {
-      navigate(buildAuthUrl({ returnTo: '/game/play' }), { replace: true })
-    }
-  }, [challengeLoading, userId, navigate])
 
   // Keep targetSlugRef current whenever challenge loads
   useEffect(() => {
@@ -76,48 +69,51 @@ export default function GamePlay() {
     return () => { cancelled = true }
   }, [])
 
-  // Mount: check already-played, start session, start timer, load first article
+  // Mount: check already-played (signed-in only), start session, start timer, load first article
   useEffect(() => {
-    if (!userId || !challenge) return
+    if (!challenge) return
 
     let cancelled = false
 
     async function initGame() {
-      const supabase = getSupabase()
+      if (userId) {
+        const supabase = getSupabase()
 
-      // Check if already completed today's challenge (filter by BOTH user_id AND challenge_id)
-      const { data: existing } = await supabase
-        .from('game_sessions')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('challenge_id', challenge.id)
-        .eq('completed', true)
-        .maybeSingle()
+        // Check if already completed today's challenge
+        const { data: existing } = await supabase
+          .from('game_sessions')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('challenge_id', challenge.id)
+          .eq('completed', true)
+          .maybeSingle()
 
-      if (existing) {
-        navigate('/game', { replace: true })
-        return
+        if (existing) {
+          navigate('/game', { replace: true })
+          return
+        }
+
+        if (cancelled) return
+
+        // Start session
+        let sessionId
+        try {
+          sessionId = await startSessionMutation.mutateAsync({
+            challengeId: challenge.id,
+            userId,
+            startSlug: challenge.start_slug,
+          })
+        } catch (err) {
+          console.error('GamePlay: failed to start session', err)
+          navigate('/game', { replace: true })
+          return
+        }
+
+        if (cancelled) return
+
+        sessionIdRef.current = sessionId
       }
 
-      if (cancelled) return
-
-      // Start session
-      let sessionId
-      try {
-        sessionId = await startSessionMutation.mutateAsync({
-          challengeId: challenge.id,
-          userId,
-          startSlug: challenge.start_slug,
-        })
-      } catch (err) {
-        console.error('GamePlay: failed to start session', err)
-        navigate('/game', { replace: true })
-        return
-      }
-
-      if (cancelled) return
-
-      sessionIdRef.current = sessionId
       clicksRef.current = 0
       pathRef.current = [challenge.start_slug]
       setClicks(0)
@@ -190,37 +186,31 @@ export default function GamePlay() {
 
         setElapsedSeconds((s) => {
           const finalTime = s
-          void completeSessionMutation
-            .mutateAsync({
-              sessionId: sessionIdRef.current,
-              clicks: finalClicks,
-              timeSeconds: finalTime,
-              path: finalPath,
-            })
-            .then(() => {
-              navigate('/game/result', {
-                state: {
-                  sessionId: sessionIdRef.current,
-                  clicks: finalClicks,
-                  timeSeconds: finalTime,
-                  path: finalPath,
-                  challengeId: challenge?.id,
-                },
+          const resultState = {
+            sessionId: sessionIdRef.current,
+            clicks: finalClicks,
+            timeSeconds: finalTime,
+            path: finalPath,
+            challengeId: challenge?.id,
+          }
+
+          if (!sessionIdRef.current) {
+            // Guest — no session to save
+            navigate('/game/result', { state: resultState })
+          } else {
+            void completeSessionMutation
+              .mutateAsync({
+                sessionId: sessionIdRef.current,
+                clicks: finalClicks,
+                timeSeconds: finalTime,
+                path: finalPath,
               })
-            })
-            .catch((err) => {
-              console.error('GamePlay: failed to complete session', err)
-              // Navigate anyway — don't block the user
-              navigate('/game/result', {
-                state: {
-                  sessionId: sessionIdRef.current,
-                  clicks: finalClicks,
-                  timeSeconds: finalTime,
-                  path: finalPath,
-                  challengeId: challenge?.id,
-                },
+              .then(() => navigate('/game/result', { state: resultState }))
+              .catch((err) => {
+                console.error('GamePlay: failed to complete session', err)
+                navigate('/game/result', { state: resultState })
               })
-            })
+          }
           return s
         })
         return
@@ -233,8 +223,8 @@ export default function GamePlay() {
       setClicks(clicksRef.current)
       setPath([...pathRef.current])
 
-      // Batch write every 5 clicks
-      if (clicksRef.current % 5 === 0 && sessionIdRef.current) {
+      // Batch write every 5 clicks (signed-in only)
+      if (sessionIdRef.current && clicksRef.current % 5 === 0) {
         recordClickMutation.mutate({
           sessionId: sessionIdRef.current,
           clicks: clicksRef.current,

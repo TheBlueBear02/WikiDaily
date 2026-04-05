@@ -31,64 +31,57 @@ export default function DailyGameSection() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-4 p-5">
-        {/* Big sentence */}
-        {!isLoading && challenge && (
-          <p className="text-xl font-bold leading-snug text-slate-800">
-            How fast can you get from{' '}
-            <span className="text-secondary">{startArticle?.display_title}</span>
-            {' '}to{' '}
-            <span className="text-secondary">{targetArticle?.display_title}</span>?
-          </p>
-        )}
-        {isLoading && (
-          <div className="h-7 w-2/3 animate-pulse rounded bg-slate-200" />
-        )}
-
-      </div>
-
-      {/* Images edge-to-edge */}
-      <div className="flex">
+      {/* Images edge-to-edge with title overlaid at top */}
+      <div className="relative flex">
         {isLoading ? (
           <>
-            <div className="h-56 flex-1 animate-pulse bg-slate-200" />
-            <div className="h-56 flex-1 animate-pulse bg-slate-100" />
+            <div className="h-72 flex-1 animate-pulse bg-slate-200" />
+            <div className="h-72 flex-1 animate-pulse bg-slate-100" />
           </>
         ) : challenge ? (
           <>
+            {/* Top gradient — decorative only */}
+            <div className="pointer-events-none absolute top-0 left-0 right-0 z-10 h-28 bg-gradient-to-b from-black/80 to-transparent" />
+            {/* Big sentence overlaid at top */}
+            <div className="absolute top-0 left-0 right-0 z-20 px-4 py-4">
+              <p className="text-2xl font-black leading-snug text-white drop-shadow-lg">
+                How fast can you get from{' '}
+                <span className="text-white underline decoration-secondary decoration-[3px] underline-offset-4">{startArticle?.display_title}</span>
+                {' '}to{' '}
+                <span className="text-white underline decoration-secondary decoration-[3px] underline-offset-4">{targetArticle?.display_title}</span>?
+              </p>
+            </div>
             <div className="relative flex-1 overflow-hidden">
-              <img src={startArticle?.image_url} alt="" className="h-56 w-full object-cover" />
-              <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/50 to-transparent p-2">
-                <span className="text-xs font-semibold text-white drop-shadow">{startArticle?.display_title}</span>
+              <img src={startArticle?.image_url} alt="" className="h-72 w-full object-cover" />
+              <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/60 to-transparent p-3">
+                <span className="text-sm font-semibold text-white drop-shadow">{startArticle?.display_title}</span>
               </div>
-              <div className="pointer-events-none absolute bottom-7 start-0 flex items-center gap-2 bg-primary px-3 py-1 text-xs font-bold text-white" aria-hidden>
+              <div className="pointer-events-none absolute bottom-12 start-0 flex items-center gap-2 bg-primary px-5 py-2 text-base font-bold text-white" aria-hidden>
                 Start
               </div>
             </div>
             <div className="relative flex-1 overflow-hidden">
-              <img src={targetArticle?.image_url} alt="" className="h-56 w-full object-cover" />
-              <div className="absolute inset-0 flex items-end justify-end bg-gradient-to-t from-black/50 to-transparent p-2">
-                <span className="text-xs font-semibold text-white drop-shadow">{targetArticle?.display_title}</span>
+              <img src={targetArticle?.image_url} alt="" className="h-72 w-full object-cover" />
+              <div className="absolute inset-0 flex items-end justify-end bg-gradient-to-t from-black/60 to-transparent p-3">
+                <span className="text-sm font-semibold text-white drop-shadow">{targetArticle?.display_title}</span>
               </div>
-              <div className="pointer-events-none absolute bottom-7 end-0 flex items-center gap-2 bg-primary px-3 py-1 text-xs font-bold text-white" aria-hidden>
+              <div className="pointer-events-none absolute bottom-12 end-0 flex items-center gap-2 bg-primary px-5 py-2 text-base font-bold text-white" aria-hidden>
                 Target
               </div>
+            </div>
+
+            {/* CTA overlaid at the bottom of the images */}
+            <div className="absolute bottom-0 left-0 right-0 flex justify-center pb-5 z-20">
+              <NavLink
+                to="/game"
+                className="bg-secondary px-10 py-3 text-center text-base font-extrabold text-white hover:bg-secondary-hover transition-colors shadow-lg"
+              >
+                Play Now
+              </NavLink>
             </div>
           </>
         ) : null}
       </div>
-
-      {/* CTA */}
-      {!isLoading && challenge && (
-        <div className="border-t border-slate-200">
-          <NavLink
-            to="/game"
-            className="block w-full bg-primary px-4 py-3 text-center text-sm font-semibold text-white hover:bg-primary-hover transition-colors"
-          >
-            Play Now →
-          </NavLink>
-        </div>
-      )}
     </section>
   )
 }

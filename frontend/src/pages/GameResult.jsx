@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { buildAuthUrl } from '../lib/returnTo'
 import { useGameChallenge } from '../hooks/useGameChallenge'
 import { useGameLeaderboard } from '../hooks/useGameLeaderboard'
 import { useUserProgress } from '../hooks/useUserProgress'
@@ -70,7 +71,7 @@ export default function GameResult() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3">
         <div className={`${CARD_SURFACE_STATIC} flex flex-col items-center gap-1 p-4`}>
           <span className="text-2xl font-bold text-primary tabular-nums">{clicks}</span>
           <span className="text-xs text-slate-500">Clicks</span>
@@ -79,19 +80,36 @@ export default function GameResult() {
           <span className="text-2xl font-bold text-primary tabular-nums">{formatTime(timeSeconds)}</span>
           <span className="text-xs text-slate-500">Time</span>
         </div>
-        <div className={`${CARD_SURFACE_STATIC} flex flex-col items-center gap-1 p-4`}>
-          <span className="text-2xl font-bold text-primary tabular-nums">
-            {clicksRank ? `#${clicksRank}` : '—'}
-          </span>
-          <span className="text-xs text-slate-500">Clicks Rank</span>
-        </div>
-        <div className={`${CARD_SURFACE_STATIC} flex flex-col items-center gap-1 p-4`}>
-          <span className="text-2xl font-bold text-primary tabular-nums">
-            {timeRank ? `#${timeRank}` : '—'}
-          </span>
-          <span className="text-xs text-slate-500">Time Rank</span>
-        </div>
+        {userId && (
+          <>
+            <div className={`${CARD_SURFACE_STATIC} flex flex-col items-center gap-1 p-4`}>
+              <span className="text-2xl font-bold text-primary tabular-nums">
+                {clicksRank ? `#${clicksRank}` : '—'}
+              </span>
+              <span className="text-xs text-slate-500">Clicks Rank</span>
+            </div>
+            <div className={`${CARD_SURFACE_STATIC} flex flex-col items-center gap-1 p-4`}>
+              <span className="text-2xl font-bold text-primary tabular-nums">
+                {timeRank ? `#${timeRank}` : '—'}
+              </span>
+              <span className="text-xs text-slate-500">Time Rank</span>
+            </div>
+          </>
+        )}
       </div>
+
+      {/* Guest sign-in prompt */}
+      {!userId && (
+        <div className={`${CARD_SURFACE_STATIC} flex flex-col items-center gap-3 p-5 text-center`}>
+          <p className="text-sm text-slate-600">Sign in to save your score and appear on the leaderboard</p>
+          <Link
+            to={buildAuthUrl({ returnTo: '/game' })}
+            className="bg-primary px-5 py-2 text-sm font-semibold text-white hover:bg-primary-hover transition-colors"
+          >
+            Sign In
+          </Link>
+        </div>
+      )}
 
       {/* Path */}
       {path && path.length > 0 && (

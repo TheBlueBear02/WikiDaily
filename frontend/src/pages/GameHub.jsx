@@ -3,10 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useGameChallenge } from '../hooks/useGameChallenge'
 import { useUserProgress } from '../hooks/useUserProgress'
 import { getSupabase } from '../lib/supabaseClient'
-import { buildAuthUrl } from '../lib/returnTo'
 import { todayUtcYmd } from '../lib/date'
 import HeroAside from '../components/home/HeroAside'
-import TargetCard from '../components/game/TargetCard'
 import GameLeaderboard from '../components/game/GameLeaderboard'
 
 function GameAchievementsSection() {
@@ -31,7 +29,7 @@ export default function GameHub() {
 
   // Check if the signed-in user has already completed today's challenge
   const [alreadyPlayed, setAlreadyPlayed] = useState(null) // null = not checked yet
-  const [existingSessionId, setExistingSessionId] = useState(null)
+  const [existingSession, setExistingSession] = useState(null)
 
   useEffect(() => {
     if (!userId || !challenge?.id) {
@@ -41,7 +39,7 @@ export default function GameHub() {
     const supabase = getSupabase()
     supabase
       .from('game_sessions')
-      .select('id, clicks, time_seconds')
+      .select('id, clicks, time_seconds, path')
       .eq('user_id', userId)
       .eq('challenge_id', challenge.id)
       .eq('completed', true)
@@ -49,7 +47,7 @@ export default function GameHub() {
       .then(({ data: session }) => {
         if (session) {
           setAlreadyPlayed(true)
-          setExistingSessionId(session.id)
+          setExistingSession(session)
         } else {
           setAlreadyPlayed(false)
         }
@@ -57,10 +55,6 @@ export default function GameHub() {
   }, [userId, challenge?.id])
 
   const handlePlay = () => {
-    if (!userId) {
-      navigate(buildAuthUrl({ returnTo: '/game' }))
-      return
-    }
     navigate('/game/play')
   }
 
@@ -88,76 +82,90 @@ export default function GameHub() {
     dailyGameSlot = (
       <div className="flex h-full min-h-0 flex-col border border-slate-200 bg-white">
         {/* Header */}
-        <div className="shrink-0 border-b border-slate-200 bg-primary px-5 py-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold uppercase tracking-wide text-white">
-              Today's Challenge
-            </h2>
-            <span className="text-xs text-white/70">{todayUtcYmd()}</span>
+        <div className="flex items-center justify-between border-b border-slate-200 bg-primary px-5 py-3">
+          <div className="flex items-center gap-2.5">
+            <span className="shrink-0 text-white" aria-hidden>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="block">
+                <path d="M2 12.5C2 9.46 4.46 7 7.5 7h9C19.54 7 22 9.46 22 12.5c0 2.76-1.5 6.5-4 6.5-1 0-1.5-.5-2.5-1.5h-3C11.5 18.5 11 19 10 19c-2.5 0-4-3.74-4-6.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M8 10.5v3M6.5 12h3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                <circle cx="16" cy="11" r="1" fill="currentColor"/>
+                <circle cx="18" cy="13" r="1" fill="currentColor"/>
+              </svg>
+            </span>
+            <span className="text-sm font-bold uppercase tracking-wide text-white">
+              Daily Challenge
+            </span>
+            <span className="relative flex h-2.5 w-2.5 shrink-0">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-60 [animation-duration:1.5s]" />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-white" />
+            </span>
           </div>
+          <span className="text-xs text-white/70">{todayUtcYmd()}</span>
         </div>
 
-        {/* Start → Target */}
-        <div className="flex min-h-0 flex-1 flex-col gap-4 p-5">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
-            <div className="flex flex-1 flex-col gap-1.5">
-              <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                Start
-              </span>
-              <TargetCard article={startArticle} size="large" />
+        {/* Images edge-to-edge with CTA overlaid at bottom */}
+        <div className="relative flex flex-1 min-h-[24rem]">
+          {/* Top gradient — decorative only */}
+          <div className="pointer-events-none absolute top-0 left-0 right-0 z-10 h-52 bg-gradient-to-b from-black/90 to-transparent" />
+          {/* Big sentence overlaid at top */}
+          <div className="absolute top-0 left-0 right-0 z-20 px-5 py-5">
+            <p className="text-4xl font-black leading-snug text-white drop-shadow-lg">
+              How fast can you get from{' '}
+              <span className="text-white underline decoration-secondary decoration-[3px] underline-offset-4">{startArticle?.display_title}</span>
+              {' '}to{' '}
+              <span className="text-white underline decoration-secondary decoration-[3px] underline-offset-4">{targetArticle?.display_title}</span>?
+            </p>
+          </div>
+          <div className="flex-1 relative overflow-hidden">
+            <img src={startArticle?.image_url} alt="" className="h-full w-full object-cover" />
+            <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/60 to-transparent p-3">
+              <span className="text-sm font-semibold text-white drop-shadow">{startArticle?.display_title}</span>
             </div>
-            <div className="flex items-center justify-center text-2xl text-slate-300 font-light sm:py-4">
-              →
+            <div className="pointer-events-none absolute bottom-16 start-0 z-20 flex items-center bg-primary px-5 py-2 text-base font-bold text-white" aria-hidden>
+              Start
             </div>
-            <div className="flex flex-1 flex-col gap-1.5">
-              <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                Target
-              </span>
-              <TargetCard article={targetArticle} size="large" />
+          </div>
+          <div className="flex-1 relative overflow-hidden">
+            <img src={targetArticle?.image_url} alt="" className="h-full w-full object-cover" />
+            <div className="absolute inset-0 flex items-end justify-end bg-gradient-to-t from-black/60 to-transparent p-3">
+              <span className="text-sm font-semibold text-white drop-shadow">{targetArticle?.display_title}</span>
+            </div>
+            <div className="pointer-events-none absolute bottom-16 end-0 z-20 flex items-center bg-primary px-5 py-2 text-base font-bold text-white" aria-hidden>
+              Target
             </div>
           </div>
 
-          <p className="text-sm text-slate-500 leading-relaxed">
-            Navigate from the <strong className="text-slate-700">start</strong> article to the{' '}
-            <strong className="text-slate-700">target</strong> article using only Wikipedia links.
-            Reach it in as few clicks as possible!
-          </p>
-        </div>
-
-        {/* CTA */}
-        <div className="shrink-0 border-t border-slate-200 p-4">
-          {alreadyPlayed ? (
-            <div className="flex flex-col gap-2 text-center">
-              <p className="text-sm text-slate-600">You've already played today!</p>
-              <button
-                onClick={() =>
-                  navigate('/game/result', {
-                    state: { sessionId: existingSessionId, challengeId: challenge.id },
-                  })
-                }
-                className="w-full border border-primary px-4 py-2.5 text-sm font-semibold text-primary hover:bg-primary hover:text-white transition-colors"
-              >
-                View Your Result
-              </button>
-            </div>
-          ) : !userId ? (
-            <div className="flex flex-col gap-2 text-center">
-              <p className="text-sm text-slate-600">Sign in to play and track your rank</p>
+          {/* CTA overlaid at the bottom of the images */}
+          <div className="absolute bottom-0 left-0 right-0 flex justify-center pb-5">
+            {alreadyPlayed ? (
+              <div className="flex flex-col items-center gap-2 text-center">
+                <p className="text-sm font-semibold text-white drop-shadow">You've already played today!</p>
+                <button
+                  onClick={() =>
+                    navigate('/game/result', {
+                      state: {
+                        sessionId: existingSession.id,
+                        clicks: existingSession.clicks,
+                        timeSeconds: existingSession.time_seconds,
+                        path: existingSession.path,
+                        challengeId: challenge.id,
+                      },
+                    })
+                  }
+                  className="bg-white/20 backdrop-blur-sm border border-white/50 px-8 py-2.5 text-sm font-semibold text-white hover:bg-white/30 transition-colors"
+                >
+                  View Your Result
+                </button>
+              </div>
+            ) : (
               <button
                 onClick={handlePlay}
-                className="w-full bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-hover transition-colors"
+                className="bg-secondary px-10 py-3 text-center text-base font-extrabold text-white hover:bg-secondary-hover transition-colors shadow-lg"
               >
-                Sign In to Play
+                Play Now
               </button>
-            </div>
-          ) : (
-            <button
-              onClick={handlePlay}
-              className="w-full bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-hover transition-colors"
-            >
-              Play Today's Game
-            </button>
-          )}
+            )}
+          </div>
         </div>
       </div>
     )

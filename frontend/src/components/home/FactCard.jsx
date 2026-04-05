@@ -266,7 +266,7 @@ export default function FactCard({
               : 'border-slate-300 bg-white'
           }`}
         >
-          <RedditStyleUpArrow className="h-7 w-6 shrink-0" />
+          <RedditStyleUpArrow className="h-5 w-4 shrink-0" />
           <span className="min-w-0">Wow really?</span>
         </button>
         <button
@@ -287,7 +287,7 @@ export default function FactCard({
               : 'border-slate-300 bg-white'
           }`}
         >
-          <RedditStyleDownArrow className="h-7 w-6 shrink-0" />
+          <RedditStyleDownArrow className="h-5 w-4 shrink-0" />
           <span className="min-w-0">Knew already</span>
         </button>
       </div>
