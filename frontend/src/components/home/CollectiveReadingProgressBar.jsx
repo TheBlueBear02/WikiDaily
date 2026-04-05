@@ -109,7 +109,7 @@ export default function CollectiveReadingProgressBar({
           <div className={compact ? 'relative h-7 w-full' : 'relative h-9 w-full'}>
             <div
               className={[
-                'absolute inset-x-1 top-1/2 -translate-y-1/2 rounded-full bg-slate-100',
+                'absolute inset-x-1 top-1/2 -translate-y-1/2 rounded-full bg-slate-300',
                 compact ? 'h-2' : 'h-2.5',
               ].join(' ')}
             />
@@ -210,8 +210,8 @@ export default function CollectiveReadingProgressBar({
             className={[
               'flex flex-col sm:flex-row sm:items-baseline sm:justify-between',
               compact
-                ? 'mt-1 gap-0.5 sm:gap-2'
-                : 'mt-2 gap-1 sm:gap-4',
+                ? 'mt-2 gap-0.5 sm:gap-2'
+                : 'mt-3 gap-1 sm:gap-4',
             ].join(' ')}
           >
             <div className={compact ? 'text-xs font-medium leading-tight text-slate-800' : 'text-sm font-medium text-slate-800'}>
@@ -233,7 +233,7 @@ export default function CollectiveReadingProgressBar({
             </div>
           </div>
 
-          <div className={compact ? 'relative mt-1.5 w-full px-0.5 sm:px-1' : 'relative mt-3 w-full px-1 sm:px-2'}>
+          <div className={compact ? 'relative mt-0.5 w-full px-0.5 sm:px-1' : 'relative mt-0.5 w-full px-1 sm:px-2'}>
             <div
               className={compact ? 'relative h-8 w-full' : 'relative h-12 w-full'}
               role="progressbar"
@@ -248,7 +248,7 @@ export default function CollectiveReadingProgressBar({
             >
               <div
                 className={[
-                  'absolute inset-x-0 top-1/2 -translate-y-1/2 overflow-hidden rounded-full bg-slate-100',
+                  'absolute inset-x-0 top-1/2 -translate-y-1/2 overflow-hidden rounded-full bg-slate-300',
                   compact ? 'h-2' : 'h-2.5',
                 ].join(' ')}
               >
@@ -283,9 +283,9 @@ export default function CollectiveReadingProgressBar({
                       </span>
                       <div
                         className={[
-                          'flex items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-slate-200/80',
+                          'flex items-center justify-center rounded-full bg-white shadow-sm ring-2 ring-slate-300',
                           compact ? 'h-5 w-5' : 'h-6 w-6 sm:h-7 sm:w-7',
-                          unlocked ? 'text-amber-500 ring-amber-200/60' : 'text-slate-300 ring-slate-200/80',
+                          unlocked ? 'text-amber-500 ring-amber-400/70' : 'text-slate-400 ring-slate-300',
                           trophyRow ? 'ring-2 ring-amber-400/80 shadow-md' : '',
                         ].join(' ')}
                       >

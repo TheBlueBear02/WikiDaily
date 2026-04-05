@@ -135,13 +135,18 @@ async function pickGameChallenge(supabase, todayStr, dailySlug, allSlugs) {
     if (picked.length >= 2) break;
     try {
       const json = await fetchWikipediaSummary(slug);
+      if (!json.originalimage?.source && !json.thumbnail?.source) {
+        console.log(`Skipping ${slug} — no image available`);
+        continue;
+      }
+      const imageUrl = json.originalimage?.source ?? json.thumbnail?.source;
       const partial = rowFromSummary(json, slug);
       // Upsert into articles without overwriting existing daily metadata
       const { error: upsertErr } = await supabase.from('articles').upsert(
         {
           wiki_slug: partial.wiki_slug,
           display_title: partial.display_title,
-          image_url: partial.image_url,
+          image_url: imageUrl,
           description: partial.description,
         },
         { onConflict: 'wiki_slug', ignoreDuplicates: true },
@@ -157,8 +162,8 @@ async function pickGameChallenge(supabase, todayStr, dailySlug, allSlugs) {
   }
 
   if (picked.length < 2) {
-    console.error('daily-picker: could not pick 2 game challenge slugs');
-    return;
+    console.error('ERROR: No suitable article with image found in candidate pool — aborting');
+    process.exit(1);
   }
 
   const [start_slug, target_slug] = picked;
@@ -255,11 +260,16 @@ async function main() {
   for (const slug of unused) {
     try {
       const json = await fetchWikipediaSummary(slug);
+      if (!json.originalimage?.source && !json.thumbnail?.source) {
+        console.log(`Skipping ${slug} — no image available`);
+        continue;
+      }
+      const imageUrl = json.originalimage?.source ?? json.thumbnail?.source;
       const partial = rowFromSummary(json, slug);
       const row = {
         wiki_slug: partial.wiki_slug,
         display_title: partial.display_title,
-        image_url: partial.image_url,
+        image_url: imageUrl,
         description: partial.description,
         // Promote to the featured daily article for today.
         is_daily: true,

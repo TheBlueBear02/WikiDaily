@@ -13,7 +13,7 @@ function formatSavedAt(isoString) {
   }).format(d)
 }
 
-export default function FavoriteArticleCard({ entry }) {
+export default function FavoriteArticleCard({ entry, variant = 'light' }) {
   const navigate = useNavigate()
 
   const wikiSlug =
@@ -47,9 +47,10 @@ export default function FavoriteArticleCard({ entry }) {
   return (
     <article
       className={[
-        'flex gap-3 border border-slate-200 p-3',
+        'flex gap-3 group',
+        variant === 'light' ? 'border border-slate-200 p-3' : '',
         clickable
-          ? 'cursor-pointer opacity-90 hover:opacity-100 transition-opacity duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30'
+          ? 'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30'
           : 'opacity-60',
       ].join(' ')}
       onClick={clickable ? onOpen : undefined}
@@ -68,7 +69,7 @@ export default function FavoriteArticleCard({ entry }) {
       aria-label={clickable ? `Open ${title}` : `${title} (unavailable)`}
     >
       {/* Image */}
-      <div className="h-[100px] w-[100px] shrink-0 bg-slate-100">
+      <div className={['h-[100px] w-[100px] shrink-0', variant === 'light' ? 'bg-slate-100' : 'bg-white/10'].join(' ')}>
         {imageUrl ? (
           <img
             src={imageUrl}
@@ -78,7 +79,7 @@ export default function FavoriteArticleCard({ entry }) {
             referrerPolicy="no-referrer"
           />
         ) : (
-          <div className="grid h-full w-full place-items-center text-xl font-semibold text-primary/30">
+          <div className={['grid h-full w-full place-items-center text-xl font-semibold', variant === 'light' ? 'text-primary/30' : 'text-white/40'].join(' ')}>
             {String(title).trim().slice(0, 1).toUpperCase()}
           </div>
         )}
@@ -89,10 +90,10 @@ export default function FavoriteArticleCard({ entry }) {
         <div className="self-start bg-secondary px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">
           Interesting
         </div>
-        <div className="line-clamp-2 text-lg font-semibold leading-tight text-primary">
+        <div className={['line-clamp-2 text-lg font-semibold leading-tight group-hover:underline underline-offset-2', variant === 'light' ? 'text-primary' : 'text-white'].join(' ')}>
           {title}
         </div>
-        <div className="text-xs text-primary">
+        <div className={['text-xs', variant === 'light' ? 'text-primary' : 'text-white'].join(' ')}>
           {savedAtText ? `Marked ${savedAtText}` : 'Marked —'}
         </div>
       </div>

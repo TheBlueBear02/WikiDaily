@@ -43,11 +43,11 @@ function StarIcon({ className, filled }) {
 /** Sized like reading-bar milestone badges; sits on the track end (centered on `left: 100%`). */
 function EndStarBadge({ filled, isLoading }) {
   const shell =
-    'flex h-6 w-6 items-center justify-center rounded-full bg-white shadow-sm ring-1'
+    'flex h-6 w-6 items-center justify-center rounded-full bg-white shadow-sm ring-2'
 
   if (isLoading) {
     return (
-      <div className={`${shell} ring-slate-200/80`} aria-hidden>
+      <div className={`${shell} ring-2 ring-slate-300`} aria-hidden>
         <div className="h-3 w-3 animate-pulse rounded-full bg-slate-200/90" />
       </div>
     )
@@ -57,7 +57,7 @@ function EndStarBadge({ filled, isLoading }) {
     <div
       className={[
         shell,
-        filled ? 'text-amber-500 ring-amber-200/60' : 'text-slate-300 ring-slate-200/80',
+        filled ? 'text-amber-500 ring-amber-400/70' : 'text-slate-400 ring-slate-300',
       ].join(' ')}
       title={filled ? 'Goal reached' : 'Next goal'}
     >
@@ -84,7 +84,7 @@ export default function AchievementProgressTrack({
 
   const trackInner = (
     <>
-      <div className="absolute inset-x-0 top-1/2 h-2 -translate-y-1/2 overflow-hidden rounded-full bg-slate-100">
+      <div className="absolute inset-x-0 top-1/2 h-2 -translate-y-1/2 overflow-hidden rounded-full bg-slate-300">
         {isLoading ? (
           <div className="h-full w-2/5 animate-pulse rounded-full bg-slate-200/90" />
         ) : (

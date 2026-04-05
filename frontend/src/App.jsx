@@ -3,6 +3,7 @@ import Home from './pages/Home.jsx'
 import History from './pages/History.jsx'
 import Auth from './pages/Auth.jsx'
 import Navbar from './components/layout/Navbar.jsx'
+import Footer from './components/layout/Footer.jsx'
 import WikiIframe from './pages/WikiIframe.jsx'
 import Profile from './pages/Profile.jsx'
 import Game from './pages/Game.jsx'
@@ -28,6 +29,7 @@ export default function App() {
           <Route path="/wiki/:wikiSlug" element={<WikiIframe />} />
         </Routes>
       </main>
+      <Footer />
     </div>
   )
 }

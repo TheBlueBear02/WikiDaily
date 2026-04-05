@@ -163,7 +163,7 @@ export default function ReadingProgressBar({ userId, totalRead, isLoading }) {
         <div className="h-3 w-40 animate-pulse rounded bg-slate-200" />
         <div className="relative mt-4 w-full px-1">
           <div className="relative h-9 w-full">
-            <div className="absolute inset-x-1 top-1/2 h-2.5 -translate-y-1/2 rounded-full bg-slate-100" />
+            <div className="absolute inset-x-1 top-1/2 h-2.5 -translate-y-1/2 rounded-full bg-slate-300" />
             {[20, 45, 70, 100].map((left) => (
               <div
                 key={left}
@@ -243,7 +243,7 @@ export default function ReadingProgressBar({ userId, totalRead, isLoading }) {
               : `Articles read progress from zero toward ${windowEnd}`
           }
         >
-          <div className="absolute inset-x-0 top-1/2 h-2.5 -translate-y-1/2 overflow-hidden rounded-full bg-slate-100">
+          <div className="absolute inset-x-0 top-1/2 h-2.5 -translate-y-1/2 overflow-hidden rounded-full bg-slate-300">
             <div
               className={[
                 'h-full rounded-full bg-primary shadow-[0_0_12px_rgba(30,41,82,0.35)]',
@@ -281,8 +281,8 @@ export default function ReadingProgressBar({ userId, totalRead, isLoading }) {
                   </span>
                   <div
                     className={[
-                      'flex h-6 w-6 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-slate-200/80 sm:h-7 sm:w-7',
-                      unlocked ? 'text-amber-500 ring-amber-200/60' : 'text-slate-300 ring-slate-200/80',
+                      'flex h-6 w-6 items-center justify-center rounded-full bg-white shadow-sm ring-2 ring-slate-300 sm:h-7 sm:w-7',
+                      unlocked ? 'text-amber-500 ring-amber-400/70' : 'text-slate-400 ring-slate-300',
                       trophyRow ? 'ring-2 ring-amber-400/80 shadow-md' : '',
                       twinkle,
                     ].join(' ')}

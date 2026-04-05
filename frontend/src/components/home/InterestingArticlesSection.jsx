@@ -7,7 +7,7 @@ export default function InterestingArticlesSection({ entries, userId, title = 'I
 
   return (
     <section className="w-full space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-2 bg-primary px-4 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-2 bg-secondary px-4 py-3">
         <div className="flex items-center gap-2.5">
           <span className="shrink-0 text-white" aria-hidden>
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="block">
@@ -44,9 +44,9 @@ export default function InterestingArticlesSection({ entries, userId, title = 'I
           )}
         </div>
       ) : (
-        <div className="bg-white px-4 py-5 [&_article]:border-0">
+        <div className="bg-primary px-4 py-5">
           <div
-            className="grid grid-cols-1 divide-y divide-primary/20 lg:grid-cols-4 lg:divide-x lg:divide-y-0"
+            className="grid grid-cols-1 divide-y divide-white/30 lg:grid-cols-4 lg:divide-x lg:divide-y-0 [&>*]:border-white/30"
             aria-label="Your interesting articles"
           >
             {items.map((entry, i) => (
@@ -58,7 +58,7 @@ export default function InterestingArticlesSection({ entries, userId, title = 'I
                   i === items.length - 1 ? 'pt-4 lg:pt-0 lg:pr-0' : '',
                 ].join(' ')}
               >
-                <FavoriteArticleCard entry={entry} />
+                <FavoriteArticleCard entry={entry} variant="dark" />
               </div>
             ))}
           </div>
