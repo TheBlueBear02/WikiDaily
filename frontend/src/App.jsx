@@ -1,4 +1,11 @@
-import { Route, Routes } from 'react-router-dom'
+import { Route, Routes, useLocation } from 'react-router-dom'
+import { useEffect } from 'react'
+
+function ScrollToTop() {
+  const { pathname } = useLocation()
+  useEffect(() => { window.scrollTo(0, 0) }, [pathname])
+  return null
+}
 import Home from './pages/Home.jsx'
 import History from './pages/History.jsx'
 import Auth from './pages/Auth.jsx'
@@ -14,6 +21,7 @@ import UsernameSetup from './pages/UsernameSetup.jsx'
 export default function App() {
   return (
     <div className="min-h-full bg-white text-primary">
+      <ScrollToTop />
       <Navbar />
 
       <main className="mx-auto max-w-5xl px-4 py-8">

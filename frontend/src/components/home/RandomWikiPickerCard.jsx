@@ -30,7 +30,7 @@ export default function RandomWikiPickerCard() {
       onClick={handleClick}
       disabled={isLoading}
       className={[
-        'flex w-full flex-col items-center justify-center px-6 py-4 text-center sm:w-[30%]',
+        'flex w-full flex-1 flex-col items-center justify-center px-6 py-4 text-center',
         cardInteractiveSurfaceClasses(),
         'disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0 disabled:hover:shadow-sm',
         'disabled:hover:bg-slate-50',
@@ -39,13 +39,13 @@ export default function RandomWikiPickerCard() {
       <img
         src="/images/random-cube-noBG.png"
         alt="Random article dice"
-          className="mb-3 h-20 w-20 flex-shrink-0"
+          className="mb-3 h-28 w-28 flex-shrink-0"
       />
-      <div className="text-base font-semibold text-primary">RANDOM ARTICLE</div>
+      <div className="text-base font-semibold text-primary">READ RANDOM ARTICLE</div>
       <div className="mt-2 text-sm text-slate-600">
         {isLoading ? 'Picking a random article...' : null}
         {!isLoading && !errorMessage
-          ? 'Read a random wikipedia article'
+          ? 'Draw random wiki page to Increase your general knowledge curiosity'
           : null}
         {errorMessage ? <span className="text-rose-700">Error: {errorMessage}</span> : null}
       </div>

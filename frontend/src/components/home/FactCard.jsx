@@ -57,7 +57,9 @@ function RedditStyleUpArrow({ className }) {
       aria-hidden
     >
       <path
-        fill="#FF4500"
+        fill="none"
+        stroke="#dc143c"
+        strokeWidth="2"
         d="M12 2 22 14 16 14 16 26 8 26 8 14 2 14 Z"
       />
     </svg>
@@ -73,7 +75,9 @@ function RedditStyleDownArrow({ className }) {
       aria-hidden
     >
       <path
-        fill="#9494FF"
+        fill="none"
+        stroke="#1E2952"
+        strokeWidth="2"
         d="M12 26 2 14 8 14 8 2 16 2 16 14 22 14 Z"
       />
     </svg>
@@ -165,7 +169,7 @@ export default function FactCard({
 
   return (
     <>
-    <div className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-stretch gap-x-3">
+    <div className="flex w-full min-w-0 flex-col">
       <div className="flex min-h-[240px] min-w-0 flex-col border border-slate-200 bg-white p-4 shadow-sm">
         <div className="flex min-h-0 flex-1 flex-col">
           <div className="flex min-h-0 flex-1 gap-3">
@@ -248,7 +252,7 @@ export default function FactCard({
         </div>
       </div>
       <div
-        className="flex min-h-0 w-[9.5rem] shrink-0 flex-col gap-2 self-stretch"
+        className="flex shrink-0 flex-row -mt-px"
         role="group"
         aria-label="Fact reactions"
       >
@@ -256,7 +260,7 @@ export default function FactCard({
           type="button"
           disabled={buttonsLocked}
           onClick={() => requireAuth(() => onVote('up'))}
-          className={`flex min-h-0 flex-1 flex-row items-center justify-center gap-2 rounded-none border px-2 py-2 text-left text-xs font-medium leading-tight text-slate-800 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 ${
+          className={`flex flex-1 flex-row items-center justify-center gap-2 rounded-none border px-3 py-2 text-sm font-medium leading-tight text-slate-800 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 ${
             existingVote === 'up'
               ? 'border-orange-400 bg-orange-50'
               : 'border-slate-300 bg-white'
@@ -269,7 +273,7 @@ export default function FactCard({
           type="button"
           disabled={buttonsLocked}
           onClick={() => requireAuth(() => onVote('skip'))}
-          className="flex shrink-0 flex-row items-center justify-center rounded-none border border-slate-300 bg-white px-2 py-2 text-center text-xs font-medium leading-tight text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex shrink-0 flex-row items-center justify-center rounded-none border border-slate-300 bg-white px-4 py-2 text-center text-sm font-medium leading-tight text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 -ml-px"
         >
           Ok…
         </button>
@@ -277,7 +281,7 @@ export default function FactCard({
           type="button"
           disabled={buttonsLocked}
           onClick={() => requireAuth(() => onVote('down'))}
-          className={`flex min-h-0 flex-1 flex-row items-center justify-center gap-2 rounded-none border px-2 py-2 text-left text-xs font-medium leading-tight text-slate-800 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 ${
+          className={`flex flex-1 flex-row items-center justify-center gap-2 rounded-none border px-3 py-2 text-sm font-medium leading-tight text-slate-800 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 -ml-px ${
             existingVote === 'down'
               ? 'border-indigo-400 bg-indigo-50'
               : 'border-slate-300 bg-white'
@@ -288,7 +292,7 @@ export default function FactCard({
         </button>
       </div>
       {voteError ? (
-        <div className="col-span-2 mt-3 text-center text-xs text-rose-700">
+        <div className="mt-2 text-center text-xs text-rose-700">
           {voteError}
         </div>
       ) : null}

@@ -216,7 +216,7 @@ export default function CraziestFactsSection() {
     !loadingMore
 
   return (
-    <section className="w-full bg-white">
+    <section className="min-w-0 flex-1 bg-white">
       <header className="flex flex-col gap-3 bg-primary px-4 py-3 sm:flex-row sm:items-center sm:justify-between md:px-6">
         <div className="flex min-w-0 items-center gap-2.5">
           <span className="shrink-0 text-white" aria-hidden>
@@ -309,7 +309,7 @@ export default function CraziestFactsSection() {
         </div>
       </header>
 
-      <div className="space-y-3 px-4 py-4 md:px-6">
+      <div className="space-y-3 px-4 pt-4 pb-0 md:px-6">
       {loadError ? (
         <div className="rounded-none border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900">
           {loadError}

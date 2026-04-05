@@ -6,7 +6,7 @@ export default function LatestReadsSection({ entries, userId, title = 'YOUR RECE
   const items = Array.isArray(entries) ? entries.slice(0, 4) : []
 
   return (
-    <section className="w-full space-y-1">
+    <section className="w-full space-y-1 border-b border-slate-200">
       <div className="flex flex-wrap items-center justify-between gap-2 bg-primary px-4 py-3">
         <div className="flex items-center gap-2.5">
           <span className="shrink-0 text-white" aria-hidden>

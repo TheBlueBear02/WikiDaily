@@ -82,7 +82,7 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white">
-      <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-4 gap-y-3 px-4 py-4">
+      <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-4 gap-y-3 px-4 py-2">
         <NavLink
           to="/"
           aria-label="Go to home"
@@ -91,12 +91,15 @@ export default function Navbar() {
           <img
             src="/images/site-logo-noBG.png"
             alt=""
-            className="h-12 w-12 shrink-0 object-contain"
+            className="h-16 w-16 shrink-0 object-contain"
             draggable={false}
           />
-          <div className="leading-tight">
-            <div className="text-sm font-semibold">WikiDaily</div>
-            <div className="text-xs text-slate-500">Knowledge is Power</div>
+          <div className="flex flex-col gap-0">
+            <div className="flex items-baseline gap-1 leading-none">
+              <span className="text-2xl font-black tracking-tight text-primary uppercase">Wiki</span>
+              <span className="text-2xl font-black tracking-tight text-secondary uppercase">Daily</span>
+            </div>
+            <div className="text-xs text-slate-500 leading-none mb-1">Expend your knowledge</div>
           </div>
         </NavLink>
 

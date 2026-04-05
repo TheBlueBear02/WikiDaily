@@ -6,7 +6,7 @@ export default function WizardImageCard() {
   return (
     <div
       className={[
-        'flex w-full items-stretch justify-between gap-4 px-6 py-4 sm:w-[70%]',
+        'flex w-full items-stretch justify-between gap-4 px-6 py-4 sm:w-[70%] h-[250px]',
         CARD_SURFACE_STATIC,
       ].join(' ')}
     >

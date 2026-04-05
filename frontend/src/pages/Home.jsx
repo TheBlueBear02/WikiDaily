@@ -9,12 +9,15 @@ import HeroAside from '../components/home/HeroAside'
 import StreakLeaderboard from '../components/home/StreakLeaderboard'
 import HeroAchievementsSection from '../components/home/HeroAchievementsSection'
 import RandomWikiSection from '../components/home/RandomWikiSection'
+import WizardImageCard from '../components/home/WizardImageCard'
 import CraziestFactsSection from '../components/home/CraziestFactsSection'
 import CollectiveReadingProgressBar from '../components/home/CollectiveReadingProgressBar'
 import ReadingProgressBar from '../components/home/ReadingProgressBar'
 import LatestReadsSection from '../components/home/LatestReadsSection'
 import InterestingArticlesSection from '../components/home/InterestingArticlesSection'
 import { useCollectiveReadingTotal } from '../hooks/useCollectiveReadingTotal'
+import DailyGameSection from '../components/home/DailyGameSection'
+import AdPlaceholder from '../components/home/AdPlaceholder'
 
 function HomeHeroRow({ userId, profile, dailySlot, collectiveReading }) {
   const { totalRead, isLoading, isError, onRetry } = collectiveReading
@@ -151,8 +154,16 @@ export default function Home() {
           onRetry: () => collectiveReadingQuery.refetch(),
         }}
       />
-      <RandomWikiSection />
-      <CraziestFactsSection />
+      <div className="flex items-stretch gap-2">
+        <CraziestFactsSection />
+        <div className="shrink-0 w-[30%] flex flex-col">
+          <RandomWikiSection />
+        </div>
+      </div>
+      <div className="flex items-stretch gap-4">
+        <AdPlaceholder size="rectangle" className="h-auto self-stretch" />
+        <DailyGameSection />
+      </div>
       {!interestingQuery.favoritesQuery.isLoading && !interestingQuery.favoritesQuery.isError ? (
         <InterestingArticlesSection entries={interestingQuery.favorites ?? []} userId={userId} />
       ) : null}
@@ -181,6 +192,10 @@ export default function Home() {
       {!latestReadsQuery.isLoading && !latestReadsQuery.isError ? (
         <LatestReadsSection entries={latestReadsQuery.data ?? []} userId={userId} />
       ) : null}
+      <div className="flex items-stretch gap-4">
+        <WizardImageCard />
+        <AdPlaceholder size="rectangle" />
+      </div>
     </div>
   )
 }
