@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { navigateToRandomWikiArticle } from '../../lib/navigateToRandomWikiArticle'
 import { cardInteractiveSurfaceClasses } from '../../lib/cardSurface'
+import { trackEvent } from '../../lib/analytics'
 
 export default function RandomWikiPickerCard() {
   const navigate = useNavigate()
@@ -12,6 +13,7 @@ export default function RandomWikiPickerCard() {
     if (isLoading) return
     setIsLoading(true)
     setErrorMessage(null)
+    trackEvent('reading', 'random_article_click')
 
     try {
       await navigateToRandomWikiArticle(navigate)

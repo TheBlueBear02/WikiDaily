@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 
 import { getSupabase } from '../lib/supabaseClient'
+import { trackEvent } from '../lib/analytics'
 
 async function ensureProfileExists({ supabase, userId, user } = {}) {
   if (!supabase) throw new Error('Missing supabase client.')
@@ -43,8 +44,9 @@ export function useVoteFact({ userId, user } = {}) {
       if (error) throw error
       return { status: 'ok' }
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       void queryClient.invalidateQueries({ queryKey: ['factVotes', userId] })
+      trackEvent('facts', 'vote', variables.vote)
     },
   })
 }

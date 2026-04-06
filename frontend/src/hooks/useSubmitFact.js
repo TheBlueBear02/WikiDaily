@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 
 import { getSupabase } from '../lib/supabaseClient'
+import { trackEvent } from '../lib/analytics'
 
 async function ensureProfileExists({ supabase, userId, user, profile } = {}) {
   if (!supabase) throw new Error('Missing supabase client.')
@@ -50,10 +51,11 @@ export function useSubmitFact({ userId, user, profile } = {}) {
       if (error) throw error
       return { status: 'ok' }
     },
-    onSuccess: async () => {
+    onSuccess: async (data, variables) => {
       if (userId) {
         await queryClient.invalidateQueries({ queryKey: ['myWikiFacts', userId] })
       }
+      trackEvent('facts', 'fact_submitted', variables.wikiSlug)
     },
   })
 }

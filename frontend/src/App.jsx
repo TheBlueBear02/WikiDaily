@@ -1,5 +1,6 @@
 import { Route, Routes, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
+import ReactGA from 'react-ga4'
 
 function ScrollToTop() {
   const { pathname } = useLocation()
@@ -23,6 +24,17 @@ import FreeGameResult from './pages/FreeGameResult.jsx'
 import UsernameSetup from './pages/UsernameSetup.jsx'
 
 export default function App() {
+  const location = useLocation()
+
+  useEffect(() => {
+    if (import.meta.env.PROD) {
+      ReactGA.send({
+        hitType: 'pageview',
+        page: location.pathname,
+      })
+    }
+  }, [location.pathname])
+
   return (
     <div className="min-h-full bg-white text-primary">
       <ScrollToTop />

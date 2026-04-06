@@ -8,6 +8,7 @@ import {
 } from '../lib/wikipedia'
 import { useGameSession } from '../hooks/useGameSession'
 import { useUserProgress } from '../hooks/useUserProgress'
+import { trackEvent } from '../lib/analytics'
 import GameHUD from '../components/game/GameHUD'
 import PathTrail from '../components/game/PathTrail'
 
@@ -179,6 +180,7 @@ export default function FreeGamePlay() {
             targetArticle: state.targetArticle,
           }
 
+          trackEvent('game', 'free_game_completed', undefined, finalClicks)
           if (!sessionIdRef.current) {
             // Guest — no session to save
             navigate('/game/free/result', { state: resultState })

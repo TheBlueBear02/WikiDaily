@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getSupabase } from '../lib/supabaseClient'
 import { yesterdayUtcYmd } from '../lib/date'
 import { normalizeWikiSlugForDb } from '../lib/wikipedia'
+import { trackEvent } from '../lib/analytics'
 
 const AUTH_USER_STALE_TIME_MS = 5 * 60 * 1000
 /** Keeps Navbar/header profile from refetching on every remount; still invalidated after reads. */
@@ -263,13 +264,21 @@ export function useUserProgress() {
         .eq('user_id', userId)
 
       if (profileErr) throw profileErr
-      return { status: 'ok' }
+      return { status: 'ok', nextCurrentStreak, normalizedSource, wikiSlug }
     },
     onSuccess: async (data) => {
       await queryClient.invalidateQueries({ queryKey: ['profile', userId] })
       await queryClient.invalidateQueries({ queryKey: ['readingHistory', userId] })
       if (data?.status === 'ok') {
         await queryClient.invalidateQueries({ queryKey: ['collectiveReadingTotal'] })
+        trackEvent('reading', 'mark_as_read', data.wikiSlug)
+        if (data.normalizedSource === 'random') {
+          trackEvent('reading', 'random_article_read', data.wikiSlug)
+        }
+        const streak = data.nextCurrentStreak
+        if (streak > 0 && streak % 7 === 0) {
+          trackEvent('engagement', 'streak_milestone', `${streak}_days`)
+        }
       }
     },
   })

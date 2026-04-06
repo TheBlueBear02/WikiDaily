@@ -11,6 +11,7 @@ import { useGameSession } from '../hooks/useGameSession'
 import { useUserProgress } from '../hooks/useUserProgress'
 import { getSupabase } from '../lib/supabaseClient'
 import { todayUtcYmd } from '../lib/date'
+import { trackEvent } from '../lib/analytics'
 import GameHUD from '../components/game/GameHUD'
 import PathTrail from '../components/game/PathTrail'
 
@@ -194,6 +195,7 @@ export default function GamePlay() {
             challengeId: challenge?.id,
           }
 
+          trackEvent('game', 'daily_game_completed', undefined, finalClicks)
           if (!sessionIdRef.current) {
             // Guest — no session to save
             navigate('/game/result', { state: resultState })
