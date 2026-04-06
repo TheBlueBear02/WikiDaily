@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(grep -A 50 \"^## Table: \\\\`reading_log\\\\`\" /d/Projects/WikiDaily/agents/WikiDaily_Database.md)"
+      "Bash(grep -A 50 \"^## Table: \\\\`reading_log\\\\`\" /d/Projects/WikiDaily/agents/WikiDaily_Database.md)",
+      "Bash(grep -r articles d:ProjectsWikiDailyfrontendsrc --include=*.js --include=*.jsx --include=*.ts --include=*.tsx)"
     ]
   }
 }

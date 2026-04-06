@@ -47,21 +47,18 @@ async function generateFreeChallenge() {
 
   const supabase = getSupabase()
 
-  // Step 4: upsert both articles
-  const { error: articlesError } = await supabase
-    .from('articles')
-    .upsert(
-      [
-        { wiki_slug: startArticle.wiki_slug, display_title: startArticle.display_title, image_url: startArticle.image_url, is_daily: false },
-        { wiki_slug: targetArticle.wiki_slug, display_title: targetArticle.display_title, image_url: targetArticle.image_url, is_daily: false },
-      ],
-      { onConflict: 'wiki_slug', ignoreDuplicates: true }
-    )
-  if (articlesError) throw articlesError
-
-  // Step 5: create game_challenges row via RPC (table is service-role only; RPC uses SECURITY DEFINER)
+  // Step 4: create game_challenges row and upsert articles via RPC.
+  // The RPC uses SECURITY DEFINER so it bypasses RLS on both tables,
+  // allowing anon (guest) users to play without hitting RLS errors.
   const { data: challengeId, error: challengeError } = await supabase
-    .rpc('create_free_game_challenge', { p_start_slug: startSlug, p_target_slug: targetSlug })
+    .rpc('create_free_game_challenge', {
+      p_start_slug:       startSlug,
+      p_target_slug:      targetSlug,
+      p_start_title:      startArticle.display_title,
+      p_start_image_url:  startArticle.image_url,
+      p_target_title:     targetArticle.display_title,
+      p_target_image_url: targetArticle.image_url,
+    })
   if (challengeError) throw challengeError
 
   return { challengeId, startArticle, targetArticle }
