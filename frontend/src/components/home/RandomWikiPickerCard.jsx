@@ -41,11 +41,11 @@ export default function RandomWikiPickerCard() {
         alt="Random article dice"
           className="mb-3 h-28 w-28 flex-shrink-0"
       />
-      <div className="text-base font-semibold text-primary">READ RANDOM ARTICLE</div>
+      <div className="text-base font-semibold text-primary">READ A RANDOM ARTICLE</div>
       <div className="mt-2 text-sm text-slate-600">
         {isLoading ? 'Picking a random article...' : null}
         {!isLoading && !errorMessage
-          ? 'Draw random wiki page to Increase your general knowledge curiosity'
+          ? 'Draw random wiki page to Increase your general knowledge and curiosity'
           : null}
         {errorMessage ? <span className="text-rose-700">Error: {errorMessage}</span> : null}
       </div>

@@ -29,51 +29,74 @@ function FreePlayCard({ userId, navigate }) {
     <div className="flex flex-col border border-slate-200 bg-white">
       <div className="flex items-center justify-between border-b border-slate-200 bg-slate-800 px-5 py-3">
         <div className="flex items-center gap-2.5">
-          <span className="text-sm font-bold uppercase tracking-wide text-white">Free Play</span>
+          <span className="text-sm font-bold uppercase tracking-wide text-white">Casual Game</span>
         </div>
         <span className="text-xs text-white/60">Unlimited rounds</span>
       </div>
-      <div className="flex flex-col gap-4 p-5">
-        <p className="text-sm text-slate-600">
-          Navigate from a random article to a famous one in as few clicks as possible. Play as many times as you want and beat your personal best.
-        </p>
-        {userId && (
-          <div className="flex gap-3">
-            {pbLoading ? (
-              <>
-                <div className="flex-1 animate-pulse rounded border border-slate-100 bg-slate-50 p-3">
-                  <div className="h-3 w-16 rounded bg-slate-200 mb-1" />
-                  <div className="h-5 w-10 rounded bg-slate-200" />
-                </div>
-                <div className="flex-1 animate-pulse rounded border border-slate-100 bg-slate-50 p-3">
-                  <div className="h-3 w-16 rounded bg-slate-200 mb-1" />
-                  <div className="h-5 w-10 rounded bg-slate-200" />
-                </div>
-              </>
-            ) : bestClicks || bestTime ? (
-              <>
-                <div className="flex-1 rounded border border-slate-100 bg-slate-50 p-3">
-                  <div className="text-xs text-slate-400">Fewest clicks</div>
-                  <div className="text-lg font-bold text-primary tabular-nums">
-                    {bestClicks ? bestClicks.clicks : '—'}
+      <div className="flex items-stretch gap-0">
+        {/* Left: text + personal bests + button */}
+        <div className="flex flex-1 flex-col gap-4 p-5">
+          <p className="text-sm text-slate-600">
+            Navigate from a random article to a famous one in as few clicks as possible. Play as many times as you want and beat your personal best.
+          </p>
+          {userId && (
+            <div className="flex gap-3">
+              {pbLoading ? (
+                <>
+                  <div className="flex-1 animate-pulse rounded border border-slate-100 bg-slate-50 p-3">
+                    <div className="h-3 w-16 rounded bg-slate-200 mb-1" />
+                    <div className="h-5 w-10 rounded bg-slate-200" />
                   </div>
-                </div>
-                <div className="flex-1 rounded border border-slate-100 bg-slate-50 p-3">
-                  <div className="text-xs text-slate-400">Fastest time</div>
-                  <div className="text-lg font-bold text-primary tabular-nums">
-                    {bestTime ? formatTime(bestTime.time_seconds) : '—'}
+                  <div className="flex-1 animate-pulse rounded border border-slate-100 bg-slate-50 p-3">
+                    <div className="h-3 w-16 rounded bg-slate-200 mb-1" />
+                    <div className="h-5 w-10 rounded bg-slate-200" />
                   </div>
-                </div>
-              </>
-            ) : null}
+                </>
+              ) : bestClicks || bestTime ? (
+                <>
+                  <div className="flex-1 rounded border border-slate-100 bg-slate-50 p-3">
+                    <div className="text-xs text-slate-400">Fewest clicks</div>
+                    <div className="text-lg font-bold text-primary tabular-nums">
+                      {bestClicks ? bestClicks.clicks : '—'}
+                    </div>
+                  </div>
+                  <div className="flex-1 rounded border border-slate-100 bg-slate-50 p-3">
+                    <div className="text-xs text-slate-400">Fastest time</div>
+                    <div className="text-lg font-bold text-primary tabular-nums">
+                      {bestTime ? formatTime(bestTime.time_seconds) : '—'}
+                    </div>
+                  </div>
+                </>
+              ) : null}
+            </div>
+          )}
+          <button
+            onClick={() => navigate('/game/free')}
+            className="self-start bg-secondary px-6 py-2.5 text-sm font-semibold text-white hover:bg-secondary-hover transition-colors"
+          >
+            Play Now
+          </button>
+        </div>
+        {/* Right: mystery article boxes */}
+        <div className="flex shrink-0 items-stretch gap-2 border-l border-slate-100 bg-slate-50 p-2">
+          <div className="relative flex h-full w-36 flex-col items-center justify-center overflow-hidden border-2 border-dashed border-primary">
+            <img src="/images/article images/humans.JPG" alt="" className="absolute inset-0 h-full w-full object-cover blur-sm scale-110" />
+            <div className="relative flex flex-col items-center">
+              <span className="text-5xl font-black text-white drop-shadow">?</span>
+              <span className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-white drop-shadow">Start</span>
+            </div>
           </div>
-        )}
-        <button
-          onClick={() => navigate('/game/free')}
-          className="self-start border border-slate-700 bg-slate-800 px-6 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 transition-colors"
-        >
-          Start Free Game →
-        </button>
+          <div className="flex items-center">
+            <span className="text-2xl font-bold text-primary">→</span>
+          </div>
+          <div className="relative flex h-full w-36 flex-col items-center justify-center overflow-hidden border-2 border-dashed border-primary">
+            <img src="/images/article images/William Nelson.jpg" alt="" className="absolute inset-0 h-full w-full object-cover blur-sm scale-110" />
+            <div className="relative flex flex-col items-center">
+              <span className="text-5xl font-black text-white drop-shadow">?</span>
+              <span className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-white drop-shadow">Target</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )

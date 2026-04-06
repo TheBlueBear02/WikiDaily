@@ -73,7 +73,7 @@ export function useFreeGameChallenge() {
   return useMutation({
     mutationFn: generateFreeChallenge,
     onSuccess: ({ challengeId, startArticle, targetArticle }) => {
-      navigate('/game/free/play', {
+      navigate('/game/free/preview', {
         state: { challengeId, startArticle, targetArticle },
       })
     },

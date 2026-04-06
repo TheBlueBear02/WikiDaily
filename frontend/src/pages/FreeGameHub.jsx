@@ -62,10 +62,27 @@ export default function FreeGameHub() {
     <div className="mx-auto max-w-2xl space-y-8 py-4">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-primary">Free Play</h1>
+        <h1 className="text-2xl font-bold text-primary">Casual Game</h1>
         <p className="mt-1 text-sm text-slate-500">
           Play as many games as you want. Navigate from a random article to a famous one in as few clicks as possible.
         </p>
+      </div>
+
+      {/* Start button */}
+      <div className="flex flex-col items-start gap-2">
+        <button
+          onClick={handleStart}
+          disabled={startMutation.isPending}
+          className="bg-secondary px-10 py-3 text-base font-extrabold text-white hover:bg-secondary-hover transition-colors shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          {startMutation.isPending ? 'Generating…' : 'Start New Game'}
+        </button>
+        {startMutation.isError && (
+          <p className="text-sm text-red-600">
+            {startMutation.error?.message ?? 'Failed to generate a game.'}{' '}
+            <button onClick={handleStart} className="underline font-medium">Try again</button>
+          </p>
+        )}
       </div>
 
       {/* Personal Bests */}
@@ -127,23 +144,6 @@ export default function FreeGameHub() {
           </div>
         )}
       </section>
-
-      {/* Start button */}
-      <div className="flex flex-col items-start gap-2">
-        <button
-          onClick={handleStart}
-          disabled={startMutation.isPending}
-          className="bg-secondary px-10 py-3 text-base font-extrabold text-white hover:bg-secondary-hover transition-colors shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
-        >
-          {startMutation.isPending ? 'Generating…' : 'Start New Game'}
-        </button>
-        {startMutation.isError && (
-          <p className="text-sm text-red-600">
-            {startMutation.error?.message ?? 'Failed to generate a game.'}{' '}
-            <button onClick={handleStart} className="underline font-medium">Try again</button>
-          </p>
-        )}
-      </div>
 
       {/* Recent games */}
       {userId && (

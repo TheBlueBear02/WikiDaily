@@ -18,6 +18,7 @@ import GamePlay from './pages/GamePlay.jsx'
 import GameResult from './pages/GameResult.jsx'
 import FreeGameHub from './pages/FreeGameHub.jsx'
 import FreeGamePlay from './pages/FreeGamePlay.jsx'
+import FreeGamePreview from './pages/FreeGamePreview.jsx'
 import FreeGameResult from './pages/FreeGameResult.jsx'
 import UsernameSetup from './pages/UsernameSetup.jsx'
 
@@ -35,6 +36,7 @@ export default function App() {
           <Route path="/game/play" element={<GamePlay />} />
           <Route path="/game/result" element={<GameResult />} />
           <Route path="/game/free" element={<FreeGameHub />} />
+          <Route path="/game/free/preview" element={<FreeGamePreview />} />
           <Route path="/game/free/play" element={<FreeGamePlay />} />
           <Route path="/game/free/result" element={<FreeGameResult />} />
           <Route path="/auth" element={<Auth />} />

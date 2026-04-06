@@ -38,7 +38,7 @@ export default function FreeGameResult() {
     const startTitle = startArticle?.display_title ?? 'Start'
     const targetTitle = targetArticle?.display_title ?? 'Target'
     const text = [
-      'WikiDaily Free Play',
+      'WikiDaily Casual Game',
       `${startTitle} → ${targetTitle} in ${clicks} ${clicks === 1 ? 'click' : 'clicks'} (${formatTime(timeSeconds)})`,
       `Can you beat me? ${appUrl}/game/free`,
     ].join('\n')
@@ -56,7 +56,7 @@ export default function FreeGameResult() {
         <h1 className="text-xl font-bold text-primary">
           You reached {targetArticle?.display_title ?? 'the target'}!
         </h1>
-        <p className="text-sm text-slate-500">Free Play</p>
+        <p className="text-sm text-slate-500">Casual Game</p>
       </div>
 
       {/* Stats */}

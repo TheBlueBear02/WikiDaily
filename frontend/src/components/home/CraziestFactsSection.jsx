@@ -7,6 +7,7 @@ import { useVoteFact } from '../../hooks/useVoteFact'
 import { useUserProgress } from '../../hooks/useUserProgress'
 import { navigateToRandomWikiArticle } from '../../lib/navigateToRandomWikiArticle'
 import FactCard from './FactCard'
+import FactsLeaderboard from './FactsLeaderboard'
 
 export default function CraziestFactsSection() {
   const navigate = useNavigate()
@@ -369,13 +370,14 @@ export default function CraziestFactsSection() {
             You&apos;ve seen all the facts! Read more articles and submit your
             own discoveries.
           </p>
+          <FactsLeaderboard limit={3} />
           <button
             type="button"
             onClick={() => void handleReadRandomArticle()}
             disabled={randomArticleLoading}
             className="inline-flex rounded-none bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-70"
           >
-            {randomArticleLoading ? 'Picking a random article…' : 'Read an article'}
+            {randomArticleLoading ? 'Picking a random article…' : 'Read a random article'}
           </button>
           {randomArticleError ? (
             <p className="text-sm text-rose-700">{randomArticleError}</p>

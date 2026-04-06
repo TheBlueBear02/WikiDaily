@@ -48,7 +48,7 @@ function filterNotDeleted(rows) {
  * signed-out readers see the same handles as signed-in viewers (FactCard only falls back to
  * auth/profile when the viewer owns the fact).
  */
-async function enrichFactsWithPublicSubmitters(supabase, facts) {
+export async function enrichFactsWithPublicSubmitters(supabase, facts) {
   const ids = [
     ...new Set(
       facts
