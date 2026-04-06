@@ -93,11 +93,11 @@ export default function ArticleCard({
   return (
     <article
       className={[
-        'relative h-full w-full overflow-hidden',
+        'relative h-full w-full overflow-hidden min-h-[640px]',
         bodyScrollable ? 'flex min-h-0 flex-col' : null,
         isCardClickable
-          ? 'rounded-none bg-primary shadow-sm cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-2'
-          : 'rounded-none bg-primary',
+          ? 'rounded-none shadow-sm cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-2'
+          : 'rounded-none',
         className,
       ]
         .filter(Boolean)
@@ -115,12 +115,13 @@ export default function ArticleCard({
       }
     >
       {isCollected ? (
-        <div className="absolute right-3 top-3 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-900">
+        <div className="absolute right-3 top-3 z-20 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-900">
           Collected
         </div>
       ) : null}
 
-      <div className="relative h-[40vh] w-full shrink-0">
+      {/* Full-cover image */}
+      <div className="absolute inset-0">
         {imageUrl ? (
           <img
             src={imageUrl}
@@ -130,56 +131,42 @@ export default function ArticleCard({
             referrerPolicy="no-referrer"
           />
         ) : (
-          <div
-            className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-100 via-slate-50 to-slate-200"
-            aria-hidden
-          >
-            <div className="flex items-center gap-3 rounded-none border border-slate-200 bg-white/70 px-4 py-3 text-slate-700 backdrop-blur">
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                className="text-slate-600"
-              >
-                <path
-                  d="M8 9.5C8 10.3284 7.32843 11 6.5 11C5.67157 11 5 10.3284 5 9.5C5 8.67157 5.67157 8 6.5 8C7.32843 8 8 8.67157 8 9.5Z"
-                  fill="currentColor"
-                />
-                <path
-                  d="M3 6.5C3 5.11929 4.11929 4 5.5 4H18.5C19.8807 4 21 5.11929 21 6.5V17.5C21 18.8807 19.8807 20 18.5 20H5.5C4.11929 20 3 18.8807 3 17.5V6.5ZM5.5 6C5.22386 6 5 6.22386 5 6.5V15.9L8.3 12.6C8.69052 12.2095 9.32369 12.2095 9.71421 12.6L12.2 15.0858L15.3 11.9858C15.6905 11.5953 16.3237 11.5953 16.7142 11.9858L19 14.2716V6.5C19 6.22386 18.7761 6 18.5 6H5.5Z"
-                  fill="currentColor"
-                />
-              </svg>
-              <div className="text-sm font-medium">No image available</div>
-            </div>
-          </div>
+          <div className="h-full w-full bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900" />
         )}
-
-        <div
-          className="pointer-events-none absolute bottom-4 start-0 flex items-center gap-2 bg-primary px-4 py-2.5 text-sm font-bold text-white"
-          aria-hidden
-        >
-          <span className="relative flex h-2.5 w-2.5">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-60 [animation-duration:1.5s]" />
-            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-white" />
-          </span>
-          {"Today's article"}
-        </div>
+        {/* Dark gradient overlay — stronger at the bottom where text lives */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-black/70" />
       </div>
 
+      {/* Top bar: badge left, date right */}
+      <div className="pointer-events-none absolute inset-x-0 top-4 z-10 flex items-center justify-between px-4">
+        <div className="flex items-center gap-2 text-base font-bold text-white" aria-hidden>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2" />
+            <path d="M3 9h18" stroke="currentColor" strokeWidth="2" />
+            <path d="M8 2v4M16 2v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+          {"Today's article"}
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-secondary opacity-60 [animation-duration:1.5s]" />
+            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-secondary" />
+          </span>
+        </div>
+        {date ? (
+          <div className="text-sm font-bold text-white">{date}</div>
+        ) : null}
+      </div>
+
+      {/* Text content — pinned to the bottom over the gradient */}
       <div
         className={[
-          'flex flex-col gap-6 p-5 py-7',
-          bodyScrollable ? 'min-h-0 flex-1 overflow-y-auto' : null,
+          'absolute inset-x-0 bottom-0 z-10 flex flex-col gap-6 p-5 py-7',
+          bodyScrollable ? 'overflow-y-auto' : null,
         ]
           .filter(Boolean)
           .join(' ')}
       >
         <div className="flex-1 space-y-4">
-          <div className="flex items-start justify-between gap-3">
-            <h2 className="text-4xl font-extrabold leading-tight tracking-tight text-white">
+          <h2 className="text-4xl font-extrabold leading-tight tracking-tight text-white">
             {isReadNowInternal ? (
               <Link
                 to={readNowHref}
@@ -200,13 +187,7 @@ export default function ArticleCard({
                 {displayTitle}
               </a>
             )}
-            </h2>
-            {date ? (
-              <div className="shrink-0 text-sm font-bold text-white">
-                {date}
-              </div>
-            ) : null}
-          </div>
+          </h2>
           <div className="h-1 w-1/4 bg-secondary" />
           {description ? (
             <p className="text-base leading-relaxed text-white/85">
