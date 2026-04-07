@@ -1,13 +1,6 @@
 import { Route, Routes, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
 import ReactGA from 'react-ga4'
-
-
-function ScrollToTop() {
-  const { pathname } = useLocation()
-  useEffect(() => { window.scrollTo(0, 0) }, [pathname])
-  return null
-}
 import Home from './pages/Home.jsx'
 import History from './pages/History.jsx'
 import Auth from './pages/Auth.jsx'
@@ -23,6 +16,12 @@ import FreeGamePlay from './pages/FreeGamePlay.jsx'
 import FreeGamePreview from './pages/FreeGamePreview.jsx'
 import FreeGameResult from './pages/FreeGameResult.jsx'
 import UsernameSetup from './pages/UsernameSetup.jsx'
+
+function ScrollToTop() {
+  const { pathname } = useLocation()
+  useEffect(() => { window.scrollTo(0, 0) }, [pathname])
+  return null
+}
 
 export default function App() {
   const location = useLocation()
