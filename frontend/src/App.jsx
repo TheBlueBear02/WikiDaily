@@ -1,6 +1,6 @@
 import { Route, Routes, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
-import { ReactGAImplementation as ReactGA } from 'react-ga4'
+import { sendPageview } from './lib/analytics.js'
 import Home from './pages/Home.jsx'
 import History from './pages/History.jsx'
 import Auth from './pages/Auth.jsx'
@@ -27,12 +27,7 @@ export default function App() {
   const location = useLocation()
 
   useEffect(() => {
-    if (import.meta.env.PROD) {
-      ReactGA.send({
-        hitType: 'pageview',
-        page: location.pathname,
-      })
-    }
+    sendPageview(location.pathname)
   }, [location.pathname])
 
   return (

@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(grep -A 50 \"^## Table: \\\\`reading_log\\\\`\" /d/Projects/WikiDaily/agents/WikiDaily_Database.md)",
-      "Bash(grep -r articles d:ProjectsWikiDailyfrontendsrc --include=*.js --include=*.jsx --include=*.ts --include=*.tsx)"
+      "Bash(grep -r articles d:ProjectsWikiDailyfrontendsrc --include=*.js --include=*.jsx --include=*.ts --include=*.tsx)",
+      "Bash(node -e \"import\\('react-ga4'\\).then\\(m => { console.log\\('default:', typeof m.default, typeof m.default?.initialize\\); console.log\\('ReactGAImplementation:', typeof m.ReactGAImplementation, typeof m.ReactGAImplementation?.initialize\\); console.log\\('keys:', Object.keys\\(m\\)\\) }\\)\")"
     ]
   }
 }
