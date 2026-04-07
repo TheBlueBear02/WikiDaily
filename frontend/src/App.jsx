@@ -1,6 +1,6 @@
 import { Route, Routes, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
-import ReactGA from 'react-ga4'
+import { ReactGAImplementation as ReactGA } from 'react-ga4'
 import Home from './pages/Home.jsx'
 import History from './pages/History.jsx'
 import Auth from './pages/Auth.jsx'

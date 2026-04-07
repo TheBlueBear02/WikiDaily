@@ -1,4 +1,4 @@
-import ReactGA from 'react-ga4'
+import { ReactGAImplementation as ReactGA } from 'react-ga4'
 
 const isProd = import.meta.env.PROD
 
