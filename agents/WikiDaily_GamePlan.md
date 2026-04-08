@@ -2,7 +2,7 @@
 
 ## Overview
 
-A daily Wikipedia navigation game. Every player starts on the same randomly selected article and must reach a pre-selected target article by clicking links within the rendered Wikipedia content. The objective is to reach the target in the fewest clicks or fastest time. Resets at midnight UTC like the daily article.
+A daily Wikipedia navigation game. Every player starts on the same randomly selected article and must reach a pre-selected target article by clicking links within the rendered Wikipedia content. The objective is to reach the target in the fewest clicks or fastest time. Resets at **05:00 UTC** like the daily article (matches the daily picker job schedule).
 
 ---
 

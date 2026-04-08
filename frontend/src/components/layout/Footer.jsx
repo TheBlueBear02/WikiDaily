@@ -7,6 +7,9 @@ const NAV_LINKS = [
   { to: '/profile', label: 'Profile' },
 ]
 
+/** Shown only in the footer (not duplicated in the main navbar). */
+const FOOTER_PAGE_LINKS = [{ to: '/about', label: 'About' }]
+
 export default function Footer() {
   return (
     <footer className="bg-primary mt-16 border-t-2 border-white/10">
@@ -45,6 +48,21 @@ export default function Footer() {
                         isActive
                           ? 'text-white'
                           : 'text-white/60 hover:text-white',
+                      ].join(' ')
+                    }
+                  >
+                    {label}
+                  </NavLink>
+                </li>
+              ))}
+              {FOOTER_PAGE_LINKS.map(({ to, label }) => (
+                <li key={to}>
+                  <NavLink
+                    to={to}
+                    className={({ isActive }) =>
+                      [
+                        'text-sm font-medium transition-colors duration-150',
+                        isActive ? 'text-white' : 'text-white/60 hover:text-white',
                       ].join(' ')
                     }
                   >

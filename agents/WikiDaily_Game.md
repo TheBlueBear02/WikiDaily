@@ -13,7 +13,7 @@ A **Wikipedia navigation challenge**: players start at one article and try to re
 ### Daily Challenge
 
 - **One shared puzzle per calendar day** for everyone: same **start** article and same **target** article.
-- **Resets at midnight UTC**, aligned with the daily article cadence (same “day” boundary as the rest of WikiDaily).
+- **Resets at 05:00 UTC**, aligned with the daily article cadence (matches the daily picker job schedule).
 - **Global leaderboard** with two rankings:
   - **Top scores by click count** (fewer clicks is better).
   - **Top scores by time** (faster is better).

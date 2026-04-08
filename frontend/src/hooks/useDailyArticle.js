@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
 
 import { getSupabase } from '../lib/supabaseClient'
-import { todayUtcYmd } from '../lib/date'
+import { todayDailyYmd } from '../lib/date'
 
 export function useDailyArticle() {
-  const todayStr = todayUtcYmd()
+  const todayStr = todayDailyYmd()
 
   const query = useQuery({
     queryKey: ['dailyArticle', todayStr],

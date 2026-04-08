@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
 import { getSupabase } from '../lib/supabaseClient'
-import { todayUtcYmd } from '../lib/date'
+import { todayDailyYmd } from '../lib/date'
 
 export function useGameChallenge() {
-  const todayUtc = todayUtcYmd()
+  const todayUtc = todayDailyYmd()
 
   return useQuery({
     queryKey: ['gameChallenge', todayUtc],

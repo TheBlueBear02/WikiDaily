@@ -6,6 +6,24 @@ export function todayUtcYmd() {
   return `${y}-${m}-${day}`
 }
 
+/**
+ * WikiDaily "daily day" boundary.
+ *
+ * The daily picker job runs at 05:00 UTC (see `.github/workflows/daily-picker.yml`).
+ * To keep the UI countdown and DB queries consistent, we treat "today" as the
+ * current UTC date *after* shifting by this boundary hour.
+ */
+export const DAILY_RESET_UTC_HOUR = 5
+
+/** "Today" in WikiDaily terms (YYYY-MM-DD), where the day rolls over at 05:00 UTC. */
+export function todayDailyYmd(now = new Date()) {
+  const shifted = new Date(now.getTime() - DAILY_RESET_UTC_HOUR * 3_600_000)
+  const y = shifted.getUTCFullYear()
+  const m = String(shifted.getUTCMonth() + 1).padStart(2, '0')
+  const d = String(shifted.getUTCDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
 export function yesterdayUtcYmd() {
   const d = new Date()
   d.setUTCDate(d.getUTCDate() - 1)
@@ -53,10 +71,14 @@ export function getLeaderboardCountdownParts(now = new Date()) {
 
 /** Next UTC midnight (start of next UTC day). */
 export function getNextDailyResetDate(now = new Date()) {
+  // Next boundary at DAILY_RESET_UTC_HOUR:00:00.000 UTC.
   const y = now.getUTCFullYear()
   const m = now.getUTCMonth()
   const d = now.getUTCDate()
-  return new Date(Date.UTC(y, m, d + 1, 0, 0, 0, 0))
+
+  const todayBoundary = Date.UTC(y, m, d, DAILY_RESET_UTC_HOUR, 0, 0, 0)
+  if (now.getTime() < todayBoundary) return new Date(todayBoundary)
+  return new Date(Date.UTC(y, m, d + 1, DAILY_RESET_UTC_HOUR, 0, 0, 0))
 }
 
 /** Remaining time until `getNextDailyResetDate`, broken into hour/minute/second parts. */

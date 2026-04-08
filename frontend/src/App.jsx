@@ -16,6 +16,7 @@ import FreeGamePlay from './pages/FreeGamePlay.jsx'
 import FreeGamePreview from './pages/FreeGamePreview.jsx'
 import FreeGameResult from './pages/FreeGameResult.jsx'
 import UsernameSetup from './pages/UsernameSetup.jsx'
+import About from './pages/About.jsx'
 
 function ScrollToTop() {
   const { pathname } = useLocation()
@@ -50,6 +51,7 @@ export default function App() {
           <Route path="/setup-username" element={<UsernameSetup />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/wiki/:wikiSlug" element={<WikiIframe />} />
+          <Route path="/about" element={<About />} />
         </Routes>
       </main>
       <Footer />
