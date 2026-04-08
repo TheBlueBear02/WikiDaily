@@ -154,14 +154,17 @@ export default function Home() {
           onRetry: () => collectiveReadingQuery.refetch(),
         }}
       />
-      <div className="flex items-stretch gap-2">
+      <div className="flex flex-col items-stretch gap-3 md:flex-row md:gap-2">
         <CraziestFactsSection />
-        <div className="shrink-0 w-[30%] flex flex-col">
+        <div className="shrink-0 w-[30%] w-full flex flex-col md:w-[30%]">
           <RandomWikiSection />
         </div>
       </div>
-      <div className="flex items-stretch gap-4">
-        <AdPlaceholder size="rectangle" className="h-auto self-stretch" />
+      <div className="flex flex-col items-stretch gap-4 md:flex-row">
+        <AdPlaceholder
+          size="rectangle"
+          className="h-auto self-stretch w-full max-w-full sm:w-[300px] md:w-[300px]"
+        />
         <DailyGameSection />
       </div>
       {!interestingQuery.favoritesQuery.isLoading && !interestingQuery.favoritesQuery.isError ? (
@@ -192,9 +195,9 @@ export default function Home() {
       {!latestReadsQuery.isLoading && !latestReadsQuery.isError ? (
         <LatestReadsSection entries={latestReadsQuery.data ?? []} userId={userId} />
       ) : null}
-      <div className="flex items-stretch gap-4">
+      <div className="flex flex-col items-stretch gap-4 md:flex-row">
         <WizardImageCard />
-        <AdPlaceholder size="rectangle" />
+        <AdPlaceholder size="rectangle" className="w-full max-w-full sm:w-[300px] md:w-[300px]" />
       </div>
     </div>
   )

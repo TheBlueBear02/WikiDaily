@@ -171,6 +171,11 @@ export default function CraziestFactsSection() {
         return
       }
 
+      if (!userId) {
+        advanceCard()
+        return
+      }
+
       setVoteError(null)
       try {
         await voteMutation.mutateAsync({
@@ -184,7 +189,7 @@ export default function CraziestFactsSection() {
         )
       }
     },
-    [advanceCard, voteMutation],
+    [advanceCard, userId, voteMutation],
   )
 
   const current = queue[0]

@@ -12,9 +12,9 @@ A community-driven section on the Home page where users discover interesting fac
 1. The Home page shows a single fact card
 2. **Open the source article:** Clicking the fact quote, submitter row, or article title navigates to `/wiki/:wikiSlug` with router `state` that includes `highlightFactText` (the stored fact string), `displayTitle`, and `source: 'link'`. The in-app reader (`WikiIframe`) finds that text inside the Parsoid HTML (whitespace-normalized match, with an optional shorter prefix fallback for very long quotes), wraps it in a yellow `<mark class="wikidaily-fact-highlight">`, and scrolls it into view (`smooth`, `block: 'center'`). If the text cannot be found (article drift, markup differences), the article still loads with no highlight.
 3. User reads the fact and chooses one of three actions:
-   - **"Wow really?"** — records an up vote, then **advances to the next fact immediately** after the mutation succeeds (no card animation)
-   - **"Ok..."** — skips silently, no vote recorded, **next fact immediately**
-   - **"Knew already"** — records a down vote, then **next fact immediately** after the mutation succeeds
+   - **"Wow really?"** — if **signed in**, records an up vote, then **advances to the next fact immediately** after the mutation succeeds (no card animation). If **signed out**, **advances only** — no vote row and no change to fact counts / `net_score`.
+   - **"Ok..."** — skips silently, no vote recorded, **next fact immediately** (same for signed-in and signed-out)
+   - **"Knew already"** — if **signed in**, records a down vote, then **next fact immediately** after the mutation succeeds. If **signed out**, **advances only** — no vote row and no change to fact counts / `net_score`.
 4. **No flip / fade between facts** — the queue simply shows the next card. **No net score line on the card** (scores still drive **Most Popular** sort in the database)
 5. When the queue runs out — a friendly end state is shown
 
@@ -63,7 +63,7 @@ A community-driven section on the Home page where users discover interesting fac
 
 ## Transitions between facts
 
-There is **no** 3D flip, opacity fade, or timed delay after a vote or skip. `CraziestFactsSection` pops the current fact from the queue and React re-renders `FactCard` with the next row — buttons stay disabled only while `useVoteFact` is pending for up/down.
+There is **no** 3D flip, opacity fade, or timed delay after a vote or skip. `CraziestFactsSection` pops the current fact from the queue and React re-renders `FactCard` with the next row — buttons stay disabled only while `useVoteFact` is pending for up/down (signed-in users only; signed-out up/down advance without calling the mutation).
 
 ---
 

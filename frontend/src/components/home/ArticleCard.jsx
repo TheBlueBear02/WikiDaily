@@ -93,7 +93,7 @@ export default function ArticleCard({
   return (
     <article
       className={[
-        'relative h-full w-full overflow-hidden min-h-[640px]',
+        'relative h-full w-full overflow-hidden min-h-[420px] md:min-h-[640px]',
         bodyScrollable ? 'flex min-h-0 flex-col' : null,
         isCardClickable
           ? 'rounded-none shadow-sm cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-2'
@@ -138,8 +138,8 @@ export default function ArticleCard({
       </div>
 
       {/* Top bar: badge left, date right */}
-      <div className="pointer-events-none absolute inset-x-0 top-4 z-10 flex items-center justify-between px-4">
-        <div className="flex items-center gap-2 text-base font-bold text-white" aria-hidden>
+      <div className="pointer-events-none absolute inset-x-0 top-3 z-10 flex items-center justify-between px-3 sm:top-4 sm:px-4">
+        <div className="flex items-center gap-2 text-sm font-bold text-white sm:text-base" aria-hidden>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2" />
             <path d="M3 9h18" stroke="currentColor" strokeWidth="2" />
@@ -152,21 +152,21 @@ export default function ArticleCard({
           </span>
         </div>
         {date ? (
-          <div className="text-sm font-bold text-white">{date}</div>
+          <div className="text-xs font-bold text-white sm:text-sm">{date}</div>
         ) : null}
       </div>
 
       {/* Text content — pinned to the bottom over the gradient */}
       <div
         className={[
-          'absolute inset-x-0 bottom-0 z-10 flex flex-col gap-6 p-5 py-7',
+          'absolute inset-x-0 bottom-0 z-10 flex flex-col gap-5 p-4 py-5 sm:gap-6 sm:p-5 sm:py-7',
           bodyScrollable ? 'overflow-y-auto' : null,
         ]
           .filter(Boolean)
           .join(' ')}
       >
         <div className="flex-1 space-y-4">
-          <h2 className="text-4xl font-extrabold leading-tight tracking-tight text-white">
+          <h2 className="break-words text-2xl font-extrabold leading-tight tracking-tight text-white sm:text-3xl md:text-4xl">
             {isReadNowInternal ? (
               <Link
                 to={readNowHref}
@@ -190,11 +190,11 @@ export default function ArticleCard({
           </h2>
           <div className="h-1 w-1/4 bg-secondary" />
           {description ? (
-            <p className="text-base leading-relaxed text-white/85">
+            <p className="text-sm leading-relaxed text-white/85 sm:text-base">
               {descriptionPreview(description)}
             </p>
           ) : (
-            <p className="text-base text-white/85">No description available.</p>
+            <p className="text-sm text-white/85 sm:text-base">No description available.</p>
           )}
         </div>
 

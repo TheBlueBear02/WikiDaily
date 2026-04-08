@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { NavLink, useNavigate } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
 
 import { getCurrentLevel } from '../../lib/levels'
 import { initialsFromUsername } from '../../lib/profileAvatar'
-import { buildAuthUrl } from '../../lib/returnTo'
 import ProfileTooltip from '../shared/ProfileTooltip'
 
 const FACT_SUBMITTER_TIP_HIDE_MS = 180
@@ -94,8 +93,6 @@ export default function FactCard({
   profile,
   existingVote,
 }) {
-  const navigate = useNavigate()
-
   const isOwnFact = Boolean(
     userId && fact?.user_id && userId === fact.user_id,
   )
@@ -153,14 +150,6 @@ export default function FactCard({
       ? `fact-submitter-tip-${fact.user_id}`
       : 'fact-submitter-tip'
 
-  function requireAuth(fn) {
-    if (!userId) {
-      navigate(buildAuthUrl({ returnTo: '/' }))
-      return
-    }
-    fn()
-  }
-
   const wikiArticleState = {
     displayTitle: fact.display_title,
     source: 'link',
@@ -172,8 +161,8 @@ export default function FactCard({
     <div className="flex w-full min-w-0 flex-col">
       <div className="flex min-h-[240px] min-w-0 flex-col border border-slate-200 bg-white p-4 shadow-sm">
         <div className="flex min-h-0 flex-1 flex-col">
-          <div className="flex min-h-0 flex-1 gap-3">
-            <blockquote className="min-h-0 flex-1 overflow-y-auto text-base leading-relaxed text-black">
+          <div className="flex min-h-0 flex-1 flex-col gap-3 sm:flex-row">
+            <blockquote className="min-h-0 flex-1 overflow-y-auto text-sm leading-relaxed text-black sm:text-base">
               {fact.fact_text}{' '}
               <NavLink
                 to={`/wiki/${encodeURIComponent(fact.wiki_slug)}`}
@@ -188,7 +177,7 @@ export default function FactCard({
                 src={fact.image_url}
                 alt=""
                 aria-hidden
-                className="w-32 shrink-0 self-stretch rounded-sm object-contain"
+                className="h-32 w-full shrink-0 rounded-sm object-cover sm:h-auto sm:w-32 sm:self-stretch sm:object-contain"
               />
             ) : null}
           </div>
@@ -252,19 +241,19 @@ export default function FactCard({
         </div>
       </div>
       <div
-        className="flex shrink-0 flex-row -mt-px"
+        className="flex shrink-0 flex-col sm:flex-row -mt-px"
         role="group"
         aria-label="Fact reactions"
       >
         <button
           type="button"
           disabled={buttonsLocked}
-          onClick={() => requireAuth(() => onVote('up'))}
+          onClick={() => onVote('up')}
           className={`flex flex-1 flex-row items-center justify-center gap-2 rounded-none border px-3 py-2 text-sm font-medium leading-tight text-slate-800 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 ${
             existingVote === 'up'
               ? 'border-orange-400 bg-orange-50'
               : 'border-slate-300 bg-white'
-          }`}
+          } min-h-[44px] py-3 sm:py-2 w-full`}
         >
           <RedditStyleUpArrow className="h-5 w-4 shrink-0" />
           <span className="min-w-0">Wow really?</span>
@@ -272,20 +261,20 @@ export default function FactCard({
         <button
           type="button"
           disabled={buttonsLocked}
-          onClick={() => requireAuth(() => onVote('skip'))}
-          className="flex shrink-0 flex-row items-center justify-center rounded-none border border-slate-300 bg-white px-4 py-2 text-center text-sm font-medium leading-tight text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 -ml-px"
+          onClick={() => onVote('skip')}
+          className="flex flex-1 flex-row items-center justify-center rounded-none border border-slate-300 bg-white px-4 py-2 text-center text-sm font-medium leading-tight text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 min-h-[44px] py-3 sm:py-2 w-full -mt-px sm:-mt-0 sm:-ml-px"
         >
           Ok…
         </button>
         <button
           type="button"
           disabled={buttonsLocked}
-          onClick={() => requireAuth(() => onVote('down'))}
+          onClick={() => onVote('down')}
           className={`flex flex-1 flex-row items-center justify-center gap-2 rounded-none border px-3 py-2 text-sm font-medium leading-tight text-slate-800 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 -ml-px ${
             existingVote === 'down'
               ? 'border-indigo-400 bg-indigo-50'
               : 'border-slate-300 bg-white'
-          }`}
+          } min-h-[44px] py-3 sm:py-2 w-full -mt-px sm:-mt-0`}
         >
           <RedditStyleDownArrow className="h-5 w-4 shrink-0" />
           <span className="min-w-0">Knew already</span>
