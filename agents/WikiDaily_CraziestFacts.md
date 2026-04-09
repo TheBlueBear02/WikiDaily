@@ -306,7 +306,7 @@ Props: `{ fact, onVote, buttonsLocked, voteError, userId, user, profile }` (pare
 - Root wrapper: `grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-stretch gap-x-3` (full width of the Craziest Facts body column); fragment wraps grid + optional **`createPortal`** tooltip
 - Bordered card column: `min-h-[240px]`, `p-4`, border + shadow + hover lift; fact quote scrolls (`flex-1` + `min-h-0` + `overflow-y-auto`); label row + divider + footer pinned below quote; **submitter handle** rendered **without** `@`
 - **Submitter hover:** when `fact.user_id` is set, **`useFactSubmitterTooltip`** + **`FactSubmitterTooltip`** (see Card Layout bullet)
-- Reaction buttons in a separate grid column (`w-[9.5rem]`, `self-stretch`, `flex-col gap-2`); up/down `flex-1`, **Ok…** `shrink-0 py-2`; up/down rows are `flex-row` with wider Reddit-style arrows (`w-6`) left of text; vote error row `col-span-2` below
+- **Mobile responsiveness:** reaction buttons stack vertically below `sm` (`flex-col`), switch back to a row at `sm+` (`sm:flex-row`), and each button enforces a minimum 44px tap target height. The fact quote + thumbnail stack below `sm` and switch to side-by-side at `sm+`; the thumbnail uses `object-cover` on mobile so it fits without squeezing the quote.
 
 **Button states:**
 - Default: outlined, muted

@@ -301,7 +301,10 @@ export default function CollectiveReadingProgressBar({
             </div>
 
             <div
-              className={compact ? 'relative -mt-1 h-3 w-full leading-none' : 'relative -mt-2 h-4 w-full leading-none'}
+              className={[
+                compact ? 'relative -mt-1 h-3 w-full leading-none' : 'relative -mt-2 h-4 w-full leading-none',
+                'hidden md:block',
+              ].join(' ')}
               aria-hidden
             >
               {visible.map((m) => {

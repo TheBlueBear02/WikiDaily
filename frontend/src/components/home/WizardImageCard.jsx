@@ -6,7 +6,7 @@ export default function WizardImageCard() {
   return (
     <div
       className={[
-        'flex w-full items-stretch justify-between gap-4 px-6 py-4 sm:w-[70%] h-[250px]',
+        'flex w-full flex-col items-stretch justify-between gap-4 px-4 py-3 sm:w-[70%] sm:flex-row sm:px-6 sm:py-4 h-auto sm:h-[250px]',
         CARD_SURFACE_STATIC,
       ].join(' ')}
     >
@@ -27,7 +27,7 @@ export default function WizardImageCard() {
         <img
           src={WIZARD_IMAGE_SRC}
           alt="Wizard helper"
-          className="h-32 w-auto max-w-full object-contain sm:h-56"
+          className="h-28 w-auto max-w-full object-contain sm:h-56"
           loading="lazy"
         />
       </div>

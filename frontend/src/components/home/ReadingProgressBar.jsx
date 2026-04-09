@@ -299,7 +299,7 @@ export default function ReadingProgressBar({ userId, totalRead, isLoading }) {
         </div>
 
         <div
-          className="relative -mt-2 h-4 w-full leading-none"
+          className="relative -mt-2 hidden h-4 w-full leading-none md:block"
           aria-hidden
         >
           {visible.map((m) => {

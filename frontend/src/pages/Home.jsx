@@ -25,7 +25,7 @@ function HomeHeroRow({ userId, profile, dailySlot, collectiveReading }) {
   return (
     <section className="space-y-4">
       <div className="flex flex-col gap-4 md:flex-row md:items-stretch md:gap-6">
-        <HeroAside>
+        <HeroAside className="order-2 md:order-1">
           <div className="flex min-h-0 flex-1 flex-col gap-3 bg-slate-50/70">
             <div className="shrink-0 border border-slate-200 bg-white">
               <HeroAchievementsSection userId={userId} profile={profile} />
@@ -35,7 +35,7 @@ function HomeHeroRow({ userId, profile, dailySlot, collectiveReading }) {
             </div>
           </div>
         </HeroAside>
-        <div className="flex min-h-0 w-full shrink-0 flex-col gap-3 md:w-[70%]">
+        <div className="order-1 flex min-h-0 w-full shrink-0 flex-col gap-3 md:order-2 md:w-[70%]">
           {/* flex-1: takes all space above the community strip (same visual weight as ReadingProgressBar below). */}
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{dailySlot}</div>
           <div className="shrink-0">

@@ -15,11 +15,11 @@ export default function DailyGameSection() {
   return (
     <section className="flex-1 border border-slate-200 bg-white">
       {/* Images edge-to-edge with header + title overlaid at top */}
-      <div className="relative flex">
+      <div className="relative flex flex-col md:flex-row">
         {isLoading ? (
           <>
-            <div className="h-72 flex-1 animate-pulse bg-slate-200" />
-            <div className="h-72 flex-1 animate-pulse bg-slate-100" />
+            <div className="h-56 flex-1 animate-pulse bg-slate-200 sm:h-64 md:h-72" />
+            <div className="h-56 flex-1 animate-pulse bg-slate-100 sm:h-64 md:h-72" />
           </>
         ) : challenge ? (
           <>
@@ -45,7 +45,7 @@ export default function DailyGameSection() {
                 </div>
                 <span className="text-xs tabular-nums text-white/70">New in: {countdownLabel}</span>
               </div>
-              <p className="text-2xl font-black leading-snug text-white drop-shadow-lg">
+              <p className="text-lg font-black leading-snug text-white drop-shadow-lg sm:text-2xl">
                 How fast can you get from{' '}
                 <span className="text-white underline decoration-secondary decoration-[3px] underline-offset-4">{startArticle?.display_title}</span>
                 {' '}to{' '}
@@ -54,7 +54,7 @@ export default function DailyGameSection() {
             </div>
 
             <div className="relative flex-1 overflow-hidden">
-              <img src={startArticle?.image_url} alt="" className="h-72 w-full object-cover" />
+              <img src={startArticle?.image_url} alt="" className="h-56 w-full object-cover sm:h-64 md:h-72" />
               <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/60 to-transparent p-3">
                 <span className="text-sm font-semibold text-white drop-shadow">{startArticle?.display_title}</span>
               </div>
@@ -63,7 +63,7 @@ export default function DailyGameSection() {
               </div>
             </div>
             <div className="relative flex-1 overflow-hidden">
-              <img src={targetArticle?.image_url} alt="" className="h-72 w-full object-cover" />
+              <img src={targetArticle?.image_url} alt="" className="h-56 w-full object-cover sm:h-64 md:h-72" />
               <div className="absolute inset-0 flex items-end justify-end bg-gradient-to-t from-black/60 to-transparent p-3">
                 <span className="text-sm font-semibold text-white drop-shadow">{targetArticle?.display_title}</span>
               </div>
@@ -73,10 +73,10 @@ export default function DailyGameSection() {
             </div>
 
             {/* CTA overlaid at the bottom of the images */}
-            <div className="absolute bottom-0 left-0 right-0 flex justify-center pb-5 z-20">
+            <div className="absolute bottom-0 left-0 right-0 z-20 flex justify-center px-4 pb-5">
               <NavLink
                 to="/game"
-                className="bg-secondary px-10 py-3 text-center text-base font-extrabold text-white hover:bg-secondary-hover transition-colors shadow-lg"
+                className="min-h-[44px] w-full bg-secondary px-6 py-3 text-center text-base font-extrabold text-white hover:bg-secondary-hover transition-colors shadow-lg sm:w-auto sm:px-10"
               >
                 Play Now
               </NavLink>
