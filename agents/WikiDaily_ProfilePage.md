@@ -154,12 +154,13 @@ Each card:
 
 **Layout:** full-width section with a section label above it: `"Reading activity"` in small uppercase muted sans-serif.
 
-**What it is:** a GitHub-style calendar grid. 52 columns (weeks) × 7 rows (days Mon–Sun). Each cell is a small square (12px × 12px) with 3px gap.
+**What it is:** a GitHub-style calendar grid. **7 rows** (days Mon–Sun) × **N columns** (weeks), each cell a small square (12px × 12px) with 3px gap.
 
 **Date window & alignment (important):**
-- Render **52 full weeks** aligned to **UTC Mondays**.
-- Compute `endMonday` = Monday of the current UTC week, and `startMonday = endMonday - 51 weeks`.
-- Render all \(52 × 7 = 364\) cells for dates from `startMonday` through the end of the last week.
+- Aligned to **UTC Mondays**.
+- **Viewport `md` and up** (`min-width: 768px`): **52 full weeks** (~1 year). `endMonday` = Monday of the current UTC week; `startMonday = endMonday - 51 weeks`. \(52 × 7 = 364\) cells.
+- **Below `md`** (narrow / mobile): **13 weeks** (~three months), ending on the same current week: `startMonday = endMonday - 12 weeks`.
+- Month labels above the grid: on the full-year view, show abbreviated months on alternating months to reduce crowding; on the compact view, label **every** month that appears in the window.
 - Cells after *today (UTC)* are “future” cells and should be visually suppressed (dimmed) and should not show tooltips.
 
 **Cell states:**
@@ -183,15 +184,15 @@ Each card:
 
 ### 3.5. Achievements
 
-**Placement:** after **Activity Heatmap**, before **Interesting articles** (`FavoritesGrid`).
+**Placement:** after **Reading history** (`ReadingHistoryGrid`), **before** the **Danger zone** (delete account) block.
 
 **Layout:**
 - Section label: `Achievements`
 - Right-aligned count: `X / 14 unlocked`
 - Compact vertical spacing and narrower card columns than a full-width achievements view
 - 3 grouped rows (one per achievement `type`), each with:
-  - A compact row header: type label (left) and a **text-only** progress summary (right) — current/next threshold, next achievement label, or `"All unlocked"` — no progress bar
-  - A horizontal, scrollable strip of achievement cards for that type (`AchievementCard` with `compact` sizing)
+  - A compact row header: type label (left) and a **text-only** progress summary (right) — current/next threshold, next achievement label, or `"All unlocked"` — no progress bar. Header uses `flex-wrap` so long progress text can wrap on narrow viewports without horizontal overflow.
+  - **Below `md`:** achievement cards for that type use a **2-column CSS grid** (no horizontal scrolling). **`md` and up:** a horizontal, scrollable strip of fixed-width cards (~132px) as before (`AchievementCard` with `compact` sizing).
 
 **Card states:**
 - Unlocked: full opacity, subtle teal accent border; shows icon, label, description, and `unlocked_at` formatted as `"Unlocked Mar 29, 2026"`
@@ -214,7 +215,7 @@ Each card:
 
 ### 3.75. Your notes
 
-**Placement:** after **Achievements**, before **Interesting articles** (`FavoritesGrid`).
+**Placement:** after **Activity Heatmap**, before **Interesting articles** (`FavoritesGrid`) and the other grids below it on the page.
 
 **What it is:** a grid of the user’s saved article notes, ordered by most recently updated.
 
@@ -303,6 +304,14 @@ With a button linking to `/`.
 
 ---
 
+### 6. Danger zone (delete account)
+
+**Placement:** **last** section on the profile page — **after** **Achievements** (which follows **Reading history**).
+
+**What it is:** inline `DeleteAccountSection` in `Profile.jsx`: bordered “Danger zone” area with **Delete account** flow (confirm phrase, irreversible copy, cancel).
+
+---
+
 ## Component Breakdown
 
 ```
@@ -320,11 +329,8 @@ Profile.jsx  (page)
 │
 ├── ActivityHeatmap.jsx
 │     ├── Month labels row
-│     ├── Day grid (52 × 7 cells)
+│     ├── Day grid (52×7 desktop, 13×7 narrow)
 │     └── Cell hover tooltip
-│
-├── AchievementsGrid.jsx
-│     └── AchievementCard.jsx × N (per type; `compact` on Profile)
 │
 ├── NotesGrid.jsx
 │     └── NoteCard.jsx × N
@@ -335,12 +341,17 @@ Profile.jsx  (page)
 │           ├── Title (2-line clamp)
 │           └── Marked date
 │
-└── ReadingHistoryGrid.jsx
-      └── ArticleHistoryCard.jsx × N
-            ├── Thumbnail (or placeholder)
-            ├── Source badge (Daily / Random)
-            ├── Title (2-line clamp)
-            └── Date read
+├── ReadingHistoryGrid.jsx
+│     └── ArticleHistoryCard.jsx × N
+│           ├── Thumbnail (or placeholder)
+│           ├── Source badge (Daily / Random)
+│           ├── Title (2-line clamp)
+│           └── Date read
+│
+├── AchievementsGrid.jsx
+│     └── AchievementCard.jsx × N (per type; `compact` on Profile)
+│
+└── DeleteAccountSection (danger zone — inline in `Profile.jsx`; last on page)
 ```
 
 ---

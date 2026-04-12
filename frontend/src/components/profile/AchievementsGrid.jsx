@@ -27,13 +27,13 @@ function SkeletonCard() {
 function SkeletonRow() {
   return (
     <div className="rounded-none border border-slate-200 bg-white">
-      <div className="flex items-center justify-between gap-2 border-b border-slate-200 px-2 py-1.5">
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-b border-slate-200 px-2 py-1.5">
         <div className="h-2.5 w-16 animate-pulse rounded bg-slate-200" />
-        <div className="h-2.5 w-28 animate-pulse rounded bg-slate-200" />
+        <div className="h-2.5 w-28 max-w-full animate-pulse rounded bg-slate-200" />
       </div>
-      <div className="flex gap-2 overflow-x-auto px-2 py-2">
+      <div className="grid grid-cols-2 gap-2 px-2 py-2 md:flex md:flex-nowrap md:gap-2 md:overflow-x-auto">
         {Array.from({ length: 6 }).map((_, idx) => (
-          <div key={idx} className="min-w-[132px] max-w-[132px]">
+          <div key={idx} className="min-w-0 md:min-w-[132px] md:max-w-[132px] md:shrink-0">
             <SkeletonCard />
           </div>
         ))}
@@ -102,21 +102,23 @@ export default function AchievementsGrid({
 
               return (
                 <div key={type} className="rounded-none border border-slate-200 bg-white">
-                  <div className="flex items-center justify-between gap-2 border-b border-slate-200 px-2 py-1.5">
-                    <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                  <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-b border-slate-200 px-2 py-1.5">
+                    <div className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
                       {meta.title}
                     </div>
-                    <div className="max-w-[min(100%,14rem)] text-right text-[10px] font-medium leading-tight text-slate-500">
+                    <div className="min-w-0 max-w-full text-right text-[10px] font-medium leading-tight text-slate-500 md:max-w-[14rem]">
                       {label}
                     </div>
                   </div>
 
-                  <div className="flex gap-2 overflow-x-auto px-2 py-2">
+                  <div className="grid grid-cols-2 gap-2 px-2 py-2 md:flex md:flex-nowrap md:gap-2 md:overflow-x-auto">
                     {defsForType.length === 0 ? (
-                      <div className="text-[11px] text-slate-500">No achievements yet.</div>
+                      <div className="col-span-2 text-[11px] text-slate-500 md:col-span-auto">
+                        No achievements yet.
+                      </div>
                     ) : (
                       defsForType.map((a) => (
-                        <div key={a?.id} className="min-w-[132px] max-w-[132px]">
+                        <div key={a?.id} className="min-w-0 md:min-w-[132px] md:max-w-[132px] md:shrink-0">
                           <AchievementCard
                             achievement={a}
                             isUnlocked={unlockedSet.has(a?.id)}

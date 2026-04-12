@@ -151,8 +151,32 @@ export default function Navbar() {
           </div>
 
           {userId ? (
-            <div className="md:hidden">
-              <StreakBadge />
+            <div className="md:hidden flex items-center gap-2">
+              <StreakBadge className="h-10 w-10" />
+
+              <NavLink
+                to="/profile"
+                aria-label="Go to profile"
+                className="flex h-9 w-9 items-center justify-center focus:outline-none focus:ring-2 focus:ring-slate-300"
+                onClick={() => setMenuOpen(false)}
+              >
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt=""
+                    aria-hidden="true"
+                    referrerPolicy="no-referrer"
+                    className="h-8 w-8 shrink-0 rounded-full object-cover ring-1 ring-slate-200"
+                  />
+                ) : (
+                  <span
+                    className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-amber-100 text-xs font-semibold text-amber-950 ring-1 ring-slate-200"
+                    aria-hidden="true"
+                  >
+                    {initials}
+                  </span>
+                )}
+              </NavLink>
             </div>
           ) : (
             <NavLink
@@ -279,16 +303,6 @@ export default function Navbar() {
                 onClick={() => setMenuOpen(false)}
               >
                 Home
-              </NavLink>
-
-              <NavLink
-                to="/history"
-                className={({ isActive }) =>
-                  `${linkBase} ${isActive ? linkActive : ''} px-6 py-3 min-h-[48px] flex items-center`
-                }
-                onClick={() => setMenuOpen(false)}
-              >
-                History
               </NavLink>
 
               <NavLink

@@ -24,9 +24,11 @@ export default function AchievementCard({ achievement, isUnlocked, unlockedAt, c
     ? 'mt-0.5 flex h-8 w-8 items-center justify-center text-[22px] leading-none'
     : 'mt-1 flex h-9 w-9 items-center justify-center text-[28px] leading-none'
   const titleClass = compact
-    ? 'mt-1.5 text-[12px] font-medium text-primary'
+    ? 'mt-1.5 break-words text-[12px] font-medium text-primary'
     : 'mt-2 text-[13px] font-medium text-primary'
-  const descClass = compact ? 'mt-0.5 text-[10px] text-slate-600' : 'mt-1 text-[11px] text-slate-600'
+  const descClass = compact
+    ? 'mt-0.5 break-words text-[10px] text-slate-600'
+    : 'mt-1 text-[11px] text-slate-600'
   const unlockedClass = compact
     ? 'mt-1 text-[9px] font-medium text-slate-500'
     : 'mt-2 text-[10px] font-medium text-slate-500'

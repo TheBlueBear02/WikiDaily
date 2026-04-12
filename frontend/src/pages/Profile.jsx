@@ -119,14 +119,6 @@ export default function Profile() {
         )}
       </div>
 
-      <AchievementsGrid
-        achievements={achievementsQuery.achievements}
-        unlocked={achievementsQuery.unlocked}
-        userAchievements={achievementsQuery.userAchievementsQuery.data ?? []}
-        isLoading={achievementsQuery.isLoading}
-        profile={profile}
-      />
-
       <NotesGrid
         entries={notesQuery.data ?? []}
         isLoading={notesQuery.isLoading}
@@ -158,6 +150,14 @@ export default function Profile() {
         isError={readingHistoryQuery.isError}
         error={readingHistoryQuery.error}
         onRetry={() => readingHistoryQuery.refetch()}
+      />
+
+      <AchievementsGrid
+        achievements={achievementsQuery.achievements}
+        unlocked={achievementsQuery.unlocked}
+        userAchievements={achievementsQuery.userAchievementsQuery.data ?? []}
+        isLoading={achievementsQuery.isLoading}
+        profile={profile}
       />
 
       <DeleteAccountSection />

@@ -33,6 +33,16 @@ export function yesterdayUtcYmd() {
   return `${y}-${m}-${day}`
 }
 
+/** "Yesterday" in WikiDaily terms (YYYY-MM-DD), where the day rolls over at 05:00 UTC. */
+export function yesterdayDailyYmd(now = new Date()) {
+  const shifted = new Date(now.getTime() - DAILY_RESET_UTC_HOUR * 3_600_000)
+  shifted.setUTCDate(shifted.getUTCDate() - 1)
+  const y = shifted.getUTCFullYear()
+  const m = String(shifted.getUTCMonth() + 1).padStart(2, '0')
+  const d = String(shifted.getUTCDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
 /**
  * End of the current leaderboard window: next UTC Sunday at 23:59:59.999.
  * If that moment has already passed today (e.g. late Sunday UTC), returns the following Sunday.

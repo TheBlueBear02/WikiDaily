@@ -1,4 +1,21 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+
+const WEEKS_FULL_YEAR = 52
+const WEEKS_LAST_THREE_MONTHS = 13
+
+function useNarrowActivityHeatmap() {
+  const [narrow, setNarrow] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches
+  )
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)')
+    setNarrow(mq.matches)
+    const handler = () => setNarrow(mq.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
+  return narrow
+}
 
 const EMPTY_CELL =
   'h-3 w-3 rounded-[2px] bg-slate-200/60'
@@ -39,6 +56,48 @@ function addDaysUtc(date, days) {
   return d
 }
 
+function buildHeatmapGrid(numWeeks) {
+  const today = new Date()
+  const todayUtc = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()))
+  const endMonday = mondayOfWeekUtc(todayUtc)
+  const start = addDaysUtc(endMonday, -7 * (numWeeks - 1))
+
+  const labels = []
+  const seenMonths = new Set()
+  let monthCount = 0
+  const showEveryMonth = numWeeks < WEEKS_FULL_YEAR
+
+  for (let col = 0; col < numWeeks; col += 1) {
+    for (let row = 0; row < 7; row += 1) {
+      const d = addDaysUtc(start, col * 7 + row)
+      if (d.getUTCDate() === 1) {
+        const key = `${d.getUTCFullYear()}-${d.getUTCMonth()}`
+        if (!seenMonths.has(key)) {
+          seenMonths.add(key)
+          if (showEveryMonth || monthCount % 2 === 0) {
+            labels.push({
+              col,
+              text: new Intl.DateTimeFormat(undefined, { month: 'short', timeZone: 'UTC' }).format(d),
+            })
+          }
+          monthCount += 1
+        }
+        break
+      }
+    }
+  }
+
+  const grid = []
+  for (let col = 0; col < numWeeks; col += 1) {
+    for (let rowMon0 = 0; rowMon0 < 7; rowMon0 += 1) {
+      const dateUtc = addDaysUtc(start, col * 7 + rowMon0)
+      grid.push({ col, rowMon0, dateUtc, ymd: ymdUtc(dateUtc) })
+    }
+  }
+
+  return { todayUtcDate: todayUtc, cells: grid, monthLabels: labels, numWeeks }
+}
+
 function formatTooltip(dateUtc, title) {
   const dayLabel = new Intl.DateTimeFormat(undefined, {
     weekday: 'short',
@@ -71,45 +130,13 @@ function buildReadIndex(entries) {
 }
 
 export default function ActivityHeatmap({ entries }) {
-  const { startMonday, todayUtcDate, cells, monthLabels } = useMemo(() => {
-    const today = new Date()
-    const todayUtc = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()))
-    const endMonday = mondayOfWeekUtc(todayUtc)
-    const start = addDaysUtc(endMonday, -7 * 51) // 52 full weeks
+  const narrow = useNarrowActivityHeatmap()
+  const numWeeks = narrow ? WEEKS_LAST_THREE_MONTHS : WEEKS_FULL_YEAR
 
-    const labels = []
-    const seenMonths = new Set()
-    let monthCount = 0
-    for (let col = 0; col < 52; col += 1) {
-      for (let row = 0; row < 7; row += 1) {
-        const d = addDaysUtc(start, col * 7 + row)
-        if (d.getUTCDate() === 1) {
-          const key = `${d.getUTCFullYear()}-${d.getUTCMonth()}`
-          if (!seenMonths.has(key)) {
-            seenMonths.add(key)
-            if (monthCount % 2 === 0) {
-              labels.push({
-                col,
-                text: new Intl.DateTimeFormat(undefined, { month: 'short', timeZone: 'UTC' }).format(d),
-              })
-            }
-            monthCount += 1
-          }
-          break
-        }
-      }
-    }
-
-    const grid = []
-    for (let col = 0; col < 52; col += 1) {
-      for (let rowMon0 = 0; rowMon0 < 7; rowMon0 += 1) {
-        const dateUtc = addDaysUtc(start, col * 7 + rowMon0)
-        grid.push({ col, rowMon0, dateUtc, ymd: ymdUtc(dateUtc) })
-      }
-    }
-
-    return { startMonday: start, todayUtcDate: todayUtc, cells: grid, monthLabels: labels }
-  }, [])
+  const { todayUtcDate, cells, monthLabels, numWeeks: columnCount } = useMemo(
+    () => buildHeatmapGrid(numWeeks),
+    [numWeeks]
+  )
 
   const { readSet, titleByDate } = useMemo(() => buildReadIndex(entries), [entries])
   const todayYmd = useMemo(() => ymdUtc(todayUtcDate), [todayUtcDate])
@@ -119,7 +146,7 @@ export default function ActivityHeatmap({ entries }) {
   return (
     <div className="space-y-2">
       <div className="ml-8 flex gap-[3px] text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-        {Array.from({ length: 52 }).map((_, col) => {
+        {Array.from({ length: columnCount }).map((_, col) => {
           const label = monthLabels.find((l) => l.col === col)
           return (
             <div key={`m-${col}`} className="w-3">
@@ -141,7 +168,6 @@ export default function ActivityHeatmap({ entries }) {
         <div className="grid grid-flow-col grid-rows-7 gap-[3px]">
           {cells.map((cell) => {
             const isFuture = cell.ymd > todayYmd
-            const isToday = cell.ymd === todayYmd
             const isRead = readSet.has(cell.ymd)
 
             const title = isFuture

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { getSupabase } from '../lib/supabaseClient'
-import { yesterdayUtcYmd } from '../lib/date'
+import { yesterdayDailyYmd } from '../lib/date'
 import { normalizeWikiSlugForDb } from '../lib/wikipedia'
 import { trackEvent } from '../lib/analytics'
 
@@ -230,7 +230,7 @@ export function useUserProgress() {
       }
 
       const lastRead = currentProfile?.last_read ?? null
-      const yesterday = yesterdayUtcYmd()
+      const yesterday = yesterdayDailyYmd()
 
       // Streak is per-day, but `total_read` is per successful log insert.
       // If the user already read something today, we should not change streak,
